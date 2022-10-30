@@ -1,7 +1,8 @@
 # GTS-Engine
 
 
-
+## 操作文档
+hold
 ## 环境依赖
 ```
 pip install -r requirements.txt
@@ -23,6 +24,7 @@ pip install -r requirements.txt
 #### 单机单卡
 
 ```
+CUDA_VISIBLE_DEVICES=0 
 python train.py 
     --data_dir files/data \
     --save_path files \
@@ -41,7 +43,6 @@ python train.py
 
 
 可配置参数包括
-- ``model_name_or_path``表示内置模型参数名（目前支持``ernie-health-chinese``），或者模型参数配置路径（这时需配置 --init_from_ckpt 参数一起使用，一般用于断点恢复训练场景。）
 - ``data_dir``表示训练数据所在目录，该目录下至少要有``train.json``、``val.json``、``label.json``三个文件，如果需要预测```test.json``也要存在。
 - ``save_path``表示模型训练参数和训练日志以及训练结果的保存目录。
 - ``train_batchsize``表示训练时每次迭代每张卡上的样本数量。当batch_size=2时，max_len=512时, 运行时单卡约需要24G显存。如果实际GPU显存小于24G或大大多于24G，可适当调小/调大此配置。
