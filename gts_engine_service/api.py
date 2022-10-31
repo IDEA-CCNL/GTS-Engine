@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 import argparse
 import os
 import uvicorn
-from fastapi import FastAPI, Request File, UploadFile, Form
+from fastapi import FastAPI, Request, File, UploadFile, Form
 from starlette.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
@@ -145,7 +145,7 @@ def train_data(inputs:TrainInput):
     #hold
     if inputs.tuning_method not in ["UnifiedMC"]:
         return {"error":"tuning_method must be UnifiedMC"}
-    assert inputs.task_type in ["text_classification"]
+    if inputs.task_type in ["text_classification"]:
         return {"error":"task_type must be text_classification"}
 
     task_id = str(int(time.time()))
@@ -219,7 +219,6 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
 
-
 from teacher_core.utils.evaluation import evaluation
 from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
 from teacher_core.models.text_classification.bert_UnifiedMC import taskModel, BertUnifiedMC
@@ -285,7 +284,7 @@ class PredictInput(BaseModel):
 def predict(inputs:PredictInput):
     if inputs.tuning_method not in ["UnifiedMC"]:
         return {"error": "tuning_method must be UnifiedMC"}
-    assert inputs.task_type in ["text_classification"]
+    if inputs.task_type in ["text_classification"]:
         return {"error": "task_type must be text_classification"}
 
     if len(checkpoint_path)==0:
