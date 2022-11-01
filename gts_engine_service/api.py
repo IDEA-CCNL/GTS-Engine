@@ -15,6 +15,7 @@ import time
 import json
 import datetime
 import shutil
+import subprocess
 from fastapi import FastAPI, File, UploadFile
 from typing import List
 import api_utils
@@ -118,129 +119,89 @@ def delete_task(task_id: str):
     return {"ret_code": 200, "message": "Success"}
 
 # ------------------------------------------模型训练-------------------------------------------------
-
 class TrainInput(BaseModel):
-    train_data: str = "train.json"
-    valid_data: str = "dev.json"
-    test_data: str = "test.json"
-    labels_data: str = "labels.json"
-    # data_dir: str = "/raid/liuyibo/gts_teacher_service/data"
-    data_dir: str = "{}/files/data".format(os.getcwd())
-    save_path: str = "{}/files".format(os.getcwd())
-    train_batchsize: int = 1
-    valid_batchsize: int = 4
-    max_len: int = 512
-    task_type: str = "text_classification"
-    tuning_method: str = "UnifiedMC"
-    max_epochs: int = 10
-    min_epochs: int = 1 
-    num_threads: int = 8 
-    seed: int = 123 
-    val_check_interval: float = 0.25
-    gpuid: int = 0
-
-
-def check_train_data(data_path, data_type):
-    is_correct = True
-    try:
-        with open(data_path, 'r', encoding='utf8') as f:
-            data = f.readlines()
-            for line in data:
-                try:
-                    line = json.loads(line)
-                except:
-                    is_correct = False
-
-                if data_type=='train' or data_type=='dev':
-                    if "text" not in line or  "label" not in line:
-                        is_correct = False
-                if data_type=='test':
-                    if "text" not in line:
-                        is_correct = False
-                if data_type=='label':
-                    if "labels" not in line:
-                        is_correct = False 
-    except:
-        is_correct = False
-    return is_correct
+    task_id: str # 任务id
+    train_data: str # 训练集名称
+    val_data: str # 验证集名称 
+    test_data: str # 测试集名称
+    label_data: str # 标签数据名称
+    max_len: int = 512 # 文本最大长度
+    max_num_epoch: int = 1 # 最大训练轮次
+    min_num_epoch: int = 1 # 最小训练轮次
+    seed: int = 42 # 随机种子 
         
 
 @app.post('/api/train')
-def train_data(inputs:TrainInput):
+def train(train_input: TrainInput):
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    task_id = train_input.task_id
+    if not api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "任务id不存在"}
 
-    train_data_path = os.path.join(inputs.data_dir, inputs.train_data)
-    if not check_train_data(train_data_path, "train"):
-        return {"message":"请检查训练数据的地址是否存在或者数据格式是否符合要求"}
-
-    dev_data_path = os.path.join(inputs.data_dir, inputs.dev_data)
-    if not check_train_data(val_data_path, "dev"):
-        return {"message":"请检查验证数据的地址是否存在或者数据格式是否符合要求"}
-
-    if inputs.test_data:
-        test_data_path = os.path.join(inputs.data_dir, inputs.test_data)
-        if not check_train_data(test_data_path, "test"):
-            return {"message":"请检查测试数据的地址是否存在或者数据格式是否符合要求"}
-
-    label_data_path = os.path.join(inputs.data_dir, inputs.label_data)
-    if not check_train_data(label_data_path, "label"):
-        return {"message":"请检查标签数据的地址是否存在或者数据格式是否符合要求"}
-
-
-    #hold
-    if inputs.tuning_method not in ["UnifiedMC"]:
-        return {"error":"tuning_method must be UnifiedMC"}
-    if inputs.task_type in ["text_classification"]:
-        return {"error":"task_type must be text_classification"}
-
-    task_id = str(int(time.time()))
-    print('start')
-    sh_command = "CUDA_VISIBLE_DEVICES={} nohup python train.py \
-                    --train_data={} \
-                    --valid_data={} \
-                    --test_data={} \
-                    --labels_data= {} \
-                    --data_dir={} \
-                    --save_path={} \
-                    --train_batchsize={} \
-                    --valid_batchsize={} \
-                    --max_len={} \
-                    --task_id={} \
-                    --tuning_method={} \
-                    --max_epochs={} \
-                    --min_epochs={} \
-                    --num_threads={} \
-                    --seed={} \
-                    --val_check_interval={} > train_{}.log &".format(
-                                                    inputs.gpuid,
-                                                    inputs.train_data,
-                                                    inputs.valid_data,
-                                                    inputs.test_data,
-                                                    inputs.labels_data,
-                                                    inputs.data_dir,
-                                                    inputs.save_path,
-                                                    inputs.train_batchsize,
-                                                    inputs.valid_batchsize,
-                                                    inputs.max_len,
-                                                    task_id,
-                                                    inputs.tuning_method,
-                                                    inputs.max_epochs,
-                                                    inputs.min_epochs,
-                                                    inputs.num_threads,
-                                                    inputs.seed,
-                                                    inputs.val_check_interval,
-                                                    task_id)
-
-
-    print('sh_command', sh_command)
-    os.system(sh_command)
+    task_dir = os.path.join(task_dir, task_id)
+    task_data_dir = os.path.join(task_dir, "data")
     
-    print('end')
-    # task_id =  int(os.getpid())
-    # train.py创建task_id/data_dir/results/train_status.json
-    # {"状态":"训练中"}
-    # train.py训练完之后把改为{"状态":"已完成","acc":"100%"}
+    task_info_path = os.path.join(task_dir, "task_info.json")
+    if not os.path.exists(task_info_path):
+        return {"ret_code": -102, "message": "任务信息文件不存在"}
+    task_info = json.load(open(task_info_path))
 
-    return {"info":"已提交训练", "训练id":task_id}
+    if not api_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.train_data), "train"):
+        return {"ret_code": -101, "message":"训练数据不存在或者数据格式不合法"}
+
+    if not api_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.val_data), "dev"):
+        return {"ret_code": -101, "message":"验证数据不存在或者数据格式不合法"}
+
+    if not api_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.test_data), "test"):
+        return {"ret_code": -101, "message":"测试数据不存在或者数据格式不合法"}
+
+    if not api_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.label_data), "label"):
+        return {"ret_code": -101, "message":"标签数据不存在或者数据格式不合法"}
+
+    # 创建日志目录和模型存储目录
+    task_log_dir = os.path.join(task_dir, "logs")
+    task_output_dir = os.path.join(task_dir, "outputs")
+    if not os.path.exists(task_log_dir):
+        os.makedirs(task_log_dir)
+    if not os.path.exists(task_output_dir):
+        os.makedirs(task_output_dir)
+
+    train_batch_size = 1
+    val_batch_size = 4
+    val_check_interval = 0.25
+
+    print('start training...')
+    args = [
+        "--task_dir=%s" % task_dir,
+        "--train_data=%s" % train_input.train_data,
+        "--valid_data=%s" % train_input.val_data,
+        "--test_data=%s" % train_input.test_data,
+        "--labels_data=%s" % train_input.label_data,
+        "--data_dir=%s" % task_data_dir,
+        "--save_path=%s" % task_output_dir,
+        "--train_batchsize=%d" % train_batch_size,
+        "--valid_batchsize=%d" %  val_batch_size,
+        "--max_len=%d" % train_input.max_len,
+        "--max_epochs=%d" % train_input.max_num_epoch,
+        "--min_epochs=%d" % train_input.min_num_epoch,
+        "--seed=%d" % train_input.seed,
+        "--val_check_interval=%f" % val_check_interval,
+    ]
+
+    proc_args = ["python", "train.py"] + args
+    proc = subprocess.Popen(proc_args)
+
+    task_info["status"] = "On Training"
+    task_info["status_code"] = 1
+    task_info["train_pid"] = proc.pid
+    task_info["train_data"] = train_input.train_data
+    task_info["val_data"] = train_input.val_data
+    task_info["test_data"] = train_input.test_data
+    task_info["label_data"] = train_input.label_data
+    with open(task_info_path, mode="w") as f:
+            json.dump(task_info, f, indent=4)
+
+    return {"ret_code": 200, "message": "训练调度成功"}
  
 # ------------------------------------------模型预测-------------------------------------------------
 
