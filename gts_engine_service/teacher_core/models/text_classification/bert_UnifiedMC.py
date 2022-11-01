@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
 from transformers.optimization import get_linear_schedule_with_warmup
-from transformers import AdamW
+from transformers import AdamW,Adafactor
 from teacher_core.models.text_classification.base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
 # from torchsnooper import snoop
 # from teacher_core.optimizer.optimization import AdamW
@@ -18,31 +18,9 @@ from teacher_core.models.text_classification.base_model import BaseModel, MLPLay
 from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
 import numpy as np
 
+from teacher_core.utils.detect_gpu_memory import detect_gpu_memory
+import teacher_core.utils.globalvar as globalvar
 
-class FGM():
-    def __init__(self, model):
-        self.model = model
-        self.backup = {}
-
-    def attack(self, epsilon=1., emb_name='embeddings'):
-        # emb_name这个参数要换成你模型中embedding的参数名
-        # emb_name='embeddings'
-        for name, param in self.model.named_parameters():
-            if param.requires_grad and emb_name in name:
-                self.backup[name] = param.data.clone()
-                norm = torch.norm(param.grad)
-                if norm != 0 and not torch.isnan(norm):
-                    r_at = epsilon * param.grad / norm
-                    param.data.add_(r_at)
-
-    def restore(self, emb_name='embeddings'):
-        # emb_name这个参数要换成你模型中embedding的参数名
-        # emb_name='embeddings'
-        for name, param in self.model.named_parameters():
-            if param.requires_grad and emb_name in name: 
-                assert name in self.backup
-                param.data = self.backup[name]
-        self.backup = {}
 
 class taskModel(nn.Module):
     def __init__(self, pre_train_dir: str, tokenizer):
@@ -51,8 +29,18 @@ class taskModel(nn.Module):
         self.no_token = tokenizer.encode("非")[1]
         
         if "1.3B" in pre_train_dir:
-            self.config = MegatronBertConfig.from_pretrained(pre_train_dir)
-            self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+            # v100
+            print(globalvar.get_value("gpu_type") )
+            if globalvar.get_value("gpu_type") == "low_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "mid_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "high_gpu":
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
@@ -179,12 +167,15 @@ class BertUnifiedMC(BaseModel):
 
 
     def validation_epoch_end(self, validation_step_outputs):
+        gpu_memory, gpu_used_memory = detect_gpu_memory()
+        if gpu_used_memory > globalvar.get_value("gpu_max_used_memory"):
+            globalvar.set_value("gpu_max_used_memory", gpu_used_memory)
+
         ncorrect = 0
         ntotal = 0
         for x in validation_step_outputs:
             ncorrect += x[0]
             ntotal += x[1]
-
 
         self.log('valid_acc_epoch', ncorrect / ntotal, on_epoch=True, prog_bar=True)
 
@@ -208,7 +199,8 @@ class BertUnifiedMC(BaseModel):
 
     def predict(self, batch):
         inputs = self.predict_inputs(batch)
-        loss, logits, cls_logits, hidden_states = self.model(**inputs)
+        with torch.no_grad():
+            loss, logits, cls_logits, hidden_states = self.model(**inputs)
 
         probs = torch.nn.functional.softmax(cls_logits, dim=-1)
         predicts = torch.argmax(probs, dim=-1)
@@ -274,7 +266,11 @@ class BertUnifiedMC(BaseModel):
             'params': [p for n, p in paras if any(nd in n for nd in no_decay)],
             'weight_decay': 0.0
         }]
-        optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
+        if globalvar.get_value("gpu_type") == "low_gpu":
+            optimizer = Adafactor(paras, lr=self.hparams.lr,relative_step=False, warmup_init=False)
+            print("使用Adafactor!")
+        else:
+            optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
             optimizer, int(self.total_step * self.hparams.warmup),
             self.total_step)
