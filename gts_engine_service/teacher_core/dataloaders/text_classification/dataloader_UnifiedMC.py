@@ -175,7 +175,7 @@ class TaskDatasetUnifiedMC(Dataset):
         #                                         )
         # else:
 
-        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' +item['text']
+        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' + item['text']
         # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
         encode_dict = self.tokenizer.encode_plus(texta,
                                             max_length=self.max_length,
@@ -244,11 +244,8 @@ class TaskDatasetUnifiedMC(Dataset):
         else:
             # target[label_idx[item['label']]]=self.yes_token
             # clslabels = label_idx[item['label']]
-            # target[label_idx[self.choice.index(item['label'])]]=self.yes_token
-            # clslabels = label_idx[self.choice.index(item['label'])]
-            target[label_idx[0]]=self.yes_token
-            clslabels = label_idx[0]
-
+            target[label_idx[self.choice.index(item['label'])]]=self.yes_token
+            clslabels = label_idx[self.choice.index(item['label'])]
 
         # target[label_idx[:-1]]=-100
         # target[label_idx[item['label']]]=-100
@@ -313,7 +310,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         # else:
         #     self.label2id_file = None
 
-        self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.labels_data))
+        self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.label_data))
         # args.num_labels = len(self.label_classes)
         args.num_labels = len(self.choice)
 
@@ -322,7 +319,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.valid_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
+            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True, choice=self.choice)
         print("len(valid_data:",len(self.valid_data))
         # if args.use_knn:
         #     self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(

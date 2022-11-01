@@ -43,12 +43,10 @@ def main(args):
     # Set path to save checkpoint and outputs
     
     
-    # hyparas = 'tuning_method={}-seed={}-model={}-bs={}-train_data={}-lr={}-pooler={}-l2={}-ft={}-clip={}-drop={}-adv={}-prec-{}'.format(
-    #             args.tuning_method, args.seed,args.pretrained_model_name,args.train_batchsize, args.train_data,args.lr, args.pooler_type, args.l2,
-    #             int(args.finetune), args.gradient_clip_val, args.mlp_dropout, int(args.adv), args.precision)
     
     # save_path = os.path.join(args.save_dir, args.output)
-    save_path = os.path.join(args.save_path, 'save_{}'.format(args.task_id))
+    #save_path = os.path.join(args.save_path, 'save_{}'.format(args.task_id))
+    save_path = args.save_path
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # args.save_path = save_path
@@ -100,11 +98,24 @@ def main(args):
     data_model = tuning_methods_config[args.tuning_method]["DataModel"](args, tokenizer)
     #model = BertUnifiedMC(args, tokenizer)
     model = tuning_methods_config[args.tuning_method]["TuningModel"](args, tokenizer)
-    for k,v in model.named_parameters():
-        print('named_parameters',  k,v.requires_grad)
+    # for k,v in model.named_parameters():
+    #     print('named_parameters',  k,v.requires_grad)
     trainer.fit(model, data_model)
     checkpoint_path = checkpoint.best_model_path
 
+    task_info_path =  'tasks/{}/task_info.json'.format(args.task_id)
+
+    if os.path.exists(task_info_path):
+        task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
+
+        task_info_dict['best_model_path'] = checkpoint_path
+
+        with open(task_info_path, mode="w") as f:
+                json.dump(task_info_dict, f, indent=4)
+
+    
+    
+    
     
 
     
@@ -151,15 +162,15 @@ if __name__ == '__main__':
     total_parser.add_argument('--train_batchsize', default=1, type=int)   
     total_parser.add_argument('--valid_batchsize', default=4, type=int)   
     total_parser.add_argument('--test_batchsize', default=4, type=int)  
-    total_parser.add_argument('--max_len', default=256, type=int)   
+    total_parser.add_argument('--max_len', default=512, type=int)   
     total_parser.add_argument('--recreate_dataset', action='store_true', default=True)
 
     total_parser.add_argument('--data_dir',default='files/data',type=str)
     total_parser.add_argument('--output_dir',default='',type=str)
     total_parser.add_argument('--train_data', default='train.json', type=str)   
     total_parser.add_argument('--valid_data', default='dev.json', type=str)     
-    total_parser.add_argument('--test_data', default='test_label.json', type=str)      
-    total_parser.add_argument('--labels_data', default='labels.json', type=str)
+    total_parser.add_argument('--test_data', default='test.json', type=str)      
+    total_parser.add_argument('--label_data', default='labels.json', type=str)
     total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
     total_parser.add_argument('--label2id_file', default=None, type=str)  
     total_parser.add_argument('--content_key', default="content",help="content key in json file")
@@ -175,8 +186,8 @@ if __name__ == '__main__':
 
     total_parser.add_argument('--output',default='output',type=str)
     # total_parser.add_argument('--model_path',default='{}/model_save'.format(os.getcwd()),type=str)
-    total_parser.add_argument('--save_path',default='{}/data_files'.format(os.getcwd()),type=str)
-    total_parser.add_argument('--task_id',default='{}'.format(int(time.time())),type=str)
+    total_parser.add_argument('--save_path',default='{}/files'.format(os.getcwd()),type=str)
+    total_parser.add_argument('--task_id',default='',type=str)
 
     
     # * Args for base model 
@@ -233,14 +244,15 @@ if __name__ == '__main__':
     args = total_parser.parse_args()
 
     args.gpus = 1
-    # args.max_epochs = 1 
-    # args.min_epochs = 1 
-    args.num_threads = 8 
-    # args.seed = 123 
-    # args.val_check_interval = 0.25 
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
     args.warmup = 0.1 
+    args.num_threads = 8 
+
+    args.max_epochs = 1 
+    args.min_epochs = 1 
+    args.seed = 123 
+    args.val_check_interval = 0.25 
 
 
 
