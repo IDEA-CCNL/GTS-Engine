@@ -125,7 +125,6 @@ class TaskDatasetUnifiedMC(Dataset):
 
         self.load_from_list = load_from_list
         self.samples = samples
-        self.sup_pretrain = args.sup_pretrain
         self.is_test = is_test
         self.unlabeled = unlabeled
 
@@ -174,8 +173,7 @@ class TaskDatasetUnifiedMC(Dataset):
         #                                         truncation=True
         #                                         )
         # else:
-
-        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' + item['text']
+        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' +item['content']
         # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
         encode_dict = self.tokenizer.encode_plus(texta,
                                             max_length=self.max_length,
@@ -244,19 +242,17 @@ class TaskDatasetUnifiedMC(Dataset):
         else:
             # target[label_idx[item['label']]]=self.yes_token
             # clslabels = label_idx[item['label']]
-            target[label_idx[self.choice.index(item['label'])]]=self.yes_token
+            target[label_idx[self.choice.index(item['label'])]] = self.yes_token
             clslabels = label_idx[self.choice.index(item['label'])]
+
 
         # target[label_idx[:-1]]=-100
         # target[label_idx[item['label']]]=-100
 
-        if self.sup_pretrain and not self.is_test:
-            label_idx = label_idx[:1]
-
         encoded = {
             # "id": item["id"],
             # "sentence":item["texta"],
-            "sentence":item["text"],
+            "sentence":item["content"],
             "unlabeled_set":item["unlabeled_set"] if "unlabeled_set" in item.keys() else "0",
             "input_ids": torch.tensor(source).long(),
             "token_type_ids": torch.tensor(token_type_ids).long(),
@@ -302,7 +298,6 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         # self.test_batchsize = 5
         self.test_batchsize = args.test_batchsize
         self.num_workers = args.num_workers
-        self.sup_pretrain = args.sup_pretrain
         self.tokenizer = tokenizer
 
         # if args.label2id_file is not None:
@@ -400,12 +395,8 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
                                                 padding_value=-10000)
 
         clslabels = torch.stack(batch_data["clslabels"],dim=0)
-        if self.sup_pretrain:
-            label_idx = nn.utils.rnn.pad_sequence(batch_data["label_idx"],
-                                            batch_first=True,
-                                            padding_value=0)
-        else:
-            label_idx = torch.stack(batch_data["label_idx"],dim=0)
+        
+        label_idx = torch.stack(batch_data["label_idx"],dim=0)
 
 
 
