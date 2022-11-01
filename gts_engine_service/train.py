@@ -249,9 +249,9 @@ if __name__ == '__main__':
     args.warmup = 0.1 
     args.num_threads = 8 
 
-    args.max_epochs = 1 
-    args.min_epochs = 1 
-    args.seed = 123 
+    # args.max_epochs = 1 
+    # args.min_epochs = 1 
+    # args.seed = 123 
     args.val_check_interval = 0.25 
 
 
