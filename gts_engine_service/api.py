@@ -11,18 +11,15 @@ from fastapi.templating import Jinja2Templates
 from starlette.staticfiles import StaticFiles
 from pydantic import BaseModel
 from enum import Enum
-import numpy as np
 import time
-import requests
 import json
+import datetime
+import shutil
 from fastapi import FastAPI, File, UploadFile
 from typing import List
-import copy
+import api_utils
 
-
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 app = FastAPI()
-
 
 # -------------------------------------------主页---------------------------------------------------
 @app.get('/',response_class=HTMLResponse)
@@ -36,42 +33,89 @@ async def index(request: Request):
 
     return html_content
 
+# ---------------------------------------创建任务---------------------------------------------------
+@app.post('/api/create_task/')
+def create_task(task_name: str, task_type: str):
+    # 获得当前时间
+    timestamp_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    if task_name is None:
+        task_name = task_type
+    task_id = task_name + "_" + timestamp_str
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    if not os.path.exists(task_dir):
+        os.makedirs(task_dir)
+    if api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "task已经存在", "task_id": task_id}
+    else:
+        task_info = {
+            "task_id": task_id,
+            "status": "Initialized",
+            "status_code": 0,
+            "task_type": task_type,
+            "task_name": task_name,
+        }
+        specific_task_dir = os.path.join(task_dir, task_id)
+        if not os.path.exists(specific_task_dir):
+            os.makedirs(specific_task_dir)
+        with open(os.path.join(specific_task_dir, "task_info.json"), mode="w") as f:
+            json.dump(task_info, f, indent=4)
+        return {"ret_code": 200, "message": "task成功创建", "task_id": task_id}
+    
 
+# ---------------------------------------创建任务---------------------------------------------------
+@app.post('/api/list_task/')
+def list_task():
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    tasks = api_utils.list_task(task_dir)
+    return {"ret_code": 200, "message": "Success", "tasks": tasks}
+
+# ------------------------------------------查看任务状态-------------------------------------------------
+@app.post('/api/check_task_status')
+def check_task_status(task_id: str):
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    if not api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "任务不存在"}
+    specific_task_dir = os.path.join(task_dir, task_id)
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
+    if not os.path.exists(task_info_path):
+        return {"ret_code": -200, "message": "任务信息文件不存在"}
+    task_info = json.load(open(task_info_path))
+    status = task_info["status"]
+    status_code = task_info["status_code"]
+    return {"ret_code": status_code, "message": status}
 
 # ---------------------------------------文件上传---------------------------------------------------
 @app.post('/api/upfiles/')
-async def upload_files(upload_list:List[UploadFile]=File(...)):
-    
-    file_names = []
-    file_types = []
-    file_sizes = []
+async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    if not api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "task id不存在"}
 
-    for file_ in upload_list:
-        
+    task_dir = os.path.join(task_dir, task_id)
+    data_dir = os.path.join(task_dir, "data")
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    print('file will save to', data_dir)
+
+    for file_ in files:
         contents = await file_.read()
         file_name = file_.filename
-        file_type = file_.content_type
-
-        #文件保存位置
-        data_path = os.path.join(os.getcwd(),'files/data')
-        if not os.path.exists(data_path):
-            os.makedirs(data_path)
-        print('data_path', data_path)
-        file_path = '{}/{}'.format(data_path, file_name)
+        
+        file_path = os.path.join(data_dir, file_name)
         print('file_path', file_path)
-        with open(file_path,'wb') as f:
+        with open(file_path, 'wb') as f:
             f.write(contents)
 
-        file_names.append(file_name)
-        file_types.append(file_type)
+    return {"ret_code": 200, "message": "上传成功"}
 
-    return ({
-            "file_names":file_names,
-            "file_types":file_types,
-            "message": "上传成功"
-            })
-
-
+# ---------------------------------------创建任务---------------------------------------------------
+@app.post('/api/delete_task/')
+def delete_task(task_id: str):
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    if not api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "task id不存在"}
+    shutil.rmtree(os.path.join(task_dir, task_id))
+    return {"ret_code": 200, "message": "Success"}
 
 # ------------------------------------------模型训练-------------------------------------------------
 
@@ -197,19 +241,6 @@ def train_data(inputs:TrainInput):
     # train.py训练完之后把改为{"状态":"已完成","acc":"100%"}
 
     return {"info":"已提交训练", "训练id":task_id}
-
-
-
-# ------------------------------------------任务状态-------------------------------------------------
-@app.post('/api/task')
-def task_status(task_id):
-
-    with open(os.path.join(os.getcwd(),'info.json'),'r') as f:
-        res = json.loads(f.read())
-
-    # train_status = open(task_id)
-    return {"info":res['训练状态']}
-
  
 # ------------------------------------------模型预测-------------------------------------------------
 
@@ -344,5 +375,5 @@ def predict(inputs:PredictInput):
 
 if __name__ == '__main__':
     # uvicorn.run(app, host='0.0.0.0', port=8080, debug = True)
-    uvicorn.run(app, host='0.0.0.0', port=5201)
+    uvicorn.run(app, host='0.0.0.0', port=5207)
     # uvicorn.run(app, host='192.168.190.63', port=5201)
