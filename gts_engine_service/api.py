@@ -14,6 +14,7 @@ from enum import Enum
 import time
 import json
 import datetime
+import psutil
 import shutil
 import subprocess
 from fastapi import FastAPI, File, UploadFile
@@ -132,7 +133,7 @@ class TrainInput(BaseModel):
         
 
 @app.post('/api/train')
-def train(train_input: TrainInput):
+def start_train(train_input: TrainInput):
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     task_id = train_input.task_id
     if not api_utils.is_task_valid(task_dir, task_id):
@@ -161,10 +162,12 @@ def train(train_input: TrainInput):
     # 创建日志目录和模型存储目录
     task_log_dir = os.path.join(task_dir, "logs")
     task_output_dir = os.path.join(task_dir, "outputs")
-    if not os.path.exists(task_log_dir):
-        os.makedirs(task_log_dir)
-    if not os.path.exists(task_output_dir):
-        os.makedirs(task_output_dir)
+    if os.path.exists(task_log_dir):
+        shutil.rmtree(task_log_dir)
+    os.makedirs(task_log_dir)
+    if os.path.exists(task_output_dir):
+        shutil.rmtree(task_output_dir)
+    os.makedirs(task_output_dir)
 
     train_batch_size = 1
     val_batch_size = 4
@@ -203,6 +206,34 @@ def train(train_input: TrainInput):
 
     return {"ret_code": 200, "message": "训练调度成功"}
  
+class StopTrainInput(BaseModel):
+    task_id: str # 任务id
+
+@app.post('/api/stop_train')
+def stop_train(stop_train_input: StopTrainInput):
+    task_id = stop_train_input.task_id
+    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
+    if not api_utils.is_task_valid(task_dir, task_id):
+        return {"ret_code": -100, "message": "任务id不存在"}
+
+    task_dir = os.path.join(task_dir, task_id)
+    task_info_path = os.path.join(task_dir, "task_info.json")
+    if not os.path.exists(task_info_path):
+        return {"ret_code": -102, "message": "任务信息文件不存在"}
+    task_info = json.load(open(task_info_path))
+
+    if task_info["status"] != "On Training":
+        return {"ret_code": -103, "message": "任务不在训练中"}
+
+    proc = psutil.Process(task_info["train_pid"])
+    proc.kill()
+    print("train process %d is killed" % task_info["train_pid"])
+
+    task_info["status"] = "Train Stopped"
+    task_info["status_code"] = 3
+
+    return {"ret_code": 200, "message": "终止训练成功"}
+
 # ------------------------------------------模型预测-------------------------------------------------
 
 from itertools import chain
