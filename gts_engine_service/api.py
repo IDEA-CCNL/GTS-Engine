@@ -20,9 +20,9 @@ import subprocess
 from fastapi import FastAPI, File, UploadFile
 from typing import List
 import api_utils
-from teacher_config import tuning_methods_config
 import gc
 app = FastAPI()
+
 
 # -------------------------------------------主页---------------------------------------------------
 @app.get('/',response_class=HTMLResponse)
@@ -36,11 +36,18 @@ async def index(request: Request):
 
     return html_content
 
+
 # ---------------------------------------创建任务---------------------------------------------------
+class CreateTaskInput(BaseModel):
+    task_name: str # 任务名称
+    task_type: str # 任务类型
+
 @app.post('/api/create_task/')
-def create_task(task_name: str, task_type: str):
+def create_task(creat_task_input: CreateTaskInput):
     # task_type 可选:classification、similarity
     # 获得当前时间
+    task_name = creat_task_input.task_name
+    task_type = creat_task_input.task_type
     timestamp_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     if task_name is None:
         task_name = task_type
@@ -73,9 +80,15 @@ def list_task():
     tasks = api_utils.list_task(task_dir)
     return {"ret_code": 200, "message": "Success", "tasks": tasks}
 
+
 # ------------------------------------------查看任务状态-------------------------------------------------
+class TaskStatusInput(BaseModel):
+    task_id: str # 任务id
+
 @app.post('/api/check_task_status')
-def check_task_status(task_id: str):
+def check_task_status(task_task_inut: TaskStatusInput):
+    task_id = task_task_inut.task_id
+
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "任务不存在"}
@@ -87,6 +100,7 @@ def check_task_status(task_id: str):
     status = task_info["status"]
     status_code = task_info["status_code"]
     return {"ret_code": status_code, "message": status}
+
 
 # ---------------------------------------文件上传---------------------------------------------------
 @app.post('/api/upfiles/')
@@ -112,14 +126,21 @@ async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
 
     return {"ret_code": 200, "message": "上传成功"}
 
+
 # ---------------------------------------创建任务---------------------------------------------------
+class DeleteTaskInput(BaseModel):
+    task_id: str # 任务id
+
 @app.post('/api/delete_task/')
-def delete_task(task_id: str):
+def delete_task(delete_task_input: DeleteTaskInput):
+    task_id = delete_task_input.task_id
+
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "task id不存在"}
     shutil.rmtree(os.path.join(task_dir, task_id))
     return {"ret_code": 200, "message": "Success"}
+
 
 # ------------------------------------------模型训练-------------------------------------------------
 class TrainInput(BaseModel):
@@ -128,13 +149,14 @@ class TrainInput(BaseModel):
     val_data: str # 验证集名称 
     test_data: str # 测试集名称
     label_data: str # 标签数据名称
+    pretrained_model: str #模型文件
     max_len: int = 512 # 文本最大长度
     max_num_epoch: int = 1 # 最大训练轮次
     min_num_epoch: int = 1 # 最小训练轮次
     seed: int = 42 # 随机种子
     gpuid: int 
+    
         
-
 @app.post('/api/train')
 def start_train(train_input: TrainInput):
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
@@ -184,6 +206,7 @@ def start_train(train_input: TrainInput):
         "--test_data=%s" % train_input.test_data,
         "--label_data=%s" % train_input.label_data,
         "--data_dir=%s" % task_data_dir,
+        "--pretrained_model=%s" % train_input.pretrained_model,
         "--save_path=%s" % task_output_dir,
         "--train_batchsize=%d" % train_batch_size,
         "--valid_batchsize=%d" %  val_batch_size,
@@ -197,12 +220,10 @@ def start_train(train_input: TrainInput):
     proc_args = ["python", "train.py"] + args
     # proc = subprocess.Popen(proc_args)
 
-    task_train_log = os.path.join(task_dir, "train.log")
+    task_train_log = os.path.join(task_log_dir, "train.log")
 
     with open(task_train_log,"w") as writer:
         proc = subprocess.Popen(';'.join(['export CUDA_VISIBLE_DEVICES={}'.format(str(train_input.gpuid)), ' '.join(proc_args)]), shell=True, stdout=writer, stderr=writer)
-
-    
 
     task_info["status"] = "On Training"
     task_info["status_code"] = 1
@@ -211,17 +232,20 @@ def start_train(train_input: TrainInput):
     task_info["val_data"] = train_input.val_data
     task_info["test_data"] = train_input.test_data
     task_info["label_data"] = train_input.label_data
+    task_info["pretrained_model"] = train_input.pretrained_model
     with open(task_info_path, mode="w") as f:
             json.dump(task_info, f, indent=4)
 
     return {"ret_code": 200, "message": "训练调度成功"}
  
+# ------------------------------------------停止模型训练-------------------------------------------------
 class StopTrainInput(BaseModel):
     task_id: str # 任务id
 
 @app.post('/api/stop_train')
 def stop_train(stop_train_input: StopTrainInput):
     task_id = stop_train_input.task_id
+
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "任务id不存在"}
@@ -244,7 +268,7 @@ def stop_train(stop_train_input: StopTrainInput):
 
     return {"ret_code": 200, "message": "终止训练成功"}
 
-# ------------------------------------------模型预测-------------------------------------------------
+# ------------------------------------------开启模型预测-------------------------------------------------
 
 from itertools import chain
 import torch.nn as nn
@@ -258,17 +282,21 @@ from teacher_core.models.text_classification.bert_UnifiedMC import taskModel, Be
 from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer, seed_everything, loggers
-# from pytorch_lightning.callbacks.progress import tqdm
 from tqdm.auto import tqdm
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
+class StartInferenceInput(BaseModel):
+    task_id: str # 任务id
 
 
 @app.post('/api/start_inference')
-def start_inference(task_id:str):
+def start_inference(start_inference_input: StartInferenceInput):
+    task_id = start_inference_input.task_id
+
     global inference_tokenizer
     global inference_model
-
+    global inference_choice
+    global inference_args
 
     task_info_path =  'tasks/{}/task_info.json'.format(task_id)
 
@@ -279,18 +307,33 @@ def start_inference(task_id:str):
 
     checkpoint_path =  task_info_dict['best_model_path']
     task_type = task_info_dict['task_type']
+    label_data = task_info_dict["label_data"]
+
+    label_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id,  "data", label_data)
+    print("label_path",label_path)
+    line = json.load(open(label_path, 'r', encoding='utf8'))
+    inference_choice = line['labels']
+    inference_args = api_utils.load_args(checkpoint_path)
 
     # tokenizer, model = load_tokenizer_and_model(checkpoint_path, inputs.tuning_method)
     inference_tokenizer, inference_model = api_utils.load_tokenizer_and_model(checkpoint_path)
 
-    return {"ret_code":200}
+    
+
+    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
+    task_info = json.load(open(task_info_path))
+    task_info["status"] = "Load Predict Model"
+    with open(task_info_path, mode="w") as f:
+        json.dump(task_info, f, indent=4)
 
 
+    return {"ret_code":200, "message":"加载预测模型"}
+
+
+# ------------------------------------------模型预测-------------------------------------------------
 class PredictInput(BaseModel):
     sentences: list = ["怎样的房子才算户型方正？","文登区这些公路及危桥将进入封闭施工，请注意绕行！"]
-    task_id: str = ""
-
-
+    task_id: str
 
 @app.post('/api/predict')
 def predict(inputs:PredictInput):
@@ -301,61 +344,50 @@ def predict(inputs:PredictInput):
         task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
         return {"ret_code":-100, "message": "task_id not exits"}
-    checkpoint_path =  task_info_dict['best_model_path']
+    
+    # checkpoint_path =  task_info_dict['best_model_path']
+    # label_data = task_info_dict["label_data"]
+    # label_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id,  "data", label_data)
+    # print("label_path",label_path)
+    # line = json.load(open(label_path, 'r', encoding='utf8'))
 
-    label_data = task_info_dict["label_data"]
 
-    label_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id,  "data", label_data)
-
-    # tokenizer, model = load_tokenizer_and_model(checkpoint_path, inputs.tuning_method)
-
-    print("label_path",label_path)
-    line = json.load(open(label_path, 'r', encoding='utf8'))
-    choice = line['labels']
-    args = api_utils.load_args(checkpoint_path)
+    # choice = line['labels']
+    # args = api_utils.load_args(checkpoint_path)
     
     # 加载数据
-    data_model = TaskDataModelUnifiedMC(args, inference_tokenizer)
+    data_model = TaskDataModelUnifiedMC(inference_args, inference_tokenizer)
 
     samples = []
     question = "请问下面的文字描述属于那个类别？"
 
     for sentence in sentences:
-        sample = {"id":0, "content":sentence, "textb":"", "question":question, "choice":choice, "label":choice[0]}
+        sample = {"id":0, "content":sentence, "textb":"", "question":question, "choice":inference_choice, "label":inference_choice[0]}
         samples.append(sample)
-    dataset = TaskDatasetUnifiedMC(data_path=None,args=args,used_mask=False, tokenizer=inference_tokenizer, load_from_list=True, samples=samples, choice=choice)
+    dataset = TaskDatasetUnifiedMC(data_path=None, args=inference_args, used_mask=False, tokenizer=inference_tokenizer, load_from_list=True, samples=samples, choice=inference_choice)
     
-
     dataloader = DataLoader(dataset, shuffle=False, 
         collate_fn=data_model.collate_fn, \
-        batch_size=args.train_batchsize)
+        batch_size=inference_args.train_batchsize)
 
     label_classes = data_model.label_classes
     print(label_classes)
     label_classes_reverse = {v:k for k,v in label_classes.items()}
 
-    # results = []
-
     pred_labels = []
     pred_probs = []
-    # 进行预测
+
     for batch in dataloader:
         logits, probs, predicts, labels, _ = inference_model.predict(batch)
     
         for idx, (predict,prob) in enumerate(zip(predicts,probs)):    
-            # pred = {
-            #     'sentence': batch['sentence'][idx],
-            #     'label': predict,
-            #     "label_name":choice[predict],
-            #     "probs":prob.tolist()
-            # }
-            # results.append(pred)
             pred_labels.append(choice[predict])
             pred_probs.append(prob.tolist())
+
     return {'ret_code':200, 'predictions':pred_labels, 'probabilities':pred_probs}
 
 
-
+# ------------------------------------------关闭模型预测-------------------------------------------------
 @app.post('/api/end_inference')
 def end_inference():
     global inference_tokenizer
@@ -364,7 +396,14 @@ def end_inference():
     del inference_tokenizer
     gc.collect()
     torch.cuda.empty_cache()
-    return {'ret_code':200}
+
+    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
+    task_info = json.load(open(task_info_path))
+    task_info["status"] = "Release Predict Model"
+    with open(task_info_path, mode="w") as f:
+        json.dump(task_info, f, indent=4)
+
+    return {'ret_code':200, "message":"释放预测模型"}
 
 
 

@@ -68,7 +68,7 @@ def main(args):
                                             logger=logger,
                                             callbacks=[checkpoint, early_stop])
     # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, args.pretrained_model_name)
+    # args.pretrained_model = os.path.join(args.pretrained_model_dir, args.pretrained_model_name)
 
     # Save args
     with open(os.path.join(save_path, 'args.json'), 'w') as f:
@@ -81,36 +81,15 @@ def main(args):
     
     tokenizer = get_train_tokenizer(args=args)            
     tokenizer.save_pretrained(save_path)
-    # data_model = TaskDataModel(args, tokenizer)
-    # model = Bert(args, tokenizer)
 
+    #加载数据
     data_model = TaskDataModelUnifiedMC(args, tokenizer)
+    #加载模型
     model = BertUnifiedMC(args, tokenizer)
-
-
+    #模型训练
     trainer.fit(model, data_model)
+    #验证集效果最好的模型文件地址
     checkpoint_path = checkpoint.best_model_path
-
-    # task_info_path =  'tasks/{}/task_info.json'.format(args.task_id)
-
-    # if os.path.exists(task_info_path):
-    #     task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
-
-    task_info['best_model_path'] = checkpoint_path
-
-    # with open(task_info_path, mode="w") as f:
-    #         json.dump(task_info_dict, f, indent=4)
-
-    
-    
-    
-    
-
-    
-    # # Evaluating on dev set
-    # output_save_path = os.path.join(save_path, 'predictions/')
-    # if not os.path.exists(output_save_path):
-    #     os.makedirs(output_save_path)
 
     if args.test_data:
         output_save_path = os.path.join(save_path, 'predictions/')
@@ -203,8 +182,11 @@ if __name__ == '__main__':
     total_parser.add_argument("--pretrained_model_dir", default="/raid/liuyibo/GTS-Engine",
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument('--pretrained_model_name',
-                        default='UnifiedMC_Bert-1.3B',   #######
+                        default='UnifiedMC_Bert-1.3B',   
                         type=str)
+    total_parser.add_argument("--pretrained_model", default="/raid/liuyibo/GTS-Engine/UnifiedMC_Bert-1.3B",
+                        type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
+    
     total_parser.add_argument('--child_tuning_p', type=float, default=1.0, help="prob of dropout gradient, if < 1.0, use child-tuning")
     total_parser.add_argument('--finetune', action='store_true', default=True, help="if fine tune the pretrained model")    #####
     total_parser.add_argument("--pooler_type", type=str, default="cls_pooler", help="acceptable values:[cls, cls_before_pooler, avg, avg_top2, avg_first_last]")

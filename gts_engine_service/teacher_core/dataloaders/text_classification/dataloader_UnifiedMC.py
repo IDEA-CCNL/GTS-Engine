@@ -149,16 +149,33 @@ class TaskDatasetUnifiedMC(Dataset):
                 for line in tqdm(lines):
                     item = json.loads(line)
                     samples.append(item)
+                    # choices_len = len('[MASK]'.join(item['choice']))
+                    # # 如果choice拼起来太长就不要了
+                    # if choices_len < 512:
+                    #     samples.append(item)
         return samples
 
     def encode(self, item, used_mask, is_test, unlabeled):
         # item['question']='[CLS]'
         # 如果choice太长的处理
-        
+        # while len(self.tokenizer.encode('[MASK]'.join(item['choice']))) > self.max_length-32:
+        #     item['choice'] = [c[:int(len(c)/2)] for c in item['choice']]
         while len(self.tokenizer.encode('[MASK]'.join(self.choice))) > self.max_length-32:
             self.choice = [c[:int(len(c)/2)] for c in self.choice]
 
-        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' + item['content']
+        # if item['textb']!='':
+        #     texta =  '[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]' +item['question'] + '[SEP]' +item['texta']+'[SEP]'+item['textb']
+        #     # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']+'[SEP]'+item['textb']
+        #     encode_dict = self.tokenizer.encode_plus(texta,
+        #                                         max_length=self.max_length,
+        #                                         # padding='max_length',
+        #                                         padding="longest",
+        #                                         truncation=True
+        #                                         )
+        # else:
+
+        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' +item['content']
+        # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
         encode_dict = self.tokenizer.encode_plus(texta,
                                             max_length=self.max_length,
                                             # padding='max_length',
@@ -179,6 +196,8 @@ class TaskDatasetUnifiedMC(Dataset):
                 label_idx.append(cur_mask_idx)
     
 
+        # token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*self.max_length
+        # token_type_ids=token_type_ids[:self.max_length]
         encoded_len = len(encode_dict["input_ids"])
         zero_len = len(encode_dict["input_ids"]) - question_len - ((label_idx[-1]-label_idx[0]+1))
         token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*zero_len
@@ -227,6 +246,9 @@ class TaskDatasetUnifiedMC(Dataset):
             target[label_idx[self.choice.index(item['label'])]] = self.yes_token
             clslabels = label_idx[self.choice.index(item['label'])]
 
+
+        # target[label_idx[:-1]]=-100
+        # target[label_idx[item['label']]]=-100
 
         encoded = {
             # "id": item["id"],
@@ -279,6 +301,11 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.num_workers = args.num_workers
         self.tokenizer = tokenizer
 
+        # if args.label2id_file is not None:
+        #     self.label2id_file = os.path.join(args.data_dir, args.label2id_file)
+        # else:
+        #     self.label2id_file = None
+
         self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.label_data))
         # args.num_labels = len(self.label_classes)
         args.num_labels = len(self.choice)
@@ -288,7 +315,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.valid_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True, choice=self.choice)
+            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         print("len(valid_data:",len(self.valid_data))
         # if args.use_knn:
         #     self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(
@@ -350,6 +377,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
 
         new_attention_mask = torch.stack(attention_mask_,dim=0)
             
+
         token_type_ids = nn.utils.rnn.pad_sequence(token_type_ids,
                                                    batch_first=True,
                                                    padding_value=0)
