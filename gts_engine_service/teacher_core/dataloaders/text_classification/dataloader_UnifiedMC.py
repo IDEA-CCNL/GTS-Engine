@@ -306,7 +306,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         # else:
         #     self.label2id_file = None
 
-        self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.labels_data))
+        self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.label_data))
         # args.num_labels = len(self.label_classes)
         args.num_labels = len(self.choice)
 
@@ -315,7 +315,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.valid_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
+            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True, choice=self.choice)
         print("len(valid_data:",len(self.valid_data))
         # if args.use_knn:
         #     self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(
@@ -421,42 +421,6 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
 
         return batch_data
 
-    # def get_label_classes(self,file_path=None,label2id_file=None, label_key="label"):
-    #     if label2id_file is not None:
-    #         # print(self.label2id_file)
-    #         with open(label2id_file, 'r', encoding='utf8') as f:
-    #             label2id = json.load(f)
-    #             # label_classes = list(label2id.keys())
-    #             # 按照id键排序
-    #             # label_classes = OrderedDict(sorted(label2id.items(), key=lambda i: i[1]['id']))
-    #             # label_classes = list(label_classes.keys())
-    #             # print(label_classes)
-    #             # 用dict存储label_classes
-    #             label_classes = {}
-    #             for k, v in label2id.items():
-    #                 label_classes[k] = v["id"]
-    #     else:
-    #         with open(file_path, 'r', encoding='utf8') as f:
-    #             lines = f.readlines()
-    #             labels = []
-    #             for line in tqdm(lines):
-    #                 data = json.loads(line)
-    #                 # text = data[content_key].strip("\n")
-    #                 label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-    #                 # result.append((text, label))
-
-    #                 if label not in labels:
-    #                     labels.append(label)
-
-    #             # 传入一个list，把每个标签对应一个数字
-    #             label_model = sklearn.preprocessing.LabelEncoder()
-    #             label_model.fit(labels)
-    #             label_classes = {}
-    #             for i,item in enumerate(list(label_model.classes_)):
-    #                 label_classes[int(item)] = i
-
-    #     print("label_classes:",label_classes)
-    #     return label_classes
 
     def get_label_classes(self,file_path=None):
         
