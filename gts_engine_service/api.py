@@ -149,7 +149,6 @@ class TrainInput(BaseModel):
     val_data: str # 验证集名称 
     test_data: str # 测试集名称
     label_data: str # 标签数据名称
-    pretrained_model: str #模型文件
     max_len: int = 512 # 文本最大长度
     max_num_epoch: int = 1 # 最大训练轮次
     min_num_epoch: int = 1 # 最小训练轮次
@@ -206,7 +205,6 @@ def start_train(train_input: TrainInput):
         "--test_data=%s" % train_input.test_data,
         "--label_data=%s" % train_input.label_data,
         "--data_dir=%s" % task_data_dir,
-        "--pretrained_model=%s" % train_input.pretrained_model,
         "--save_path=%s" % task_output_dir,
         "--train_batchsize=%d" % train_batch_size,
         "--valid_batchsize=%d" %  val_batch_size,
@@ -232,7 +230,6 @@ def start_train(train_input: TrainInput):
     task_info["val_data"] = train_input.val_data
     task_info["test_data"] = train_input.test_data
     task_info["label_data"] = train_input.label_data
-    task_info["pretrained_model"] = train_input.pretrained_model
     with open(task_info_path, mode="w") as f:
             json.dump(task_info, f, indent=4)
 
@@ -309,7 +306,7 @@ def start_inference(start_inference_input: StartInferenceInput):
     task_type = task_info_dict['task_type']
     label_data = task_info_dict["label_data"]
 
-    label_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id,  "data", label_data)
+    label_path = os.path.join(os.path.dirname(__file__), "tasks", task_id,  "data", label_data)
     print("label_path",label_path)
     line = json.load(open(label_path, 'r', encoding='utf8'))
     inference_choice = line['labels']
@@ -317,8 +314,6 @@ def start_inference(start_inference_input: StartInferenceInput):
 
     # tokenizer, model = load_tokenizer_and_model(checkpoint_path, inputs.tuning_method)
     inference_tokenizer, inference_model = api_utils.load_tokenizer_and_model(checkpoint_path)
-
-    
 
     task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
     task_info = json.load(open(task_info_path))
@@ -381,15 +376,20 @@ def predict(inputs:PredictInput):
         logits, probs, predicts, labels, _ = inference_model.predict(batch)
     
         for idx, (predict,prob) in enumerate(zip(predicts,probs)):    
-            pred_labels.append(choice[predict])
+            pred_labels.append(inference_choice[predict])
             pred_probs.append(prob.tolist())
 
     return {'ret_code':200, 'predictions':pred_labels, 'probabilities':pred_probs}
 
 
 # ------------------------------------------关闭模型预测-------------------------------------------------
+class EndInferenceInput(BaseModel):
+    task_id: str  #任务id
+
 @app.post('/api/end_inference')
-def end_inference():
+def end_inference(end_inference_input: EndInferenceInput):
+    task_id = end_inference_input.task_id
+
     global inference_tokenizer
     global inference_model
     del inference_model
