@@ -36,13 +36,17 @@ async def index(request: Request):
     return html_content
 
 # ---------------------------------------创建任务---------------------------------------------------
+class CreateTaskInput(BaseModel):
+    task_name: str # 任务名称
+    task_type: str # 任务类型
+
 @app.post('/api/create_task/')
-def create_task(task_name: str, task_type: str):
-    # 获得当前时间
-    timestamp_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+def create_task(create_task_input: CreateTaskInput):
+    task_name = create_task_input.task_name
+    task_type = create_task_input.task_type
     if task_name is None:
-        task_name = task_type
-    task_id = task_name + "_" + timestamp_str
+        task_name = task_type + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    task_id = task_name # 任务名称等于任务id
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not os.path.exists(task_dir):
         os.makedirs(task_dir)
@@ -72,8 +76,12 @@ def list_task():
     return {"ret_code": 200, "message": "Success", "tasks": tasks}
 
 # ------------------------------------------查看任务状态-------------------------------------------------
+class CheckTaskInput(BaseModel):
+    task_id: str # 任务id
+
 @app.post('/api/check_task_status')
-def check_task_status(task_id: str):
+def check_task_status(check_task_input: CheckTaskInput):
+    task_id = check_task_input.task_id
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "任务不存在"}
@@ -111,8 +119,12 @@ async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
     return {"ret_code": 200, "message": "上传成功"}
 
 # ---------------------------------------创建任务---------------------------------------------------
+class DeleteTaskInput(BaseModel):
+    task_id: str # 任务id
+
 @app.post('/api/delete_task/')
-def delete_task(task_id: str):
+def delete_task(delete_task_input: DeleteTaskInput):
+    task_id = delete_task_input.task_id
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "task id不存在"}
