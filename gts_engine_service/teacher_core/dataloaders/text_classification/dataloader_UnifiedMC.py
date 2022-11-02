@@ -149,32 +149,16 @@ class TaskDatasetUnifiedMC(Dataset):
                 for line in tqdm(lines):
                     item = json.loads(line)
                     samples.append(item)
-                    # choices_len = len('[MASK]'.join(item['choice']))
-                    # # 如果choice拼起来太长就不要了
-                    # if choices_len < 512:
-                    #     samples.append(item)
         return samples
 
     def encode(self, item, used_mask, is_test, unlabeled):
         # item['question']='[CLS]'
         # 如果choice太长的处理
-        # while len(self.tokenizer.encode('[MASK]'.join(item['choice']))) > self.max_length-32:
-        #     item['choice'] = [c[:int(len(c)/2)] for c in item['choice']]
+        
         while len(self.tokenizer.encode('[MASK]'.join(self.choice))) > self.max_length-32:
             self.choice = [c[:int(len(c)/2)] for c in self.choice]
 
-        # if item['textb']!='':
-        #     texta =  '[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]' +item['question'] + '[SEP]' +item['texta']+'[SEP]'+item['textb']
-        #     # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']+'[SEP]'+item['textb']
-        #     encode_dict = self.tokenizer.encode_plus(texta,
-        #                                         max_length=self.max_length,
-        #                                         # padding='max_length',
-        #                                         padding="longest",
-        #                                         truncation=True
-        #                                         )
-        # else:
-        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' +item['content']
-        # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
+        texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' + item['content']
         encode_dict = self.tokenizer.encode_plus(texta,
                                             max_length=self.max_length,
                                             # padding='max_length',
@@ -195,8 +179,6 @@ class TaskDatasetUnifiedMC(Dataset):
                 label_idx.append(cur_mask_idx)
     
 
-        # token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*self.max_length
-        # token_type_ids=token_type_ids[:self.max_length]
         encoded_len = len(encode_dict["input_ids"])
         zero_len = len(encode_dict["input_ids"]) - question_len - ((label_idx[-1]-label_idx[0]+1))
         token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*zero_len
@@ -245,9 +227,6 @@ class TaskDatasetUnifiedMC(Dataset):
             target[label_idx[self.choice.index(item['label'])]] = self.yes_token
             clslabels = label_idx[self.choice.index(item['label'])]
 
-
-        # target[label_idx[:-1]]=-100
-        # target[label_idx[item['label']]]=-100
 
         encoded = {
             # "id": item["id"],
@@ -299,11 +278,6 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.test_batchsize = args.test_batchsize
         self.num_workers = args.num_workers
         self.tokenizer = tokenizer
-
-        # if args.label2id_file is not None:
-        #     self.label2id_file = os.path.join(args.data_dir, args.label2id_file)
-        # else:
-        #     self.label2id_file = None
 
         self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.label_data))
         # args.num_labels = len(self.label_classes)
@@ -376,7 +350,6 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
 
         new_attention_mask = torch.stack(attention_mask_,dim=0)
             
-
         token_type_ids = nn.utils.rnn.pad_sequence(token_type_ids,
                                                    batch_first=True,
                                                    padding_value=0)
@@ -420,42 +393,6 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
 
         return batch_data
 
-    # def get_label_classes(self,file_path=None,label2id_file=None, label_key="label"):
-    #     if label2id_file is not None:
-    #         # print(self.label2id_file)
-    #         with open(label2id_file, 'r', encoding='utf8') as f:
-    #             label2id = json.load(f)
-    #             # label_classes = list(label2id.keys())
-    #             # 按照id键排序
-    #             # label_classes = OrderedDict(sorted(label2id.items(), key=lambda i: i[1]['id']))
-    #             # label_classes = list(label_classes.keys())
-    #             # print(label_classes)
-    #             # 用dict存储label_classes
-    #             label_classes = {}
-    #             for k, v in label2id.items():
-    #                 label_classes[k] = v["id"]
-    #     else:
-    #         with open(file_path, 'r', encoding='utf8') as f:
-    #             lines = f.readlines()
-    #             labels = []
-    #             for line in tqdm(lines):
-    #                 data = json.loads(line)
-    #                 # text = data[content_key].strip("\n")
-    #                 label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-    #                 # result.append((text, label))
-
-    #                 if label not in labels:
-    #                     labels.append(label)
-
-    #             # 传入一个list，把每个标签对应一个数字
-    #             label_model = sklearn.preprocessing.LabelEncoder()
-    #             label_model.fit(labels)
-    #             label_classes = {}
-    #             for i,item in enumerate(list(label_model.classes_)):
-    #                 label_classes[int(item)] = i
-
-    #     print("label_classes:",label_classes)
-    #     return label_classes
 
     def get_label_classes(self,file_path=None):
         

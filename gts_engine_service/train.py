@@ -1,7 +1,4 @@
-
-
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "4" 
 import json
 import string
 import torch
@@ -94,15 +91,15 @@ def main(args):
     trainer.fit(model, data_model)
     checkpoint_path = checkpoint.best_model_path
 
-    task_info_path =  'tasks/{}/task_info.json'.format(args.task_id)
+    # task_info_path =  'tasks/{}/task_info.json'.format(args.task_id)
 
-    if os.path.exists(task_info_path):
-        task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
+    # if os.path.exists(task_info_path):
+    #     task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
 
-        task_info_dict['best_model_path'] = checkpoint_path
+    task_info['best_model_path'] = checkpoint_path
 
-        with open(task_info_path, mode="w") as f:
-                json.dump(task_info_dict, f, indent=4)
+    # with open(task_info_path, mode="w") as f:
+    #         json.dump(task_info_dict, f, indent=4)
 
     
     
@@ -135,6 +132,8 @@ def main(args):
 
 
 if __name__ == '__main__':    
+    
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
 
     total_parser = argparse.ArgumentParser()
 
@@ -174,10 +173,7 @@ if __name__ == '__main__':
 
     total_parser.add_argument('--save_path', default='output', type=str)
 
-    
-    # * Args for base model 
-        
-
+            
     # * Args for general setting
     total_parser.add_argument('--num_threads', default=8, type=int)
     total_parser.add_argument('--eval', action='store_true', default=False)
@@ -201,11 +197,10 @@ if __name__ == '__main__':
     total_parser.add_argument('--project_norm_type', default='inf', type=str)
     total_parser.add_argument('--nlabels', default=10, type=int)
 
-
     # * Args for base specific model 
-
     
-    total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
+    # total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
+    total_parser.add_argument("--pretrained_model_dir", default="/raid/liuyibo/GTS-Engine",
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument('--pretrained_model_name',
                         default='UnifiedMC_Bert-1.3B',   #######
@@ -221,15 +216,12 @@ if __name__ == '__main__':
 
 
     total_parser = Trainer.add_argparse_args(total_parser)
-
-    
     print("total_parser:",total_parser)
     # * Args for data preprocessing
-
     args = total_parser.parse_args()
 
-    args.gpus = 1
 
+    args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
     args.warmup = 0.1 
@@ -239,7 +231,6 @@ if __name__ == '__main__':
     # args.min_epochs = 1 
     # args.seed = 123 
     args.val_check_interval = 0.25 
-
 
 
     print('args', args)
