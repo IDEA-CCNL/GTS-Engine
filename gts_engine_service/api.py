@@ -43,18 +43,9 @@ class CreateTaskInput(BaseModel):
     task_type: str # 任务类型
 
 @app.post('/api/create_task/')
-<<<<<<< HEAD
 def create_task(create_task_input: CreateTaskInput):
     task_name = create_task_input.task_name
     task_type = create_task_input.task_type
-=======
-def create_task(creat_task_input: CreateTaskInput):
-    # task_type 可选:classification、similarity
-    # 获得当前时间
-    task_name = creat_task_input.task_name
-    task_type = creat_task_input.task_type
-    timestamp_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
->>>>>>> main
     if task_name is None:
         task_name = task_type + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     task_id = task_name # 任务名称等于任务id
@@ -88,22 +79,12 @@ def list_task():
 
 
 # ------------------------------------------查看任务状态-------------------------------------------------
-<<<<<<< HEAD
 class CheckTaskInput(BaseModel):
     task_id: str # 任务id
 
 @app.post('/api/check_task_status')
 def check_task_status(check_task_input: CheckTaskInput):
     task_id = check_task_input.task_id
-=======
-class TaskStatusInput(BaseModel):
-    task_id: str # 任务id
-
-@app.post('/api/check_task_status')
-def check_task_status(task_task_inut: TaskStatusInput):
-    task_id = task_task_inut.task_id
-
->>>>>>> main
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "任务不存在"}
@@ -149,10 +130,6 @@ class DeleteTaskInput(BaseModel):
 @app.post('/api/delete_task/')
 def delete_task(delete_task_input: DeleteTaskInput):
     task_id = delete_task_input.task_id
-<<<<<<< HEAD
-=======
-
->>>>>>> main
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     if not api_utils.is_task_valid(task_dir, task_id):
         return {"ret_code": -100, "message": "task id不存在"}
