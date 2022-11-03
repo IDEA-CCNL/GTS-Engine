@@ -100,15 +100,6 @@ def main(args):
     #验证集效果最好的模型文件地址
     checkpoint_path = checkpoint.best_model_path
 
-<<<<<<< HEAD
-    
-    # # Evaluating on dev set
-    # output_save_path = os.path.join(save_path, 'predictions/')
-    # if not os.path.exists(output_save_path):
-    #     os.makedirs(output_save_path)
-
-=======
->>>>>>> main
     if args.test_data:
         output_save_path = os.path.join(save_path, 'predictions/')
         if not os.path.exists(output_save_path):
