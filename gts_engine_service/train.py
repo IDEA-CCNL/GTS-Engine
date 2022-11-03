@@ -3,7 +3,6 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "4" 
 import json
-import string
 import torch
 import argparse
 import traceback
@@ -31,30 +30,11 @@ from tqdm.auto import tqdm
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-# from teacher_config import tuning_methods_config
-
 from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
 
 from teacher_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
 
-from teacher_config import tuning_methods_config
-
-def main(args):
-    # Set global random seed
-    seed_everything(args.seed)
-    # Set path to save checkpoint and outputs
-    
-    
-    # hyparas = 'tuning_method={}-seed={}-model={}-bs={}-train_data={}-lr={}-pooler={}-l2={}-ft={}-clip={}-drop={}-adv={}-prec-{}'.format(
-    #             args.tuning_method, args.seed,args.pretrained_model_name,args.train_batchsize, args.train_data,args.lr, args.pooler_type, args.l2,
-    #             int(args.finetune), args.gradient_clip_val, args.mlp_dropout, int(args.adv), args.precision)
-    
-    save_path = args.save_path
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
-    # args.save_path = save_path
-    args.output_dir = save_path
-    
+def generate_common_trainer(save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
@@ -74,39 +54,24 @@ def main(args):
     trainer = Trainer.from_argparse_args(args, 
                                             logger=logger,
                                             callbacks=[checkpoint, early_stop])
+    return trainer, checkpoint
+
+def classification_pipeline(args):
     # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, args.pretrained_model_name)
-
-    # Save args
-    with open(os.path.join(save_path, 'args.json'), 'w') as f:
-        json.dump(vars(args), f, indent=4)
-
-    print('-' * 30 + 'Args' + '-' * 30)
-    for k, v in vars(args).items():
-        print(k, ":", v, end=',\t')
-    print('\n' + '-' * 64)
-    
+    args.pretrained_model = os.path.join(args.pretrained_model_dir, "UnifiedMC_Bert-1.3B")
+    # init tokenizer
     tokenizer = get_train_tokenizer(args=args)            
-    tokenizer.save_pretrained(save_path)
-    # data_model = TaskDataModel(args, tokenizer)
-    # model = Bert(args, tokenizer)
-
+    tokenizer.save_pretrained(args.save_path)
+    # init model
     data_model = TaskDataModelUnifiedMC(args, tokenizer)
     model = BertUnifiedMC(args, tokenizer)
-
+    trainer, checkpoint = generate_common_trainer(args.save_path)
+    # training
     trainer.fit(model, data_model)
     checkpoint_path = checkpoint.best_model_path
-
     
-
-    
-    # # Evaluating on dev set
-    # output_save_path = os.path.join(save_path, 'predictions/')
-    # if not os.path.exists(output_save_path):
-    #     os.makedirs(output_save_path)
-
     if args.test_data:
-        output_save_path = os.path.join(save_path, 'predictions/')
+        output_save_path = os.path.join(args.save_path, 'predictions/')
         if not os.path.exists(output_save_path):
             os.makedirs(output_save_path)
 
@@ -120,7 +85,43 @@ def main(args):
 
     return checkpoint_path
 
+def sentence_pair_pipeline(args):
+    return None
 
+
+def main(args):
+    # Set global random seed
+    seed_everything(args.seed)
+    # Set path to save checkpoint and outputs
+    
+    
+    # hyparas = 'tuning_method={}-seed={}-model={}-bs={}-train_data={}-lr={}-pooler={}-l2={}-ft={}-clip={}-drop={}-adv={}-prec-{}'.format(
+    #             args.tuning_method, args.seed,args.pretrained_model_name,args.train_batchsize, args.train_data,args.lr, args.pooler_type, args.l2,
+    #             int(args.finetune), args.gradient_clip_val, args.mlp_dropout, int(args.adv), args.precision)
+    
+    save_path = args.save_path
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    args.output_dir = save_path
+
+
+    # Save args
+    with open(os.path.join(save_path, 'args.json'), 'w') as f:
+        json.dump(vars(args), f, indent=4)
+
+    print('-' * 30 + 'Args' + '-' * 30)
+    for k, v in vars(args).items():
+        print(k, ":", v, end=',\t')
+    print('\n' + '-' * 64)
+
+    if args.task_type == "classification":
+        best_model_path = classification_pipeline(args)
+    elif args.task_type == "similarity":
+        best_model_path = sentence_pair_pipeline(args)
+    elif args.task_type == "nli":
+        best_model_path = sentence_pair_pipeline(args)
+
+    return best_model_path
 
 
 
@@ -129,7 +130,9 @@ if __name__ == '__main__':
     total_parser = argparse.ArgumentParser()
 
     total_parser.add_argument("--task_dir", required=True, 
-                            type=str, help="train task dir")     
+                            type=str, help="train task dir")
+    total_parser.add_argument("--task_type", required=True,
+                            type=str, help="task type for training")
     total_parser.add_argument("--use_knn", default=False, action="store_true",
                             help="whether or not to use knn component")
     
@@ -163,10 +166,6 @@ if __name__ == '__main__':
     # total_parser.add_argument('--model_path',default='{}/model_save'.format(os.getcwd()),type=str)
     total_parser.add_argument('--save_path', default='output', type=str)
 
-    
-    # * Args for base model 
-        
-
     # * Args for general setting
     total_parser.add_argument('--num_threads', default=8, type=int)
     total_parser.add_argument('--eval', action='store_true', default=False)
@@ -196,9 +195,6 @@ if __name__ == '__main__':
     
     total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
-    total_parser.add_argument('--pretrained_model_name',
-                        default='UnifiedMC_Bert-1.3B',   #######
-                        type=str)
     total_parser.add_argument('--child_tuning_p', type=float, default=1.0, help="prob of dropout gradient, if < 1.0, use child-tuning")
     total_parser.add_argument('--finetune', action='store_true', default=True, help="if fine tune the pretrained model")    #####
     total_parser.add_argument("--pooler_type", type=str, default="cls_pooler", help="acceptable values:[cls, cls_before_pooler, avg, avg_top2, avg_first_last]")
