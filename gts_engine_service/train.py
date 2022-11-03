@@ -1,19 +1,12 @@
 import os
+import time 
 import json
 import torch
 import shutil
 import argparse
 import traceback
-from itertools import chain
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.optim import Adam
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
-from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
-import time
-
-from teacher_core.dataloaders.text_classification.dataloader import TaskDataset, TaskDataModel
 
 from teacher_core.utils.evaluation import evaluation
 from teacher_core.utils.tokenization import get_train_tokenizer
@@ -22,14 +15,21 @@ from teacher_core.utils import knn_utils
 
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer, seed_everything, loggers
-# from pytorch_lightning.callbacks.progress import tqdm
-from tqdm.auto import tqdm
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
 
 from teacher_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
+
+# 设置gpu相关的全局变量
+import teacher_core.utils.globalvar as globalvar
+globalvar._init()
+
+from teacher_core.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
+globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
+globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
 
 def generate_common_trainer(save_path):
     # Prepare Trainer
