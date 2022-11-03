@@ -1,7 +1,4 @@
-
-
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "4" 
 import json
 import torch
 import argparse
@@ -64,10 +61,12 @@ def classification_pipeline(args):
     tokenizer.save_pretrained(args.save_path)
     # init model
     data_model = TaskDataModelUnifiedMC(args, tokenizer)
+    #加载模型
     model = BertUnifiedMC(args, tokenizer)
     trainer, checkpoint = generate_common_trainer(args.save_path)
     # training
     trainer.fit(model, data_model)
+    #验证集效果最好的模型文件地址
     checkpoint_path = checkpoint.best_model_path
     
     if args.test_data:
@@ -126,6 +125,8 @@ def main(args):
 
 
 if __name__ == '__main__':    
+    
+    #os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
 
     total_parser = argparse.ArgumentParser()
 
@@ -142,15 +143,15 @@ if __name__ == '__main__':
     total_parser.add_argument('--train_batchsize', default=1, type=int)   
     total_parser.add_argument('--valid_batchsize', default=4, type=int)   
     total_parser.add_argument('--test_batchsize', default=4, type=int)  
-    total_parser.add_argument('--max_len', default=256, type=int)   
+    total_parser.add_argument('--max_len', default=512, type=int)   
     total_parser.add_argument('--recreate_dataset', action='store_true', default=True)
 
     total_parser.add_argument('--data_dir',default='files/data',type=str)
     total_parser.add_argument('--output_dir',default='',type=str)
     total_parser.add_argument('--train_data', default='train.json', type=str)   
     total_parser.add_argument('--valid_data', default='dev.json', type=str)     
-    total_parser.add_argument('--test_data', default='test_label.json', type=str)      
-    total_parser.add_argument('--labels_data', default='labels.json', type=str)
+    total_parser.add_argument('--test_data', default='test.json', type=str)      
+    total_parser.add_argument('--label_data', default='labels.json', type=str)
     total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
     total_parser.add_argument('--label2id_file', default=None, type=str)  
     total_parser.add_argument('--content_key', default="content",help="content key in json file")
@@ -164,7 +165,6 @@ if __name__ == '__main__':
 
     total_parser.add_argument('--output',default='output',type=str)
     # total_parser.add_argument('--model_path',default='{}/model_save'.format(os.getcwd()),type=str)
-    total_parser.add_argument('--save_path', default='output', type=str)
 
     # * Args for general setting
     total_parser.add_argument('--num_threads', default=8, type=int)
@@ -189,11 +189,10 @@ if __name__ == '__main__':
     total_parser.add_argument('--project_norm_type', default='inf', type=str)
     total_parser.add_argument('--nlabels', default=10, type=int)
 
-
     # * Args for base specific model 
-
     
-    total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
+    # total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
+    total_parser.add_argument("--pretrained_model_dir", default="/raid/liuyibo/GTS-Engine",
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument('--child_tuning_p', type=float, default=1.0, help="prob of dropout gradient, if < 1.0, use child-tuning")
     total_parser.add_argument('--finetune', action='store_true', default=True, help="if fine tune the pretrained model")    #####
@@ -206,19 +205,21 @@ if __name__ == '__main__':
 
 
     total_parser = Trainer.add_argparse_args(total_parser)
-
-    
     print("total_parser:",total_parser)
     # * Args for data preprocessing
-
     args = total_parser.parse_args()
 
+
     args.gpus = 1
-    args.num_threads = 8 
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
     args.warmup = 0.1 
+    args.num_threads = 8 
 
+    # args.max_epochs = 1 
+    # args.min_epochs = 1 
+    # args.seed = 123 
+    args.val_check_interval = 0.25 
 
 
     print('args', args)
