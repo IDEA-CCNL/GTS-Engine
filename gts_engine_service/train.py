@@ -1,4 +1,5 @@
 import os
+import time 
 import json
 import string
 import torch
@@ -11,7 +12,6 @@ from torch.optim import Adam
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
-import time
 
 from teacher_core.dataloaders.text_classification.dataloader import TaskDataset, TaskDataModel
 #from teacher_core.models.text_classification.bert_baseline import Bert
@@ -35,6 +35,15 @@ from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import Ta
 from teacher_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
 
 from teacher_config import tuning_methods_config
+
+# 设置gpu相关的全局变量
+import teacher_core.utils.globalvar as globalvar
+globalvar._init()
+
+from teacher_core.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
+globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
+globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
 
 def main(args):
     # Set global random seed
