@@ -20,6 +20,7 @@ import subprocess
 from fastapi import FastAPI, File, UploadFile
 from typing import List
 import api_utils
+from inference import preprare_inference, inference_samples
 import gc
 app = FastAPI()
 
@@ -195,6 +196,7 @@ def start_train(train_input: TrainInput):
     print('start training...')
     args = [
         "--task_dir=%s" % task_dir,
+        "--task_type=%s" % task_info["task_type"],
         "--train_data=%s" % train_input.train_data,
         "--valid_data=%s" % train_input.val_data,
         "--test_data=%s" % train_input.test_data,
@@ -261,22 +263,6 @@ def stop_train(stop_train_input: StopTrainInput):
     return {"ret_code": 200, "message": "终止训练成功"}
 
 # ------------------------------------------开启模型预测-------------------------------------------------
-
-from itertools import chain
-import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.optim import Adam
-from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
-
-from teacher_core.utils.evaluation import evaluation
-from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
-from teacher_core.models.text_classification.bert_UnifiedMC import taskModel, BertUnifiedMC
-from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
-import pytorch_lightning as pl
-from pytorch_lightning import Trainer, seed_everything, loggers
-from tqdm.auto import tqdm
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-
 class StartInferenceInput(BaseModel):
     task_id: str # 任务id
 
@@ -285,37 +271,23 @@ class StartInferenceInput(BaseModel):
 def start_inference(start_inference_input: StartInferenceInput):
     task_id = start_inference_input.task_id
 
-    global inference_tokenizer
-    global inference_model
-    global inference_choice
-    global inference_args
+    global inference_suite
 
-    task_info_path =  'tasks/{}/task_info.json'.format(task_id)
-
+    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
     if os.path.exists(task_info_path):
-        task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
+        task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
         return {"ret_code":-100, "message": "task_id not exits"}
 
-    checkpoint_path =  task_info_dict['best_model_path']
-    task_type = task_info_dict['task_type']
-    label_data = task_info_dict["label_data"]
+    save_path = task_info['save_path']
+    task_type = task_info["task_type"]
 
-    label_path = os.path.join(os.path.dirname(__file__), "tasks", task_id,  "data", label_data)
-    print("label_path",label_path)
-    line = json.load(open(label_path, 'r', encoding='utf8'))
-    inference_choice = line['labels']
-    inference_args = api_utils.load_args(checkpoint_path)
+    inference_suite = preprare_inference(task_type, save_path)
 
-    # tokenizer, model = load_tokenizer_and_model(checkpoint_path, inputs.tuning_method)
-    inference_tokenizer, inference_model = api_utils.load_tokenizer_and_model(checkpoint_path)
-
-    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
-    task_info = json.load(open(task_info_path))
-    task_info["status"] = "Load Predict Model"
+    task_info["status"] = "On Inference"
+    task_info["statue_code"] = 3
     with open(task_info_path, mode="w") as f:
         json.dump(task_info, f, indent=4)
-
 
     return {"ret_code":200, "message":"加载预测模型"}
 
@@ -326,55 +298,23 @@ class PredictInput(BaseModel):
     task_id: str
 
 @app.post('/api/predict')
-def predict(inputs:PredictInput):
+def predict(inputs: PredictInput):
 
     sentences = inputs.sentences
-    task_info_path =  'tasks/{}/task_info.json'.format(inputs.task_id)
+    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id, "task_info.json")
     if os.path.exists(task_info_path):
-        task_info_dict = json.load(open(task_info_path,'r', encoding='utf-8'))
+        task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
         return {"ret_code":-100, "message": "task_id not exits"}
     
-    # checkpoint_path =  task_info_dict['best_model_path']
-    # label_data = task_info_dict["label_data"]
-    # label_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id,  "data", label_data)
-    # print("label_path",label_path)
-    # line = json.load(open(label_path, 'r', encoding='utf8'))
+    task_type = task_info["task_type"]
+    try:
+        sentences = [json.loads(sentence) for sentence in sentences]
+    except:
+        return {"ret_code": -101, "message": "输入数据格式错误"}
+    result = inference_samples(task_type, sentences, inference_suite)
 
-
-    # choice = line['labels']
-    # args = api_utils.load_args(checkpoint_path)
-    
-    # 加载数据
-    data_model = TaskDataModelUnifiedMC(inference_args, inference_tokenizer)
-
-    samples = []
-    question = "请问下面的文字描述属于那个类别？"
-
-    for sentence in sentences:
-        sample = {"id":0, "content":sentence, "textb":"", "question":question, "choice":inference_choice, "label":inference_choice[0]}
-        samples.append(sample)
-    dataset = TaskDatasetUnifiedMC(data_path=None, args=inference_args, used_mask=False, tokenizer=inference_tokenizer, load_from_list=True, samples=samples, choice=inference_choice)
-    
-    dataloader = DataLoader(dataset, shuffle=False, 
-        collate_fn=data_model.collate_fn, \
-        batch_size=inference_args.train_batchsize)
-
-    label_classes = data_model.label_classes
-    print(label_classes)
-    label_classes_reverse = {v:k for k,v in label_classes.items()}
-
-    pred_labels = []
-    pred_probs = []
-
-    for batch in dataloader:
-        logits, probs, predicts, labels, _ = inference_model.predict(batch)
-    
-        for idx, (predict,prob) in enumerate(zip(predicts,probs)):    
-            pred_labels.append(inference_choice[predict])
-            pred_probs.append(prob.tolist())
-
-    return {'ret_code':200, 'predictions':pred_labels, 'probabilities':pred_probs}
+    return {'ret_code':200, "result": result, "message": "预测成功"}
 
 
 # ------------------------------------------关闭模型预测-------------------------------------------------
@@ -385,16 +325,15 @@ class EndInferenceInput(BaseModel):
 def end_inference(end_inference_input: EndInferenceInput):
     task_id = end_inference_input.task_id
 
-    global inference_tokenizer
-    global inference_model
-    del inference_model
-    del inference_tokenizer
+    global inference_suite
+    del inference_suite
     gc.collect()
     torch.cuda.empty_cache()
 
     task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
     task_info = json.load(open(task_info_path))
-    task_info["status"] = "Release Predict Model"
+    task_info["status"] = "Train Success"
+    task_info["status_code"] = 2
     with open(task_info_path, mode="w") as f:
         json.dump(task_info, f, indent=4)
 

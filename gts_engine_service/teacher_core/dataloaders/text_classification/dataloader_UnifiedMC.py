@@ -173,7 +173,6 @@ class TaskDatasetUnifiedMC(Dataset):
         #                                         truncation=True
         #                                         )
         # else:
-
         texta =  '[MASK]' + '[MASK]'.join(self.choice)+ '[SEP]'+ "请问下面的文字描述属于那个类别？" + '[SEP]' +item['content']
         # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
         encode_dict = self.tokenizer.encode_plus(texta,
@@ -203,7 +202,6 @@ class TaskDatasetUnifiedMC(Dataset):
         token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*zero_len
 
         if self.args.use_label_attention_mask=='True':
-            # print("label_idx",label_idx) 
             attention_mask=get_att_mask(attention_mask,label_idx,question_len)
 
         if self.args.use_align_position=='True':
@@ -315,7 +313,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.valid_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True, choice=self.choice)
+            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         print("len(valid_data:",len(self.valid_data))
         # if args.use_knn:
         #     self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(

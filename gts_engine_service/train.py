@@ -1,6 +1,7 @@
 import os
 import json
 import torch
+import shutil
 import argparse
 import traceback
 from itertools import chain
@@ -13,7 +14,6 @@ from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
 import time
 
 from teacher_core.dataloaders.text_classification.dataloader import TaskDataset, TaskDataModel
-#from teacher_core.models.text_classification.bert_baseline import Bert
 
 from teacher_core.utils.evaluation import evaluation
 from teacher_core.utils.tokenization import get_train_tokenizer
@@ -35,10 +35,10 @@ def generate_common_trainer(save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
-                                    save_last=True,
+                                    save_last=False,
                                     monitor='valid_acc_epoch',
                                     mode='max',
-                                    filename='{epoch:02d}-{valid_acc:.4f}')
+                                    filename='best_model')
 
     checkpoint.CHECKPOINT_NAME_LAST = "{epoch}-last"
     early_stop = EarlyStopping(monitor='valid_acc_epoch',
@@ -59,6 +59,8 @@ def classification_pipeline(args):
     # init tokenizer
     tokenizer = get_train_tokenizer(args=args)            
     tokenizer.save_pretrained(args.save_path)
+    # init label
+    shutil.copyfile(os.path.join(args.data_dir, args.label_data), os.path.join(args.save_path, "label.json"))
     # init model
     data_model = TaskDataModelUnifiedMC(args, tokenizer)
     #加载模型
@@ -81,23 +83,19 @@ def classification_pipeline(args):
         model.eval() 
 
         evaluation(args, model, data_model, output_save_path, mode='test', data_set="test")
-
-    return checkpoint_path
+    
 
 def sentence_pair_pipeline(args):
+    """ write a traininig pipeline and return the checkpoint path of the best model """
+    # TODO
     return None
 
 
 def main(args):
     # Set global random seed
     seed_everything(args.seed)
+    
     # Set path to save checkpoint and outputs
-    
-    
-    # hyparas = 'tuning_method={}-seed={}-model={}-bs={}-train_data={}-lr={}-pooler={}-l2={}-ft={}-clip={}-drop={}-adv={}-prec-{}'.format(
-    #             args.tuning_method, args.seed,args.pretrained_model_name,args.train_batchsize, args.train_data,args.lr, args.pooler_type, args.l2,
-    #             int(args.finetune), args.gradient_clip_val, args.mlp_dropout, int(args.adv), args.precision)
-    
     save_path = args.save_path
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -114,13 +112,11 @@ def main(args):
     print('\n' + '-' * 64)
 
     if args.task_type == "classification":
-        best_model_path = classification_pipeline(args)
+        classification_pipeline(args)
     elif args.task_type == "similarity":
-        best_model_path = sentence_pair_pipeline(args)
+        sentence_pair_pipeline(args)
     elif args.task_type == "nli":
-        best_model_path = sentence_pair_pipeline(args)
-
-    return best_model_path
+        sentence_pair_pipeline(args)
 
 
 
@@ -164,6 +160,7 @@ if __name__ == '__main__':
     total_parser.add_argument('--label_guided_rate', default=0.5,help="")
 
     total_parser.add_argument('--output',default='output',type=str)
+    total_parser.add_argument('--save_path', default='output', type=str)
     # total_parser.add_argument('--model_path',default='{}/model_save'.format(os.getcwd()),type=str)
 
     # * Args for general setting
@@ -190,9 +187,7 @@ if __name__ == '__main__':
     total_parser.add_argument('--nlabels', default=10, type=int)
 
     # * Args for base specific model 
-    
-    # total_parser.add_argument("--pretrained_model_dir", default="{}".format(os.path.abspath(os.path.join(os.getcwd(), ".."))),    #######
-    total_parser.add_argument("--pretrained_model_dir", default="/raid/liuyibo/GTS-Engine",
+    total_parser.add_argument("--pretrained_model_dir", default="",
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument('--child_tuning_p', type=float, default=1.0, help="prob of dropout gradient, if < 1.0, use child-tuning")
     total_parser.add_argument('--finetune', action='store_true', default=True, help="if fine tune the pretrained model")    #####
@@ -209,16 +204,12 @@ if __name__ == '__main__':
     # * Args for data preprocessing
     args = total_parser.parse_args()
 
-
+    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
     args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
     args.warmup = 0.1 
     args.num_threads = 8 
-
-    # args.max_epochs = 1 
-    # args.min_epochs = 1 
-    # args.seed = 123 
     args.val_check_interval = 0.25 
 
 
@@ -229,10 +220,10 @@ if __name__ == '__main__':
     task_info = json.load(open(task_info_path))
 
     try:
-        best_model_ckpt_path = main(args)
+        main(args)
         task_info["status"] = "Train Success"
         task_info["status_code"] = 2
-        task_info["best_model_path"] = best_model_ckpt_path
+        task_info["save_path"] = args.save_path
         with open(task_info_path, mode="w") as f:
             json.dump(task_info, f, indent=4)
     except:
