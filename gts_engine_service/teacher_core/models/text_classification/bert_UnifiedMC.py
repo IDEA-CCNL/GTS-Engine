@@ -88,9 +88,6 @@ class BertUnifiedMC(BaseModel):
         self.sep_token = tokenizer.encode("[SEP]")[1]
 
         self.save_hf_model_path = os.path.join(args.save_path,"hf_model/")
-        self.sup_pretrain = args.sup_pretrain
-        if not os.path.exists(self.save_hf_model_path) and self.sup_pretrain:
-            os.mkdir(self.save_hf_model_path)
         self.save_hf_model_file = os.path.join(self.save_hf_model_path,"pytorch_model.bin")
         self.count = 0
 
@@ -146,10 +143,10 @@ class BertUnifiedMC(BaseModel):
 
     def training_epoch_end(self,training_step_outputs):
 
-        if self.save_hf_model_file !='' and self.sup_pretrain:
+        if self.save_hf_model_file !='':
             ct=str(self.count)
-            save_path=self.save_hf_model_file.replace('.bin','-'+ct+'.bin')
-            torch.save(self.model.bert_encoder.state_dict(), f=save_path)
+            # save_path=self.save_hf_model_file.replace('.bin','-'+ct+'.bin')
+            # torch.save(self.model.bert_encoder.state_dict(), f=save_path)
             print('save the best model')
             self.count+=1
     
