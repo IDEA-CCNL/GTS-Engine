@@ -1,17 +1,11 @@
 
 import torch
-from transformers import BertTokenizer
-from torch.utils.data import Dataset, DataLoader
 import argparse
 import os
 import uvicorn
 from fastapi import FastAPI, Request, File, UploadFile, Form
-from starlette.responses import FileResponse, HTMLResponse
-from fastapi.templating import Jinja2Templates
-from starlette.staticfiles import StaticFiles
+from starlette.responses import HTMLResponse
 from pydantic import BaseModel
-from enum import Enum
-import time
 import json
 import datetime
 import psutil
@@ -342,7 +336,9 @@ def end_inference(end_inference_input: EndInferenceInput):
 
 
 if __name__ == '__main__':
-    # uvicorn.run(app, host='0.0.0.0', port=8080, debug = True)
-    # uvicorn.run(app, host='0.0.0.0', port=5201)
-    uvicorn.run(app, host='0.0.0.0', port=5201)
-    # uvicorn.run(app, host='192.168.190.63', port=5201)
+    arg_parser = argparse.ArgumentParser()
+    
+    arg_parser.add_argument('--port', default=5201, type=int)
+    args = arg_parser.parse_args()
+
+    uvicorn.run(app, host='0.0.0.0', port=args.port)

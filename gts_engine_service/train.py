@@ -7,13 +7,13 @@ import argparse
 import traceback
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
+from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM, MegatronBertConfig
 
 from teacher_core.utils.evaluation import evaluation
 from teacher_core.utils.tokenization import get_train_tokenizer
 
 from teacher_core.utils import knn_utils
 
-import pytorch_lightning as pl
 from pytorch_lightning import Trainer, seed_everything, loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -30,6 +30,18 @@ from teacher_core.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
 globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
 globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
+
+def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
+    if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
+        print("model already exists.")
+        return
+    cache_path = os.path.join(pretrained_model_dir, "cache")
+    model = model_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
+    tokenizer = tokenizer_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
+    model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+    tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+    shutil.rmtree(cache_path)
+    print("model %s is downloaded from huggingface." % model_name)
 
 def generate_common_trainer(save_path):
     # Prepare Trainer
@@ -54,8 +66,11 @@ def generate_common_trainer(save_path):
     return trainer, checkpoint
 
 def classification_pipeline(args):
+    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
+    # download pretrained model if not exists
+    download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
     # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, "UnifiedMC_Bert-1.3B")
+    args.pretrained_model = os.path.join(args.pretrained_model_dir, model_name)
     # init tokenizer
     tokenizer = get_train_tokenizer(args=args)            
     tokenizer.save_pretrained(args.save_path)
