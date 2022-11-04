@@ -77,7 +77,7 @@ def classification_inference(samples, inference_suite):
     for idx, sample in enumerate(samples):
         inner_sample = {
             "id":idx,
-            "content": sample["content"],
+            "content": sample,
             "textb":"",
             "question":question,
             "choice":inference_suite["choice"],
