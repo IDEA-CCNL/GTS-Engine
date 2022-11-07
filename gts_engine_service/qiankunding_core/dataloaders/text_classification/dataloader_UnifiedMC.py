@@ -1,14 +1,10 @@
 
 from termios import PARODD
-import time
-import argparse
-import itertools
 import json
 import copy
 import os
 import torch
 import torch.nn as nn
-import random
 import numpy as np
 from tqdm import tqdm
 from collections import defaultdict
@@ -17,12 +13,10 @@ from typing import Optional
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModel
 from pytorch_lightning import Trainer, seed_everything, loggers
-#from teacher_core.models.text_classification.bert_baseline import Bert
 import sklearn
-# from torchsnooper import snoop
 from collections import OrderedDict
 
-from teacher_core.utils.tokenization import Tokenizer
+from ...utils.tokenization import Tokenizer
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 

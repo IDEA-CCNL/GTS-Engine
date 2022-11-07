@@ -6,7 +6,7 @@ import itertools
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import pairwise_distances, accuracy_score
-from teacher_core.utils.evaluation import result_eval
+from .evaluation import result_eval
 
 class PrototypeEnhancer(object):
     def __init__(self):

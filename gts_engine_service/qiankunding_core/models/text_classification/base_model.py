@@ -10,8 +10,7 @@ from transformers import AutoModel, AutoTokenizer, AutoConfig, AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, classification_report
-# from torchsnooper import snoop
-from teacher_core.loss.adversarial_loss import AdversarialLoss
+from ...loss.adversarial_loss import AdversarialLoss
 import time
 import numpy as np
 from tqdm import tqdm
