@@ -19,9 +19,7 @@ from typing import Optional
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoTokenizer, AutoModel
 from pytorch_lightning import Trainer, seed_everything, loggers
-#from teacher_core.models.text_classification.bert_baseline import Bert
 import sklearn
-# from torchsnooper import snoop
 from collections import OrderedDict
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 

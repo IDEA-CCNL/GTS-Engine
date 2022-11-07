@@ -8,7 +8,7 @@ import os
 import unicodedata
 from io import open
 from typing import List, Union, Dict, Set, Tuple, Optional
-from teacher_core.utils.utils import truncate_sequences
+from .utils import truncate_sequences
 from transformers import AutoTokenizer, BertTokenizer, T5Tokenizer
 from transformers.models.bart.tokenization_bart import BartTokenizer
 

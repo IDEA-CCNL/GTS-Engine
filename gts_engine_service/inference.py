@@ -3,9 +3,9 @@ import json
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
 
-from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
-from teacher_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
-from teacher_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
+from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
+from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
+from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"

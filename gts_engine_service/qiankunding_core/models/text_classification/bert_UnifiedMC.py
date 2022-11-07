@@ -1,6 +1,4 @@
-
-
-from genericpath import exists
+#encodoing=utf8
 import os
 import argparse
 import torch
@@ -10,16 +8,13 @@ import pytorch_lightning as pl
 from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
 from transformers.optimization import get_linear_schedule_with_warmup
 from transformers import AdamW,Adafactor
-from teacher_core.models.text_classification.base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
-# from torchsnooper import snoop
-# from teacher_core.optimizer.optimization import AdamW
-# from fairscale.nn import checkpoint_wrapper, auto_wrap, wrap
+from .base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
 
-from sklearn.metrics import precision_score, recall_score, f1_score, classification_report
+
 import numpy as np
 
-from teacher_core.utils.detect_gpu_memory import detect_gpu_memory
-import teacher_core.utils.globalvar as globalvar
+from ...utils.detect_gpu_memory import detect_gpu_memory
+from ...utils import globalvar as globalvar
 
 
 class taskModel(nn.Module):
