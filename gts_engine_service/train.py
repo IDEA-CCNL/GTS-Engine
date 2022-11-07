@@ -217,7 +217,9 @@ if __name__ == '__main__':
     # * Args for data preprocessing
     args = total_parser.parse_args()
 
-    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
+    # args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
+    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),"pretrained")
+    print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 

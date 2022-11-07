@@ -307,7 +307,7 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         self.valid_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
+            args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True, choice=self.choice)
         print("len(valid_data:",len(self.valid_data))
         # if args.use_knn:
         #     self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(
