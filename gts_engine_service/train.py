@@ -3,6 +3,7 @@ import time
 import json
 import torch
 import shutil
+import pickle
 import argparse
 import traceback
 import torch.multiprocessing
@@ -69,6 +70,8 @@ def classification_pipeline(args):
     download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
     # Set path to load pretrained model
     args.pretrained_model = os.path.join(args.pretrained_model_dir, model_name)
+    # set knn datastore
+    args.knn_datastore_data = args.train_data
     # init tokenizer
     tokenizer = get_train_tokenizer(args=args)            
     tokenizer.save_pretrained(args.save_path)
@@ -83,7 +86,17 @@ def classification_pipeline(args):
     trainer.fit(model, data_model)
     #验证集效果最好的模型文件地址
     checkpoint_path = checkpoint.best_model_path
-    
+
+    # knn lm
+    model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+    model.cuda()
+    model.eval()
+    knn_best_hyper, knn_datastores = knn_utils.knn_augmentation(model, data_model, args.save_path)
+    with open(os.path.join(args.save_path, "knn_best_hyper.json"), mode="w") as f:
+        json.dump(knn_best_hyper, f, indent=4)
+    with open(os.path.join(args.save_path, "knn_datastores.pkl"), mode="wb") as f:
+        pickle.dump(knn_datastores, f)
+
     if args.test_data:
         output_save_path = os.path.join(args.save_path, 'predictions/')
         if not os.path.exists(output_save_path):

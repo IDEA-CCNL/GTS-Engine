@@ -25,7 +25,7 @@ class taskModel(nn.Module):
         
         if "1.3B" in pre_train_dir:
             # v100
-            print(globalvar.get_value("gpu_type") )
+            print(globalvar.get_value("gpu_type"))
             if globalvar.get_value("gpu_type") == "low_gpu":
                 self.config.gradient_checkpointing = True
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
@@ -35,6 +35,8 @@ class taskModel(nn.Module):
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
                 print("使用gradient_checkpointing！")
             elif globalvar.get_value("gpu_type") == "high_gpu":
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+            else:
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.config = AutoConfig.from_pretrained(pre_train_dir)
