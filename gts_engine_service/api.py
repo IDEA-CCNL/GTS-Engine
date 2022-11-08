@@ -214,15 +214,6 @@ def start_train(train_input: TrainInput):
     with open(task_train_log,"w") as writer:
         proc = subprocess.Popen('; '.join(['export CUDA_VISIBLE_DEVICES={}'.format(str(train_input.gpuid)), ' '.join(proc_args)]), shell=True, stdout=writer, stderr=writer)
         
-    task_info["status"] = "On Training"
-    task_info["status_code"] = 1
-    task_info["train_pid"] = proc.pid + 1  #开启子进程 子进程pid要加1
-    task_info["train_data"] = train_input.train_data
-    task_info["val_data"] = train_input.val_data
-    task_info["test_data"] = train_input.test_data
-    task_info["label_data"] = train_input.label_data
-    with open(task_info_path, mode="w") as f:
-            json.dump(task_info, f, indent=4)
 
     return {"ret_code": 200, "message": "训练调度成功"}
  
