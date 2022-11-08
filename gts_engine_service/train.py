@@ -217,7 +217,9 @@ if __name__ == '__main__':
     # * Args for data preprocessing
     args = total_parser.parse_args()
 
-    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
+    # args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
+    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),"pretrained")
+    print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
@@ -231,6 +233,16 @@ if __name__ == '__main__':
     
     task_info_path = os.path.join(args.task_dir, "task_info.json")
     task_info = json.load(open(task_info_path))
+
+    task_info["status"] = "On Training"
+    task_info["status_code"] = 1
+    task_info["train_pid"] = os.getpid() 
+    task_info["train_data"] = args.train_data
+    task_info["val_data"] = args.valid_data
+    task_info["test_data"] = args.test_data
+    task_info["label_data"] = args.label_data
+    with open(task_info_path, mode="w") as f:
+            json.dump(task_info, f, indent=4)
 
     try:
         main(args)

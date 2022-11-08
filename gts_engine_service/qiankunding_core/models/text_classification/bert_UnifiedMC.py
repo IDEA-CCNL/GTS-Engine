@@ -23,19 +23,26 @@ class taskModel(nn.Module):
         self.yes_token = tokenizer.encode("是")[1]
         self.no_token = tokenizer.encode("非")[1]
         
+        global_variable = True
         if "1.3B" in pre_train_dir:
             # v100
-            print(globalvar.get_value("gpu_type") )
-            if globalvar.get_value("gpu_type") == "low_gpu":
-                self.config.gradient_checkpointing = True
-                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                print("使用gradient_checkpointing！")
-            elif globalvar.get_value("gpu_type") == "mid_gpu":
-                self.config.gradient_checkpointing = True
-                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                print("使用gradient_checkpointing！")
-            elif globalvar.get_value("gpu_type") == "high_gpu":
+            try:
+                print("gpu_type", globalvar.get_value("gpu_type"))
+            except:
+                # 开启预测的时候 _global_dict 未定义
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+                global_variable = False
+            if global_variable:
+                if globalvar.get_value("gpu_type") == "low_gpu":
+                    self.config.gradient_checkpointing = True
+                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                    print("使用gradient_checkpointing！")
+                elif globalvar.get_value("gpu_type") == "mid_gpu":
+                    self.config.gradient_checkpointing = True
+                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                    print("使用gradient_checkpointing！")
+                elif globalvar.get_value("gpu_type") == "high_gpu":
+                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
