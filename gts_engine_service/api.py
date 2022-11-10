@@ -34,14 +34,14 @@ async def index(request: Request):
 
 # ---------------------------------------创建任务---------------------------------------------------
 class CreateTaskInput(BaseModel):
-    task_name: str # 任务名称
-    task_type: str # 任务类型
+    task_name: str = "" # 任务名称
+    task_type: str = "" # 任务类型
 
 @app.post('/api/create_task/')
 def create_task(create_task_input: CreateTaskInput):
     task_name = create_task_input.task_name
     task_type = create_task_input.task_type
-    if task_name is None:
+    if not task_name:
         task_name = task_type + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     task_id = task_name # 任务名称等于任务id
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
@@ -65,7 +65,7 @@ def create_task(create_task_input: CreateTaskInput):
         return {"ret_code": 200, "message": "task成功创建", "task_id": task_id}
     
 
-# ---------------------------------------创建任务---------------------------------------------------
+# ---------------------------------------查看任务列表---------------------------------------------------
 @app.post('/api/list_task/')
 def list_task():
     task_dir = os.path.join(os.path.dirname(__file__), "tasks")
@@ -75,7 +75,7 @@ def list_task():
 
 # ------------------------------------------查看任务状态-------------------------------------------------
 class CheckTaskInput(BaseModel):
-    task_id: str # 任务id
+    task_id: str = "" # 任务id
 
 @app.post('/api/check_task_status')
 def check_task_status(check_task_input: CheckTaskInput):
@@ -118,9 +118,9 @@ async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
     return {"ret_code": 200, "message": "上传成功"}
 
 
-# ---------------------------------------创建任务---------------------------------------------------
+# ---------------------------------------删除任务---------------------------------------------------
 class DeleteTaskInput(BaseModel):
-    task_id: str # 任务id
+    task_id: str = "" # 任务id
 
 @app.post('/api/delete_task/')
 def delete_task(delete_task_input: DeleteTaskInput):
@@ -134,16 +134,16 @@ def delete_task(delete_task_input: DeleteTaskInput):
 
 # ------------------------------------------模型训练-------------------------------------------------
 class TrainInput(BaseModel):
-    task_id: str # 任务id
-    train_data: str # 训练集名称
-    val_data: str # 验证集名称 
-    test_data: str # 测试集名称
-    label_data: str # 标签数据名称
+    task_id: str = ""# 任务id
+    train_data: str = "" # 训练集名称
+    val_data: str = "" # 验证集名称 
+    test_data: str = "" # 测试集名称
+    label_data: str = "" # 标签数据名称
     max_len: int = 512 # 文本最大长度
     max_num_epoch: int = 1 # 最大训练轮次
     min_num_epoch: int = 1 # 最小训练轮次
     seed: int = 42 # 随机种子
-    gpuid: int 
+    gpuid: int = 0
     
         
 @app.post('/api/train')
@@ -212,23 +212,14 @@ def start_train(train_input: TrainInput):
     task_train_log = os.path.join(task_log_dir, "train.log")
 
     with open(task_train_log,"w") as writer:
-        proc = subprocess.Popen(';'.join(['export CUDA_VISIBLE_DEVICES={}'.format(str(train_input.gpuid)), ' '.join(proc_args)]), shell=True, stdout=writer, stderr=writer)
-
-    task_info["status"] = "On Training"
-    task_info["status_code"] = 1
-    task_info["train_pid"] = proc.pid
-    task_info["train_data"] = train_input.train_data
-    task_info["val_data"] = train_input.val_data
-    task_info["test_data"] = train_input.test_data
-    task_info["label_data"] = train_input.label_data
-    with open(task_info_path, mode="w") as f:
-            json.dump(task_info, f, indent=4)
+        proc = subprocess.Popen('; '.join(['export CUDA_VISIBLE_DEVICES={}'.format(str(train_input.gpuid)), ' '.join(proc_args)]), shell=True, stdout=writer, stderr=writer)
+        
 
     return {"ret_code": 200, "message": "训练调度成功"}
  
 # ------------------------------------------停止模型训练-------------------------------------------------
 class StopTrainInput(BaseModel):
-    task_id: str # 任务id
+    task_id: str = "" # 任务id
 
 @app.post('/api/stop_train')
 def stop_train(stop_train_input: StopTrainInput):
@@ -253,12 +244,14 @@ def stop_train(stop_train_input: StopTrainInput):
 
     task_info["status"] = "Train Stopped"
     task_info["status_code"] = 3
+    with open(task_info_path, mode="w") as f:
+        json.dump(task_info, f, indent=4)
 
     return {"ret_code": 200, "message": "终止训练成功"}
 
 # ------------------------------------------开启模型预测-------------------------------------------------
 class StartInferenceInput(BaseModel):
-    task_id: str # 任务id
+    task_id: str = "" # 任务id
 
 
 @app.post('/api/start_inference')
@@ -288,12 +281,11 @@ def start_inference(start_inference_input: StartInferenceInput):
 
 # ------------------------------------------模型预测-------------------------------------------------
 class PredictInput(BaseModel):
-    sentences: list = ["怎样的房子才算户型方正？","文登区这些公路及危桥将进入封闭施工，请注意绕行！"]
-    task_id: str
+    sentences: list = [{"content":"怎样的房子才算户型方正？"}, {"content":"文登区这些公路及危桥将进入 封闭施工，请注意绕行！"}]
+    task_id: str = ""
 
 @app.post('/api/predict')
 def predict(inputs: PredictInput):
-
     sentences = inputs.sentences
     task_info_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id, "task_info.json")
     if os.path.exists(task_info_path):
@@ -302,10 +294,14 @@ def predict(inputs: PredictInput):
         return {"ret_code":-100, "message": "task_id not exits"}
     
     task_type = task_info["task_type"]
-    try:
-        sentences = [json.loads(sentence) for sentence in sentences]
-    except:
-        return {"ret_code": -101, "message": "输入数据格式错误"}
+    
+    for sentence in sentences:
+        if not isinstance(sentence, dict):
+            return {"ret_code": -101, "message": "每条样本必须是字典形式"}
+        else:
+            if "content" not in sentence:
+                return {"ret_code": -101, "message": "每条样本里必须包含content字段"}
+
     result = inference_samples(task_type, sentences, inference_suite)
 
     return {'ret_code':200, "result": result, "message": "预测成功"}
@@ -313,7 +309,7 @@ def predict(inputs: PredictInput):
 
 # ------------------------------------------关闭模型预测-------------------------------------------------
 class EndInferenceInput(BaseModel):
-    task_id: str  #任务id
+    task_id: str = ""  #任务id
 
 @app.post('/api/end_inference')
 def end_inference(end_inference_input: EndInferenceInput):

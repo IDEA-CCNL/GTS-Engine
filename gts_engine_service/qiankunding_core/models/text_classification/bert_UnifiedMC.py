@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
 from transformers.optimization import get_linear_schedule_with_warmup
 from transformers import AdamW,Adafactor
-from .base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
+from .base_model import BaseModel, Pooler
 
 
 import numpy as np
@@ -310,13 +310,4 @@ class BertUnifiedMC(BaseModel):
             return torch.sum(corr.float())/torch.sum(mlmlabels_mask.float())
         else:
             return torch.sum(corr.float())/labels.size(0), torch.sum(corr.float()), labels.size(0)
-
-
-    #  def configure_sharded_model(self):
-    #      self.mlp = auto_wrap(self.mlp)
-    #      self.output = auto_wrap(self.output)
-    #      self._pooler = auto_wrap(self._pooler)
-    #      #  self.bert = auto_wrap(self.bert)
-    #      self.model = nn.Sequential(self.mlp, self.output, self._pooler, self.bert)
-
 
