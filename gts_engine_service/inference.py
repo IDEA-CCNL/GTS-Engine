@@ -67,7 +67,7 @@ def prepare_classification_inference(save_path):
 
     # load model
     checkpoint_path = os.path.join(save_path, "best_model.ckpt")
-    inference_model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=inference_tokenizer, load_from_tapt=False)
+    inference_model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=inference_tokenizer)
     inference_model.eval()
     inference_model = inference_model.cuda()
 

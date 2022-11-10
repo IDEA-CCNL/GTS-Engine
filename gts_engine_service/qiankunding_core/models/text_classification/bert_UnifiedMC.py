@@ -94,12 +94,6 @@ class BertUnifiedMC(BaseModel):
         
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='mean')
 
-
-        # print('self.hparams.finetune', self.hparams.finetune)
-        if not self.hparams.finetune:
-            for name, child in self.bert.named_children():
-                for param in child.parameters():
-                    param.requires_grad = False
         self.init_model(args)
     
     def init_model(self, args):
@@ -210,10 +204,6 @@ class BertUnifiedMC(BaseModel):
         # 转换为label_classes
         # label_idx = list(batch["label_idx"][0].numpy())
 
-        # probs_ = np.array([[prob[i] for i in label_idx[:-1]] for prob in probs])
-        # predicts_ = [label_idx.index(i) for i in predicts]
-        # labels_ = [label_idx.index(i) for i in labels]
-
         probs_ = []
         predicts_ = []
         labels_ = []
@@ -277,8 +267,6 @@ class BertUnifiedMC(BaseModel):
                 'frequency': 1
             }
         }]
-
-        # return AdamW(self.parameters(),lr=self.hparams.bert_lr)
 
     def comput_metrix(self, logits, labels, mlmlabels_mask=None):
         logits = torch.nn.functional.softmax(logits, dim=-1)
