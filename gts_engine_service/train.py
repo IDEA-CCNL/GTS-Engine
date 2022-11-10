@@ -54,8 +54,7 @@ def generate_common_trainer(save_path):
     checkpoint.CHECKPOINT_NAME_LAST = "{epoch}-last"
     early_stop = EarlyStopping(monitor='valid_acc_epoch',
                                 mode='max',
-                                patience=10,
-                            #    check_on_train_epoch_end=True # Check early stopping after every train epoch, ignore multi validation in one train epoch
+                                patience=10
                                 ) 
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
@@ -147,8 +146,6 @@ def main(args):
 
 
 if __name__ == '__main__':    
-    
-    #os.environ["CUDA_VISIBLE_DEVICES"] = "0" 
 
     total_parser = argparse.ArgumentParser()
 
@@ -166,36 +163,20 @@ if __name__ == '__main__':
     total_parser.add_argument('--valid_batchsize', default=4, type=int)   
     total_parser.add_argument('--test_batchsize', default=4, type=int)  
     total_parser.add_argument('--max_len', default=512, type=int)   
-    total_parser.add_argument('--recreate_dataset', action='store_true', default=True)
 
     total_parser.add_argument('--data_dir',default='files/data',type=str)
-    total_parser.add_argument('--output_dir',default='',type=str)
     total_parser.add_argument('--train_data', default='train.json', type=str)   
     total_parser.add_argument('--valid_data', default='dev.json', type=str)     
     total_parser.add_argument('--test_data', default='test.json', type=str)      
     total_parser.add_argument('--label_data', default='labels.json', type=str)
     total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
-    total_parser.add_argument('--label2id_file', default=None, type=str)  
-    total_parser.add_argument('--content_key', default="content",help="content key in json file")
-    total_parser.add_argument('--label_key', default="label",help="label key in json file")
     total_parser.add_argument('--pseudo_labeling', action='store_true', default=False,help="whether to do psedudo labeling in unlabeled data")
-    total_parser.add_argument('--do_masking', action='store_true', default=False,help="")
-    total_parser.add_argument('--do_wwm', action='store_true', default=False,help="")
-    total_parser.add_argument('--wwm_mask_rate', default=0.12,help="")
-    total_parser.add_argument('--do_label_guide', action='store_true', default=False,help="")
-    total_parser.add_argument('--label_guided_rate', default=0.5,help="")
-
-    total_parser.add_argument('--output',default='output',type=str)
     total_parser.add_argument('--save_path', default='output', type=str)
-    # total_parser.add_argument('--model_path',default='{}/model_save'.format(os.getcwd()),type=str)
 
     # * Args for general setting
     total_parser.add_argument('--num_threads', default=8, type=int)
-    total_parser.add_argument('--eval', action='store_true', default=False)
     total_parser.add_argument('--checkpoint_path', default=None, type=str)
     total_parser.add_argument('--seed', default=1234, type=int)
-    total_parser.add_argument('--save_dir', default='./save', type=str)
-    total_parser.add_argument('--model_name', default='megatron_bert', type=str)
     total_parser.add_argument('--lr', default=2e-5, type=float)
     total_parser.add_argument('--l2', default=0., type=float)
     total_parser.add_argument('--warmup', default=0.1, type=float)
@@ -209,21 +190,11 @@ if __name__ == '__main__':
                         help="1 (default), trade off parameter for adversarial training.")
     total_parser.add_argument('--noise_var', default=1e-5, type=float)
     total_parser.add_argument('--noise_gamma', default=1e-6, type=float, help="1e-4 (default), eps for adversarial copy training.")
-    total_parser.add_argument('--project_norm_type', default='inf', type=str)
-    total_parser.add_argument('--nlabels', default=10, type=int)
 
     # * Args for base specific model 
     total_parser.add_argument("--pretrained_model_dir", default="",
                         type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
-    total_parser.add_argument('--child_tuning_p', type=float, default=1.0, help="prob of dropout gradient, if < 1.0, use child-tuning")
-    total_parser.add_argument('--finetune', action='store_true', default=True, help="if fine tune the pretrained model")    #####
     total_parser.add_argument("--pooler_type", type=str, default="cls_pooler", help="acceptable values:[cls, cls_before_pooler, avg, avg_top2, avg_first_last]")
-    total_parser.add_argument('--bert_lr', default=2e-5, type=float)
-    total_parser.add_argument('--bert_l2', default=0., type=float)
-    total_parser.add_argument('--mlp_dropout', default=0.5, type=float, help="Dropout rate in MLP layer")
-    total_parser.add_argument('--load_from_tapt', action='store_true', default=False, help="Dropout rate in MLP layer")
-    #total_parser = Bert.add_model_specific_args(total_parser)
-
 
     total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
@@ -231,7 +202,7 @@ if __name__ == '__main__':
     args = total_parser.parse_args()
 
     # args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
-    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),"pretrained")
+    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pretrained")
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
     args.num_sanity_val_steps = 1000 

@@ -135,18 +135,7 @@ class BaseModel(pl.LightningModule):
         if args.adv:
             self.adv_loss_fn = AdversarialLoss(args)
         # Set number of different labels here or add it to args
-        # self.nlabels = args.nlabels
-        if args.label2id_file is not None:
-            self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data),
-            label2id_file=os.path.join(args.data_dir, args.label2id_file),label_key=args.label_key)
-        else:
-            # if args.sup_pretrain:
-            #     self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.valid_data),
-            #     label_key=args.label_key)
-            #     self.len_train_dataloader = 1000000 // args.train_batchsize
-            # else:
-                self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data),
-                label_key=args.label_key)
+        self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data))
 
 
     def setup(self, stage) -> None:
@@ -228,19 +217,10 @@ class BaseModel(pl.LightningModule):
             predictions += x[2]
             labels += x[3]
 
-        # recall = recall_score(labels, predictions, average="macro")
-        # precision = precision_score(labels, predictions, average="macro")
-        # f1 = f1_score(labels, predictions, average='macro')
-        # classification_report_ = classification_report(labels, predictions)
         self.log('valid_acc_epoch', ncorrect / ntotal, on_epoch=True, prog_bar=True)
-        # self.log('valid_recall', recall, on_epoch=True, prog_bar=True)
-        # self.log('valid_precision', precision, on_epoch=True, prog_bar=True)
-        # self.log('valid_f1', f1, on_epoch=True, prog_bar=True)
 
         print("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
         print(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
-        # print(classification_report_)
-        # print('Validation P: {:.3%}, R: {:.3%}, F1: {:.3%}'.format(precision, recall, f1))
 
     def configure_optimizers(self):
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -267,38 +247,27 @@ class BaseModel(pl.LightningModule):
             }
         }]
 
-    def get_classes_and_traindata_num(self,file_path,label2id_file=None,label_key="label"):
-        if label2id_file is not None:
-            with open(label2id_file, 'r', encoding='utf8') as f:
-                label2id = json.load(f)
-                # label_classes = list(label2id.keys())
-                label_classes = {}
-                for k, v in label2id.items():
-                    label_classes[k] = v["id"]
-            with open(file_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                traindata_len = len(lines)
-        else:
-            with open(file_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                traindata_len = len(lines)
-                labels = []
-                for line in tqdm(lines):
-                    data = json.loads(line)
-                    # text = data[content_key].strip("\n")
-                    label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-                    # result.append((text, label))
+    def get_classes_and_traindata_num(self,file_path, label_key="label"):
+        with open(file_path, 'r', encoding='utf8') as f:
+            lines = f.readlines()
+            traindata_len = len(lines)
+            labels = []
+            for line in tqdm(lines):
+                data = json.loads(line)
+                # text = data[content_key].strip("\n")
+                label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
+                # result.append((text, label))
 
-                    if label not in labels:
-                        labels.append(label)
+                if label not in labels:
+                    labels.append(label)
 
-                # 传入一个list，把每个标签对应一个数字
-                label_model = sklearn.preprocessing.LabelEncoder()
-                label_model.fit(labels)
-                # label_classes = list(label_model.classes_)
-                label_classes = {}
-                for i,item in enumerate(list(label_model.classes_)):
-                    label_classes[item] = i
+            # 传入一个list，把每个标签对应一个数字
+            label_model = sklearn.preprocessing.LabelEncoder()
+            label_model.fit(labels)
+            # label_classes = list(label_model.classes_)
+            label_classes = {}
+            for i,item in enumerate(list(label_model.classes_)):
+                label_classes[item] = i
 
         return label_classes, len(label_classes),traindata_len // self.args.train_batchsize
 
