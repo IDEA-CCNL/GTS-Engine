@@ -1,11 +1,18 @@
 import os
 import json
+import pickle
+import numpy as np
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
+
+# 设置gpu相关的全局变量
+import qiankunding_core.utils.globalvar as globalvar
+globalvar._init()
 
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
 from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
+from qiankunding_core.utils.knn_utils import knn_inference
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -64,7 +71,20 @@ def prepare_classification_inference(save_path):
     inference_model.eval()
     inference_model = inference_model.cuda()
 
-    inference_suite = {"tokenizer": inference_tokenizer, "model": inference_model, "args": args, "choice": inference_choice}
+    # load knn data
+    with open(os.path.join(save_path, "knn_best_hyper.json")) as f:
+        knn_best_hyper = json.load(f)
+    with open(os.path.join(save_path, "knn_datastores.pkl"), mode="rb") as f:
+        knn_datastores = pickle.load(f)
+
+    inference_suite = {
+        "tokenizer": inference_tokenizer,
+        "model": inference_model,
+        "args": args,
+        "choice": inference_choice,
+        "knn_best_hyper": knn_best_hyper,
+        "knn_datastores": knn_datastores
+    }
     return inference_suite
 
 def classification_inference(samples, inference_suite):
@@ -101,10 +121,16 @@ def classification_inference(samples, inference_suite):
     pred_labels = []
     pred_probs = []
 
+    knn_best_hyper = inference_suite["knn_best_hyper"]
+    knn_datastores = inference_suite["knn_datastores"]
     for batch in dataloader:
-        logits, probs, predicts, labels, _ = inference_suite["model"].predict(batch)
-    
-        for idx, (predict,prob) in enumerate(zip(predicts,probs)):    
+        logits, classify_probs, predicts, labels, sample_embeds = inference_suite["model"].predict(batch)
+        knn_lambda = sum(knn_best_hyper["lambda_values"])
+        final_probs = (1 - knn_lambda) * classify_probs
+        knn_probs = knn_inference(sample_embeds, knn_datastores, knn_best_hyper)
+        final_probs = final_probs + knn_lambda * knn_probs
+        final_predicts = list(np.argmax(final_probs, axis=1))
+        for predict, prob in zip(final_predicts, final_probs):    
             pred_labels.append(inference_suite["choice"][predict])
             pred_probs.append(prob.tolist())
 

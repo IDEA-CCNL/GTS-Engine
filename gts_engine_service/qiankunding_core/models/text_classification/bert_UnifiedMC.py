@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
 from transformers.optimization import get_linear_schedule_with_warmup
 from transformers import AdamW,Adafactor
-from .base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
+from .base_model import BaseModel, Pooler
 
 
 import numpy as np
@@ -23,26 +23,21 @@ class taskModel(nn.Module):
         self.yes_token = tokenizer.encode("是")[1]
         self.no_token = tokenizer.encode("非")[1]
         
-        global_variable = True
         if "1.3B" in pre_train_dir:
             # v100
-            try:
-                print("gpu_type", globalvar.get_value("gpu_type"))
-            except:
-                # 开启预测的时候 _global_dict 未定义
+            print(globalvar.get_value("gpu_type"))
+            if globalvar.get_value("gpu_type") == "low_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "mid_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "high_gpu":
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
-                global_variable = False
-            if global_variable:
-                if globalvar.get_value("gpu_type") == "low_gpu":
-                    self.config.gradient_checkpointing = True
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                    print("使用gradient_checkpointing！")
-                elif globalvar.get_value("gpu_type") == "mid_gpu":
-                    self.config.gradient_checkpointing = True
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                    print("使用gradient_checkpointing！")
-                elif globalvar.get_value("gpu_type") == "high_gpu":
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+            else:
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
@@ -315,13 +310,4 @@ class BertUnifiedMC(BaseModel):
             return torch.sum(corr.float())/torch.sum(mlmlabels_mask.float())
         else:
             return torch.sum(corr.float())/labels.size(0), torch.sum(corr.float()), labels.size(0)
-
-
-    #  def configure_sharded_model(self):
-    #      self.mlp = auto_wrap(self.mlp)
-    #      self.output = auto_wrap(self.output)
-    #      self._pooler = auto_wrap(self._pooler)
-    #      #  self.bert = auto_wrap(self.bert)
-    #      self.model = nn.Sequential(self.mlp, self.output, self._pooler, self.bert)
-
 
