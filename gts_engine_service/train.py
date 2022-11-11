@@ -164,6 +164,8 @@ if __name__ == '__main__':
     total_parser.add_argument('--test_batchsize', default=4, type=int)  
     total_parser.add_argument('--max_len', default=512, type=int)   
 
+    total_parser.add_argument('--pretrained_model_dir',default='',type=str,
+        help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument('--data_dir',default='files/data',type=str)
     total_parser.add_argument('--train_data', default='train.json', type=str)   
     total_parser.add_argument('--valid_data', default='dev.json', type=str)     
@@ -192,8 +194,6 @@ if __name__ == '__main__':
     total_parser.add_argument('--noise_gamma', default=1e-6, type=float, help="1e-4 (default), eps for adversarial copy training.")
 
     # * Args for base specific model 
-    total_parser.add_argument("--pretrained_model_dir", default="",
-                        type=str, help="Path to the directory which contains all the pretrained models downloaded from huggingface")
     total_parser.add_argument("--pooler_type", type=str, default="cls_pooler", help="acceptable values:[cls, cls_before_pooler, avg, avg_top2, avg_first_last]")
 
     total_parser = Trainer.add_argparse_args(total_parser)
@@ -201,8 +201,6 @@ if __name__ == '__main__':
     # * Args for data preprocessing
     args = total_parser.parse_args()
 
-    # args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained")
-    args.pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pretrained")
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
     args.num_sanity_val_steps = 1000 

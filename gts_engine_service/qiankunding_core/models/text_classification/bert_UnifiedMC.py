@@ -88,8 +88,6 @@ class BertUnifiedMC(BaseModel):
         self.save_hf_model_file = os.path.join(self.save_hf_model_path,"pytorch_model.bin")
         self.count = 0
 
-        # self.bert = MegatronBertForMaskedLM.from_pretrained(args.pretrained_model)
-        # self.bert.resize_token_embeddings(new_num_tokens=len(self.tokenizer))
         self.model = taskModel(args.pretrained_model, self.tokenizer)
         
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='mean')

@@ -16,8 +16,12 @@ from typing import List
 import api_utils
 from inference import preprare_inference, inference_samples
 import gc
+
 app = FastAPI()
 
+## 全局参数
+TASK_DIR = None # 任务存放的目录
+PRETRAINED_DIR = None # 预训练模型存放的目录
 
 # -------------------------------------------主页---------------------------------------------------
 @app.get('/',response_class=HTMLResponse)
@@ -44,10 +48,9 @@ def create_task(create_task_input: CreateTaskInput):
     if not task_name:
         task_name = task_type + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     task_id = task_name # 任务名称等于任务id
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    if not os.path.exists(task_dir):
-        os.makedirs(task_dir)
-    if api_utils.is_task_valid(task_dir, task_id):
+    if not os.path.exists(TASK_DIR):
+        os.makedirs(TASK_DIR)
+    if api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "task已经存在", "task_id": task_id}
     else:
         task_info = {
@@ -57,7 +60,7 @@ def create_task(create_task_input: CreateTaskInput):
             "task_type": task_type,
             "task_name": task_name
         }
-        specific_task_dir = os.path.join(task_dir, task_id)
+        specific_task_dir = os.path.join(TASK_DIR, task_id)
         if not os.path.exists(specific_task_dir):
             os.makedirs(specific_task_dir)
         with open(os.path.join(specific_task_dir, "task_info.json"), mode="w") as f:
@@ -68,8 +71,7 @@ def create_task(create_task_input: CreateTaskInput):
 # ---------------------------------------查看任务列表---------------------------------------------------
 @app.post('/api/list_task/')
 def list_task():
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    tasks = api_utils.list_task(task_dir)
+    tasks = api_utils.list_task(TASK_DIR)
     return {"ret_code": 200, "message": "Success", "tasks": tasks}
 
 
@@ -80,10 +82,9 @@ class CheckTaskInput(BaseModel):
 @app.post('/api/check_task_status')
 def check_task_status(check_task_input: CheckTaskInput):
     task_id = check_task_input.task_id
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    if not api_utils.is_task_valid(task_dir, task_id):
+    if not api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "任务不存在"}
-    specific_task_dir = os.path.join(task_dir, task_id)
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
     task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if not os.path.exists(task_info_path):
         return {"ret_code": -200, "message": "任务信息文件不存在"}
@@ -96,12 +97,11 @@ def check_task_status(check_task_input: CheckTaskInput):
 # ---------------------------------------文件上传---------------------------------------------------
 @app.post('/api/upfiles/')
 async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    if not api_utils.is_task_valid(task_dir, task_id):
+    if not api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "task id不存在"}
 
-    task_dir = os.path.join(task_dir, task_id)
-    data_dir = os.path.join(task_dir, "data")
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    data_dir = os.path.join(specific_task_dir, "data")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
     print('file will save to', data_dir)
@@ -125,10 +125,9 @@ class DeleteTaskInput(BaseModel):
 @app.post('/api/delete_task/')
 def delete_task(delete_task_input: DeleteTaskInput):
     task_id = delete_task_input.task_id
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    if not api_utils.is_task_valid(task_dir, task_id):
+    if not api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "task id不存在"}
-    shutil.rmtree(os.path.join(task_dir, task_id))
+    shutil.rmtree(os.path.join(TASK_DIR, task_id))
     return {"ret_code": 200, "message": "Success"}
 
 
@@ -148,15 +147,14 @@ class TrainInput(BaseModel):
         
 @app.post('/api/train')
 def start_train(train_input: TrainInput):
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
     task_id = train_input.task_id
-    if not api_utils.is_task_valid(task_dir, task_id):
+    if not api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "任务id不存在"}
 
-    task_dir = os.path.join(task_dir, task_id)
-    task_data_dir = os.path.join(task_dir, "data")
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    task_data_dir = os.path.join(specific_task_dir, "data")
     
-    task_info_path = os.path.join(task_dir, "task_info.json")
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if not os.path.exists(task_info_path):
         return {"ret_code": -102, "message": "任务信息文件不存在"}
     task_info = json.load(open(task_info_path))
@@ -174,8 +172,8 @@ def start_train(train_input: TrainInput):
         return {"ret_code": -101, "message":"标签数据不存在或者数据格式不合法"}
 
     # 创建日志目录和模型存储目录
-    task_log_dir = os.path.join(task_dir, "logs")
-    task_output_dir = os.path.join(task_dir, "outputs")
+    task_log_dir = os.path.join(specific_task_dir, "logs")
+    task_output_dir = os.path.join(specific_task_dir, "outputs")
     if os.path.exists(task_log_dir):
         shutil.rmtree(task_log_dir)
     os.makedirs(task_log_dir)
@@ -189,12 +187,13 @@ def start_train(train_input: TrainInput):
 
     print('start training...')
     args = [
-        "--task_dir=%s" % task_dir,
+        "--task_dir=%s" % specific_task_dir,
         "--task_type=%s" % task_info["task_type"],
         "--train_data=%s" % train_input.train_data,
         "--valid_data=%s" % train_input.val_data,
         "--test_data=%s" % train_input.test_data,
         "--label_data=%s" % train_input.label_data,
+        "--pretrained_model_dir=%s" % PRETRAINED_DIR,
         "--data_dir=%s" % task_data_dir,
         "--save_path=%s" % task_output_dir,
         "--train_batchsize=%d" % train_batch_size,
@@ -225,12 +224,11 @@ class StopTrainInput(BaseModel):
 def stop_train(stop_train_input: StopTrainInput):
     task_id = stop_train_input.task_id
 
-    task_dir = os.path.join(os.path.dirname(__file__), "tasks")
-    if not api_utils.is_task_valid(task_dir, task_id):
+    if not api_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "任务id不存在"}
 
-    task_dir = os.path.join(task_dir, task_id)
-    task_info_path = os.path.join(task_dir, "task_info.json")
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if not os.path.exists(task_info_path):
         return {"ret_code": -102, "message": "任务信息文件不存在"}
     task_info = json.load(open(task_info_path))
@@ -260,7 +258,8 @@ def start_inference(start_inference_input: StartInferenceInput):
 
     global inference_suite
 
-    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if os.path.exists(task_info_path):
         task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
@@ -287,7 +286,9 @@ class PredictInput(BaseModel):
 @app.post('/api/predict')
 def predict(inputs: PredictInput):
     sentences = inputs.sentences
-    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", inputs.task_id, "task_info.json")
+
+    specific_task_dir = os.path.join(TASK_DIR, inputs.task_id)
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if os.path.exists(task_info_path):
         task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
@@ -320,7 +321,9 @@ def end_inference(end_inference_input: EndInferenceInput):
     gc.collect()
     torch.cuda.empty_cache()
 
-    task_info_path = os.path.join(os.path.dirname(__file__), "tasks", task_id, "task_info.json")
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    task_info_path = os.path.join(specific_task_dir, "task_info.json")
+
     task_info = json.load(open(task_info_path))
     task_info["status"] = "Train Success"
     task_info["status_code"] = 2
@@ -335,6 +338,11 @@ if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
     
     arg_parser.add_argument('--port', default=5201, type=int)
+    arg_parser.add_argument('--task_dir', default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "tasks"), type=str)
+    arg_parser.add_argument('--pretrained_dir', default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained"), type=str)
     args = arg_parser.parse_args()
+
+    TASK_DIR = args.task_dir
+    PRETRAINED_DIR = args.pretrained_dir
 
     uvicorn.run(app, host='0.0.0.0', port=args.port)
