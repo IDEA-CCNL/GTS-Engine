@@ -135,7 +135,7 @@ class BaseModel(pl.LightningModule):
         if args.adv:
             self.adv_loss_fn = AdversarialLoss(args)
         # Set number of different labels here or add it to args
-        self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data))
+        # self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num()
 
 
     def setup(self, stage) -> None:
@@ -145,8 +145,10 @@ class BaseModel(pl.LightningModule):
                 num_gpus = self.trainer.gpus if self.trainer.gpus is not None else 0
             elif type(self.trainer.gpus)==list:
                 num_gpus = len(self.trainer.gpus) if self.trainer.gpus is not None else 0
-                
-            self.total_step = int(self.trainer.max_epochs * self.len_train_dataloader / \
+            
+            n_train_step = self.get_training_step_num(file_path=os.path.join(self.args.data_dir, self.args.train_data), train_batchsize=self.args.train_batchsize)
+
+            self.total_step = int(self.trainer.max_epochs * n_train_step / \
                 (max(1, num_gpus) * self.trainer.accumulate_grad_batches))
             print('Total training step:', self.total_step)
 
@@ -247,27 +249,10 @@ class BaseModel(pl.LightningModule):
             }
         }]
 
-    def get_classes_and_traindata_num(self,file_path, label_key="label"):
+    def get_training_step_num(self, file_path, train_batchsize):
         with open(file_path, 'r', encoding='utf8') as f:
             lines = f.readlines()
-            traindata_len = len(lines)
-            labels = []
-            for line in tqdm(lines):
-                data = json.loads(line)
-                # text = data[content_key].strip("\n")
-                label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-                # result.append((text, label))
+            train_data_len = len(lines)
 
-                if label not in labels:
-                    labels.append(label)
-
-            # 传入一个list，把每个标签对应一个数字
-            label_model = sklearn.preprocessing.LabelEncoder()
-            label_model.fit(labels)
-            # label_classes = list(label_model.classes_)
-            label_classes = {}
-            for i,item in enumerate(list(label_model.classes_)):
-                label_classes[item] = i
-
-        return label_classes, len(label_classes),traindata_len // self.args.train_batchsize
+        return train_data_len // train_batchsize
 
