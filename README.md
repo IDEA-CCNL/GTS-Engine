@@ -10,7 +10,8 @@
 <h4 align="center">
   <a href=#安装> 安装 </a> |
   <a href=#快速开始> 快速开始 </a> |
-  <a href=#API文档> API文档 </a>
+  <a href=#API文档> API文档 </a> |
+  <a href=#效果展示> 效果展示 </a>
 </h4>
 
 ------------------------------------------------------------------------------------------
@@ -83,18 +84,25 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 
 ## 快速开始
 
+我们支持两种方式来使用我们的引擎：通过Web服务的方式和通过命令行调用的方式。更多`快速开始`的详情，请参考我们的文档。
+
+### Web服务
+
+GTS引擎通过调用`gts_engint_service`脚本启动一个FastAPI Web服务，通过向服务发送HTTP Post请求，即可无需了解算法细节零门槛进行训练和推理，您还可以结合我们提供的Python SDK（GTS-Engine-Client）来更方便地调用服务。下面以examples中的文本分类任务为例，教您如何快速使用引擎。
+
 #### 启动服务
 
 - 您可以直接通过调用命令行启动GTS-Engine的服务。
 
 ```bash
 git clone https://github.com/IDEA-CCNL/GTS-Engine.git #下载源码
+cd GTS-Engine
 mkdir pretrained  #将下载好的模型文件放在pretrained
-cd GTS-Engine/gts_engine
-CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py #指定GPU 运行api.py
+mkdir tasks
+CUDA_VISIBLE_DEVICES=0 python gts_engine/gts_engine_service.py #指定GPU 运行api.py
 ```
 
-- 同时也可以通过Docker命令启动Docker来运行我们的服务。
+- 同时也可以通过我们提供的Docker直接运行我们的服务。
 
 ```bash
 #启动docker
@@ -118,12 +126,26 @@ client = GTSEngineClient(ip="192.168.190.2", port="5207")
 # 创建任务
 client.create_task(task_name="tnews_classification", task_type="classification")
 # 上传文件
-client.upload_file(task_id="tnews_classification", local_data_path="train.json")
-client.upload_file(task_id="tnews_classification", local_data_path="dev.json")
-client.upload_file(task_id="tnews_classification", local_data_path="test.json")
-client.upload_file(task_id="tnews_classification", local_data_path="labels.json")
+client.upload_file(
+  task_id="tnews_classification",
+  local_data_path="examples/text_classification/tnews_train.json")
+client.upload_file(
+  task_id="tnews_classification",
+  local_data_path="examples/text_classification/tnews_val.json")
+client.upload_file(
+  task_id="tnews_classification",
+  local_data_path="examples/text_classification/tnews_test.json")
+client.upload_file(
+  task_id="tnews_classification",
+  local_data_path="examples/text_classification/tnews_label.json")
 # 开始训练
-client.start_train(task_id="tnews_classification", train_data="train.json", val_data="dev.json", test_data="test.json", label_data="labels.json", gpuid=0)
+client.start_train(
+  task_id="tnews_classification",
+  train_data="tnews_train.json",
+  val_data="tnews_val.json",
+  test_data="tnews_test.json",
+  label_data="tnews_label.json",
+  gpuid=0)
 ```
 
 #### 开始推理
@@ -135,10 +157,60 @@ from gts_engine_client import GTSEngineClient
 # 加载已训练好的模型
 client.start_inference(task_id="tnews_classification")
 # 预测
-client.inference(task_id="tnews_classification", samples=[{"content":"怎样的房子才算户型方正？"}, {"content":"文登区这些公路及危桥将进入 封闭施工，请注意绕行！"}])
+client.inference(
+  task_id="tnews_classification",
+  samples=[
+    {"content":"怎样的房子才算户型方正？"},
+    {"content":"文登区这些公路及危桥将进入 封闭施工，请注意绕行！"}
+  ])
 ```
 
-更多快速使用的详情，请参考我们的文档。
+### 调用命令行
+
+我们也支持直接通过命令行的方式进行训练和推理，适合了解算法的高阶使用者。
+
+#### 开始训练
+
+```bash
+usage: gts_engine_train.py [-h]
+                          --task_dir TASK_DIR
+                          --task_type TASK_TYPE
+                          [--num_workers NUM_WORKERS]
+                          [--train_batchsize TRAIN_BATCHSIZE]
+                          [--valid_batchsize VALID_BATCHSIZE]
+                          [--test_batchsize TEST_BATCHSIZE]
+                          [--max_len MAX_LEN]
+                          --pretrained_model_dir PRETRAINED_MODEL_DIR 
+                          --data_dir DATA_DIR --train_data TRAIN_DATA 
+                          --valid_data VALID_DATA
+                          [--test_data TEST_DATA]
+                          [--label_data LABEL_DATA]
+                          [--save_path SAVE_PATH]
+                          [--seed SEED]
+                          [--lr LR]
+                          [--max_epochs MAX_EPOCHS]
+                          [--min_epochs MIN_EPOCHS]
+```
+
+您可以通过`-h`查看详细的参数说明，也可以通过`examples/text_classification/run_train.sh`直接运行训练示例。
+
+#### 开始推理
+
+```bash
+usage: gts_engine_inference.py [-h] --task_dir TASK_DIR --task_type TASK_TYPE --input_path INPUT_PATH --output_path OUTPUT_PATH
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --task_dir TASK_DIR   specific task directory
+  --task_type TASK_TYPE
+                        task type for training
+  --input_path INPUT_PATH
+                        input path of data which will be inferenced
+  --output_path OUTPUT_PATH
+                        output path of inferenced data
+```
+
+您可以通过`examples/text_classification/run_inference.sh`直接运行推理示例。
 
 ## API文档
 
@@ -147,12 +219,6 @@ client.inference(task_id="tnews_classification", samples=[{"content":"怎样的�
 ## 效果展示
 
 GTS-Engine将专注于解决各种自然语言理解任务。乾坤鼎引擎通过一套训练流水线，已经达到了人类算法专家的水准。2022年11月11日，GTS乾坤鼎引擎在中文语言理解权威评测基准FewCLUE榜单上登顶。GTS-Engine系列会持续在各个NLU任务上不断优化，持续集成，带来更好的开箱即用的体验。
-
-## 即将发布
-
-- 分类任务增加高级模式，支持用户上传无标注数据进行Self Training，进一步提升效果；
-- 更好的使用体验，代码快速迭代中；
-- 增加信息抽取任务，SOTA效果即将公开；
 
 ## 引用
 

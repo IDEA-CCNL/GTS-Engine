@@ -202,7 +202,10 @@ if __name__ == '__main__':
     torch.set_num_threads(8)
     
     task_info_path = os.path.join(args.task_dir, "task_info.json")
-    task_info = json.load(open(task_info_path))
+    if os.path.exists(task_info_path):
+        task_info = json.load(open(task_info_path))
+    else:
+        task_info = {}
 
     task_info["status"] = "On Training"
     task_info["status_code"] = 1
