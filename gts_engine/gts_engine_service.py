@@ -14,7 +14,7 @@ import subprocess
 from fastapi import FastAPI, File, UploadFile
 from typing import List
 import api_utils
-from inference import preprare_inference, inference_samples
+from gts_engine_inference import preprare_inference, inference_samples
 import gc
 
 app = FastAPI()
@@ -205,7 +205,7 @@ def start_train(train_input: TrainInput):
         "--val_check_interval=%f" % val_check_interval,
     ]
 
-    proc_args = ["python", "train.py"] + args
+    proc_args = ["python", "gts_engine_train.py"] + args
     # proc = subprocess.Popen(proc_args)
 
     task_train_log = os.path.join(task_log_dir, "train.log")
