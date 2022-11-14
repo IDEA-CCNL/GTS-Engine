@@ -100,7 +100,6 @@ class TaskDatasetUnifiedMC(Dataset):
 
 
         self.max_length = args.max_len
-        self.num_labels = args.num_labels
         self.used_mask = used_mask
         self.args = args
         self.args.use_label_attention_mask='True'
@@ -282,102 +281,19 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         #         args.data_dir, args.unlabeled_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True)
 
     def train_dataloader(self):
-        return DataLoader(self.train_data, shuffle=True, collate_fn=self.collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
+        return DataLoader(self.train_data, shuffle=True, collate_fn=unifiedmc_collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.valid_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.valid_batchsize, pin_memory=False, num_workers=self.num_workers)
+        return DataLoader(self.valid_data, shuffle=False, collate_fn=unifiedmc_collate_fn, batch_size=self.valid_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.test_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
+        return DataLoader(self.test_data, shuffle=False, collate_fn=unifiedmc_collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def unlabeled_dataloader(self):
-        return DataLoader(self.unlabeled_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
+        return DataLoader(self.unlabeled_data, shuffle=False, collate_fn=unifiedmc_collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
     
     def knn_datastore_dataloader(self):
-        return DataLoader(self.knn_datastore_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
-
-    def collate_fn(self, batch):
-        '''
-        Aggregate a batch data.
-        batch = [ins1_dict, ins2_dict, ..., insN_dict]
-        batch_data = {'sentence':[ins1_sentence, ins2_sentence...], 'input_ids':[ins1_input_ids, ins2_input_ids...], ...}
-        '''
-        batch_data = {}
-        for key in batch[0]:
-            batch_data[key] = [example[key] for example in batch]
-        input_ids = batch_data['input_ids']
-        attention_mask = batch_data['attention_mask']
-        token_type_ids = batch_data["token_type_ids"]
-        position_ids = batch_data["position_ids"]
-        mlmlabels = batch_data["mlmlabels"]
-        mlmlabels_mask = batch_data["mlmlabels_mask"]
-        clslabels_mask = batch_data["clslabels_mask"]
-
-        # Before pad input_ids = [tensor<seq1_len>, tensor<seq2_len>, ...]
-        # After pad input_ids = tensor<batch_size, max_seq_len>
-        input_ids = nn.utils.rnn.pad_sequence(input_ids,
-                                              batch_first=True,
-                                              padding_value=self.tokenizer.pad_token_id)
-        max_len = input_ids.size(1)
-        attention_mask_ = []
-        for item in  attention_mask:
-            item_len=item.size(0)
-            new_item = torch.nn.functional.pad(input=item, 
-            pad=(
-                0,max_len-item_len, # 在右边填充
-                0,max_len-item_len, # 在下边填充
-            ),
-            mode="constant",
-            value=0
-            )
-            attention_mask_.append(new_item)
-
-        new_attention_mask = torch.stack(attention_mask_,dim=0)
-            
-
-        token_type_ids = nn.utils.rnn.pad_sequence(token_type_ids,
-                                                   batch_first=True,
-                                                   padding_value=0)
-        position_ids = nn.utils.rnn.pad_sequence(position_ids,
-                                                   batch_first=True,
-                                                   padding_value=0)
-                                    
-        mlmlabels = nn.utils.rnn.pad_sequence(mlmlabels,
-                                                batch_first=True,
-                                                padding_value=0)
-        mlmlabels_mask = nn.utils.rnn.pad_sequence(mlmlabels_mask,
-                                                batch_first=True,
-                                                padding_value=0)
-        clslabels_mask = nn.utils.rnn.pad_sequence(clslabels_mask,
-                                                batch_first=True,
-                                                padding_value=-10000)
-
-        clslabels = torch.stack(batch_data["clslabels"],dim=0)
-        
-        label_idx = torch.stack(batch_data["label_idx"],dim=0)
-
-
-
-        batch_data = {
-            # "id":batch_data["id"],
-            "sentence":batch_data["sentence"],
-            "unlabeled_set": batch_data["unlabeled_set"],
-            "input_ids": input_ids,
-            "attention_mask": new_attention_mask,
-            "token_type_ids": token_type_ids,
-            "position_ids": position_ids,
-            "mlmlabels": mlmlabels,
-            "clslabels": clslabels,
-            "clslabels_mask": clslabels_mask,
-            "mlmlabels_mask": mlmlabels_mask,
-            "label_idx": label_idx,
-            "use_mask": batch_data["use_mask"],
-        }
-
-        # print(batch)
-
-        return batch_data
-
+        return DataLoader(self.knn_datastore_data, shuffle=False, collate_fn=unifiedmc_collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def get_label_classes(self,file_path=None):
         
@@ -392,3 +308,80 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         print("choice:",choice)
         return choice, label_classes
 
+def unifiedmc_collate_fn(batch):
+    '''
+    Aggregate a batch data.
+    batch = [ins1_dict, ins2_dict, ..., insN_dict]
+    batch_data = {'sentence':[ins1_sentence, ins2_sentence...], 'input_ids':[ins1_input_ids, ins2_input_ids...], ...}
+    '''
+    batch_data = {}
+    for key in batch[0]:
+        batch_data[key] = [example[key] for example in batch]
+    input_ids = batch_data['input_ids']
+    attention_mask = batch_data['attention_mask']
+    token_type_ids = batch_data["token_type_ids"]
+    position_ids = batch_data["position_ids"]
+    mlmlabels = batch_data["mlmlabels"]
+    mlmlabels_mask = batch_data["mlmlabels_mask"]
+    clslabels_mask = batch_data["clslabels_mask"]
+
+    # Before pad input_ids = [tensor<seq1_len>, tensor<seq2_len>, ...]
+    # After pad input_ids = tensor<batch_size, max_seq_len>
+    input_ids = nn.utils.rnn.pad_sequence(input_ids,
+                                            batch_first=True,
+                                            padding_value=0)
+    max_len = input_ids.size(1)
+    attention_mask_ = []
+    for item in  attention_mask:
+        item_len=item.size(0)
+        new_item = torch.nn.functional.pad(input=item, 
+        pad=(
+            0,max_len-item_len, # 在右边填充
+            0,max_len-item_len, # 在下边填充
+        ),
+        mode="constant",
+        value=0
+        )
+        attention_mask_.append(new_item)
+
+    new_attention_mask = torch.stack(attention_mask_,dim=0)
+        
+
+    token_type_ids = nn.utils.rnn.pad_sequence(token_type_ids,
+                                                batch_first=True,
+                                                padding_value=0)
+    position_ids = nn.utils.rnn.pad_sequence(position_ids,
+                                                batch_first=True,
+                                                padding_value=0)
+                                
+    mlmlabels = nn.utils.rnn.pad_sequence(mlmlabels,
+                                            batch_first=True,
+                                            padding_value=0)
+    mlmlabels_mask = nn.utils.rnn.pad_sequence(mlmlabels_mask,
+                                            batch_first=True,
+                                            padding_value=0)
+    clslabels_mask = nn.utils.rnn.pad_sequence(clslabels_mask,
+                                            batch_first=True,
+                                            padding_value=-10000)
+
+    clslabels = torch.stack(batch_data["clslabels"],dim=0)
+    
+    label_idx = torch.stack(batch_data["label_idx"],dim=0)
+
+    batch_data = {
+        # "id":batch_data["id"],
+        "sentence":batch_data["sentence"],
+        "unlabeled_set": batch_data["unlabeled_set"],
+        "input_ids": input_ids,
+        "attention_mask": new_attention_mask,
+        "token_type_ids": token_type_ids,
+        "position_ids": position_ids,
+        "mlmlabels": mlmlabels,
+        "clslabels": clslabels,
+        "clslabels_mask": clslabels_mask,
+        "mlmlabels_mask": mlmlabels_mask,
+        "label_idx": label_idx,
+        "use_mask": batch_data["use_mask"],
+    }
+
+    return batch_data

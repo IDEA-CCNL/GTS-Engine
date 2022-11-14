@@ -11,7 +11,7 @@ globalvar._init()
 
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
 from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
-from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
+from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import unifiedmc_collate_fn
 from qiankunding_core.utils.knn_utils import knn_inference
 
 
@@ -89,8 +89,6 @@ def prepare_classification_inference(save_path):
 
 def classification_inference(samples, inference_suite):
     # 加载数据
-    data_model = TaskDataModelUnifiedMC(inference_suite["args"], inference_suite["tokenizer"])
-
     inner_samples = []
     question = "请问下面的文字描述属于那个类别？"
 
@@ -115,8 +113,8 @@ def classification_inference(samples, inference_suite):
     )
     
     dataloader = DataLoader(dataset, shuffle=False, 
-        collate_fn=data_model.collate_fn, \
-        batch_size=inference_suite["args"].train_batchsize)
+        collate_fn=unifiedmc_collate_fn, \
+        batch_size=inference_suite["args"].valid_batchsize)
 
     pred_labels = []
     pred_probs = []
