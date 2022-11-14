@@ -150,51 +150,41 @@ if __name__ == '__main__':
     total_parser = argparse.ArgumentParser()
 
     total_parser.add_argument("--task_dir", required=True, 
-                            type=str, help="train task dir")
+                            type=str, help="specific task directory")
     total_parser.add_argument("--task_type", required=True,
                             type=str, help="task type for training")
-    total_parser.add_argument("--use_knn", default=False, action="store_true",
-                            help="whether or not to use knn component")
-    
-    total_parser.add_argument('--num_workers', default=8, type=int)
-    
-    
-    total_parser.add_argument('--train_batchsize', default=1, type=int)   
-    total_parser.add_argument('--valid_batchsize', default=4, type=int)   
-    total_parser.add_argument('--test_batchsize', default=4, type=int)  
-    total_parser.add_argument('--max_len', default=512, type=int)   
+    total_parser.add_argument('--num_workers', default=8,
+                            type=int, help="number of workers for data preprocessing.")
+    total_parser.add_argument('--train_batchsize', default=1,
+                            type=int, help="batch size of train dataset")   
+    total_parser.add_argument('--valid_batchsize', default=4,
+                            type=int, help="batch size of validation dataset")   
+    total_parser.add_argument('--test_batchsize', default=4,
+                            type=int, help="batch size of test dataset")  
+    total_parser.add_argument('--max_len', default=512,
+                            type=int, help="max length of input text")   
 
-    total_parser.add_argument('--pretrained_model_dir',default='',type=str,
-        help="Path to the directory which contains all the pretrained models downloaded from huggingface")
-    total_parser.add_argument('--data_dir',default='files/data',type=str)
-    total_parser.add_argument('--train_data', default='train.json', type=str)   
-    total_parser.add_argument('--valid_data', default='dev.json', type=str)     
-    total_parser.add_argument('--test_data', default='test.json', type=str)      
-    total_parser.add_argument('--label_data', default='labels.json', type=str)
-    total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
-    total_parser.add_argument('--pseudo_labeling', action='store_true', default=False,help="whether to do psedudo labeling in unlabeled data")
-    total_parser.add_argument('--save_path', default='output', type=str)
+    total_parser.add_argument('--pretrained_model_dir', required=True,
+                            type=str, help="path to the directory which contains all the pretrained models downloaded from huggingface")
+    total_parser.add_argument('--data_dir', required=True,
+                            type=str, help="data directory of specific task data")
+    total_parser.add_argument('--train_data', required=True,
+                            type=str, help="filename of train dataset")   
+    total_parser.add_argument('--valid_data', required=True,
+                            type=str, help="filename of validation dataset")     
+    total_parser.add_argument('--test_data', default='test.json',
+                            type=str, help="filename of test dataset")      
+    total_parser.add_argument('--label_data', default='labels.json',
+                            type=str, help="filename of label data")
+    # total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
+    total_parser.add_argument('--save_path', default='output',
+                            type=str, help="save path for trained model and other logs")
 
     # * Args for general setting
-    total_parser.add_argument('--num_threads', default=8, type=int)
-    total_parser.add_argument('--checkpoint_path', default=None, type=str)
-    total_parser.add_argument('--seed', default=1234, type=int)
-    total_parser.add_argument('--lr', default=2e-5, type=float)
-    total_parser.add_argument('--l2', default=0., type=float)
-    total_parser.add_argument('--warmup', default=0.1, type=float)
-    total_parser.add_argument('--adv', action='store_true', default=False, help="if use adversarial training")
-    total_parser.add_argument('--divergence', default='js', type=str)
-    total_parser.add_argument('--adv_nloop', default=1, type=int,
-                        help="1 (default), inner loop for getting the best perturbations.")
-    total_parser.add_argument('--adv_step_size', default=1e-3, type=float,
-                        help="1 (default), perturbation size for adversarial training.")
-    total_parser.add_argument('--adv_alpha', default=1, type=float,
-                        help="1 (default), trade off parameter for adversarial training.")
-    total_parser.add_argument('--noise_var', default=1e-5, type=float)
-    total_parser.add_argument('--noise_gamma', default=1e-6, type=float, help="1e-4 (default), eps for adversarial copy training.")
-
-    # * Args for base specific model 
-    total_parser.add_argument("--pooler_type", type=str, default="cls_pooler", help="acceptable values:[cls, cls_before_pooler, avg, avg_top2, avg_first_last]")
+    total_parser.add_argument('--seed', default=1234,
+                            type=int, help="random seed for training")
+    total_parser.add_argument('--lr', default=2e-5,
+                            type=float, help="learning rate")
 
     total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
@@ -205,13 +195,11 @@ if __name__ == '__main__':
     args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
-    args.warmup = 0.1 
-    args.num_threads = 8 
     args.val_check_interval = 0.25 
 
 
     print('args', args)
-    torch.set_num_threads(args.num_threads)
+    torch.set_num_threads(8)
     
     task_info_path = os.path.join(args.task_dir, "task_info.json")
     task_info = json.load(open(task_info_path))

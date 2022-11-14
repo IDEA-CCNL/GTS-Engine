@@ -29,8 +29,8 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 
 ## 即将发布
 
-- 分类任务增加高级模式，支持用户上传无标注数据进行Self Training，进一步提升效果；
-- 更好的使用体验，代码快速迭代中；
+- 分类任务增加高级模式：支持用户上传无标注数据进行Self Training，进一步提升效果；
+- 更好的使用体验，更清晰的接口，更完善的模块划分，代码快速迭代中；
 - 增加信息抽取任务，SOTA效果即将公开；
 
 ## 安装
@@ -74,7 +74,7 @@ docker run -it --name  gst_engine \
 gts_engine_image:v0  
 
 #运行api.py
-CUDA_VISIBLE_DEVICES=0 python api.py
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 ```
 
 #### Python SDK
@@ -90,8 +90,8 @@ CUDA_VISIBLE_DEVICES=0 python api.py
 ```bash
 git clone https://github.com/IDEA-CCNL/GTS-Engine.git #下载源码
 mkdir pretrained  #将下载好的模型文件放在pretrained
-cd GTS-Engine/gts_engine_service
-CUDA_VISIBLE_DEVICES=0 python api.py #指定GPU 运行api.py
+cd GTS-Engine/gts_engine
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py #指定GPU 运行api.py
 ```
 
 - 同时也可以通过Docker命令启动Docker来运行我们的服务。
@@ -104,7 +104,7 @@ docker run -it --name  gst_engine \
 gts_engine_image:v0  
 
 #运行api.py
-CUDA_VISIBLE_DEVICES=0 python api.py
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 ```
 
 #### 开始训练

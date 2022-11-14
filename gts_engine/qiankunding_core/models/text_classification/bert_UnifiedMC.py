@@ -98,8 +98,7 @@ class BertUnifiedMC(BaseModel):
         """
         init function.
         """
-        self.pooler_type = args.pooler_type
-        self._pooler = Pooler(args.pooler_type)
+        pass
 
 
     def train_inputs(self, batch):
@@ -254,7 +253,7 @@ class BertUnifiedMC(BaseModel):
         else:
             optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
-            optimizer, int(self.total_step * self.hparams.warmup),
+            optimizer, int(self.total_step * 0.1),
             self.total_step)
 
         return [{

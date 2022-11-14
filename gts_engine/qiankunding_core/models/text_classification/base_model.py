@@ -10,7 +10,6 @@ from transformers import AutoModel, AutoTokenizer, AutoConfig, AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, classification_report
-from ...loss.adversarial_loss import AdversarialLoss
 import time
 import numpy as np
 from tqdm import tqdm
@@ -131,11 +130,9 @@ class BaseModel(pl.LightningModule):
         self.save_hyperparameters(args)
         self.tokenizer = tokenizer
         self.loss_fn = nn.CrossEntropyLoss()
-        self.adv = args.adv
-        if args.adv:
-            self.adv_loss_fn = AdversarialLoss(args)
-        # Set number of different labels here or add it to args
-        # self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num()
+        # self.adv = args.adv
+        # if args.adv:
+        #     self.adv_loss_fn = AdversarialLoss(args)
 
 
     def setup(self, stage) -> None:
@@ -237,7 +234,7 @@ class BaseModel(pl.LightningModule):
         }]
         optimizer = AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
-            optimizer, int(self.total_step * self.hparams.warmup),
+            optimizer, int(self.total_step * 0.1),
             self.total_step)
 
         return [{
