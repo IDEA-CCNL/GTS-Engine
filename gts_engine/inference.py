@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import argparse
 import numpy as np
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
@@ -140,3 +141,30 @@ def prepare_sentence_pair_inference(save_path):
 
 def sentence_pair_inference(samples, inference_suite):
     return None
+
+if __name__ == '__main__':    
+
+    total_parser = argparse.ArgumentParser()
+
+    total_parser.add_argument("--task_dir", required=True, 
+                            type=str, help="specific task directory")
+    total_parser.add_argument("--task_type", required=True,
+                            type=str, help="task type for training")
+    total_parser.add_argument("--input_path", required=True,
+                            type=str, help="input path of data which will be inferenced")
+    total_parser.add_argument("--output_path", required=True,
+                            type=str, help="output path of inferenced data")
+    
+    args = total_parser.parse_args()                            
+
+    save_path = os.path.join(args.task_dir, "outputs")
+    inference_suite = preprare_inference(args.task_type, save_path)
+    samples = []
+    for line in open(args.input_path):
+        line = line.strip()
+        sample = json.loads(line)
+        samples.append(sample)
+    result = classification_inference(samples, inference_suite)
+
+    with open(args.output_path, encoding="utf8", mode="w") as fout:
+        json.dump(result, fout, ensure_ascii=False)
