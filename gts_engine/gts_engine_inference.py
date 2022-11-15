@@ -1,10 +1,14 @@
 import os
+import sys
 import json
 import pickle
 import argparse
 import numpy as np
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
+
+# 如果没有安装gts_engine，请把GTS-Engine/gts-engine加入到系统环境变量
+sys.path.append(os.path.dirname(__file__))
 
 # 设置gpu相关的全局变量
 import qiankunding_core.utils.globalvar as globalvar
@@ -142,8 +146,7 @@ def prepare_sentence_pair_inference(save_path):
 def sentence_pair_inference(samples, inference_suite):
     return None
 
-if __name__ == '__main__':    
-
+def main():
     total_parser = argparse.ArgumentParser()
 
     total_parser.add_argument("--task_dir", required=True, 
@@ -168,3 +171,7 @@ if __name__ == '__main__':
 
     with open(args.output_path, encoding="utf8", mode="w") as fout:
         json.dump(result, fout, ensure_ascii=False)
+
+if __name__ == '__main__':    
+    main()
+    
