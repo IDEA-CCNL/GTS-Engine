@@ -1,5 +1,5 @@
 import os
-import time 
+import sys 
 import json
 import torch
 import shutil
@@ -9,16 +9,16 @@ import traceback
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM, MegatronBertConfig
-
-from qiankunding_core.utils.evaluation import evaluation
-from qiankunding_core.utils.tokenization import get_train_tokenizer
-
-from qiankunding_core.utils import knn_utils
-
 from pytorch_lightning import Trainer, seed_everything, loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+# 如果没有安装gts_engine，请把GTS-Engine/gts-engine加入到系统环境变量
+sys.path.append(os.path.dirname(__file__))
+
+from qiankunding_core.utils.evaluation import evaluation
+from qiankunding_core.utils.tokenization import get_train_tokenizer
+from qiankunding_core.utils import knn_utils
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
 from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
 
@@ -42,7 +42,7 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     shutil.rmtree(cache_path)
     print("model %s is downloaded from huggingface." % model_name)
 
-def generate_common_trainer(save_path):
+def generate_common_trainer(args, save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
@@ -80,7 +80,7 @@ def classification_pipeline(args):
     data_model = TaskDataModelUnifiedMC(args, tokenizer)
     #加载模型
     model = BertUnifiedMC(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args.save_path)
+    trainer, checkpoint = generate_common_trainer(args, args.save_path)
     # training
     trainer.fit(model, data_model)
     #验证集效果最好的模型文件地址
@@ -116,7 +116,7 @@ def sentence_pair_pipeline(args):
     return None
 
 
-def main(args):
+def train(args):
     # Set global random seed
     seed_everything(args.seed)
     
@@ -143,10 +143,7 @@ def main(args):
     elif args.task_type == "nli":
         sentence_pair_pipeline(args)
 
-
-
-if __name__ == '__main__':    
-
+def main():
     total_parser = argparse.ArgumentParser()
 
     total_parser.add_argument("--task_dir", required=True, 
@@ -218,7 +215,7 @@ if __name__ == '__main__':
             json.dump(task_info, f, indent=4)
 
     try:
-        main(args)
+        train(args)
         task_info["status"] = "Train Success"
         task_info["status_code"] = 2
         task_info["save_path"] = args.save_path
@@ -230,8 +227,7 @@ if __name__ == '__main__':
         task_info["status_code"] = 3
         with open(task_info_path, mode="w") as f:
             json.dump(task_info, f, indent=4)
-        
 
-
-    
+if __name__ == '__main__':    
+    main()
     

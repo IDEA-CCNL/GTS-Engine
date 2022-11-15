@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="gts_engine",
-    version="0.1.0",
+    version="0.1.1",
     description="gts_engine",
     long_description="git_engine development suite: a powerful NLU training system",
     license="MIT Licence",
-    url="https://idea.edu.cn",
+    url="https://github.com/IDEA-CCNL/GTS-Engine",
     author="pankunhao",
     author_email="pankunhao@gmail.com",
 
@@ -24,11 +24,19 @@ setup(
         "scikit_learn==1.1.3",
         "setuptools==58.0.4",
         "starlette==0.20.4",
-        "torch==1.11.0+cu113",
+        "torch==1.11.0",
         "tqdm==4.62.3",
         "transformers==4.18.0",
         "uvicorn==0.19.0",
     ],
 
     scripts=[],
+
+    entry_points={
+        'console_scripts': [
+            'gts_engine_service = gts_engine.gts_engine_service:main',
+            'gts_engine_train = gts_engine.gts_engine_train:main',
+            'gts_engine_inference = gts_engine.gts_engine_inference:main'
+        ]
+    }
 )

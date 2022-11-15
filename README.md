@@ -16,7 +16,7 @@
 
 ------------------------------------------------------------------------------------------
 
-GTS引擎（GTS-Engine）是一款开箱即用且性能强大的自然语言理解引擎，能够仅用小样本就能自动化生产NLP模型。它依托于封神榜开源体系的基础模型，并在下游进行了有监督预训练，同时集成了多种小样本学习技术，搭建了一个模型自动生产的流水线。
+GTS引擎（GTS-Engine）是一款开箱即用且性能强大的自然语言理解引擎，聚焦于小样本任务，能够仅用小样本就能自动化生产NLP模型。它依托于封神榜开源体系的基础模型，并在下游进行了有监督预训练，同时集成了多种小样本学习技术，搭建了一个模型自动生产的流水线。
 
 GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**八卦炉**系列。
 - 乾坤鼎系列是以1.3B参数的大模型为底座，通过大模型进行训练和推理的引擎。
@@ -84,22 +84,58 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 
 ## 快速开始
 
-我们支持两种方式来使用我们的引擎：通过Web服务的方式和通过命令行调用的方式。更多`快速开始`的详情，请参考我们的文档。
+我们支持两种方式来使用我们的引擎：通过Web服务的方式和通过命令行调用的方式。更多`快速开始`的详情，请参考我们的[文档](https://gts-engine-doc.readthedocs.io/en/latest/docs/quick_start.html)。
+
+### 数据预处理
+
+以文本分类任务为例，训练任务中，GTS Engine要求您至少提供三个数据集：训练集、验证集和标签数据，测试集为可选项。
+
+- **训练数据**
+
+每行是一个样本，采用json格式，数据字段必须含有`"text"`和`"label"`字段, "text"对应的是输入文本，"label"字段对应该文本的标签。
+
+```json
+{"text": "佛山市青少年武术比赛开幕，291名武术达人同台竞技", "label": "教育"}
+```
+
+- **验证数据**
+
+验证数据与训练数据格式一致。
+
+```json
+{"text": "王者荣耀：官方悄悄的降价了4个强势英雄，看来米莱狄要来", "label": "电竞"}
+```
+
+- **测试数据**
+
+每行是一个样本，采用json格式，数据字段必须含有`"label"`字段。
+
+```json
+{"text": "上联：草根登上星光道，怎么对下联？"}
+```
+
+- **标签数据**
+
+数据为json格式，只有一行数据，必须含有"labels"字段，对应的是标签的列表集合。
+
+```json
+{"labels": ["故事", "文化", "娱乐", "体育", "财经", "房产", "汽车", "教育", "科技", "军事", "旅游", "国际", "股票", "农业", "电竞"]}
+```
+
+其他任务的数据预处理要求，请参考我们的[文档](https://gts-engine-doc.readthedocs.io/en/latest/docs/preprocess.html)。
 
 ### Web服务
 
-GTS引擎通过调用`gts_engint_service`脚本启动一个FastAPI Web服务，通过向服务发送HTTP Post请求，即可无需了解算法细节零门槛进行训练和推理，您还可以结合我们提供的Python SDK（GTS-Engine-Client）来更方便地调用服务。下面以examples中的文本分类任务为例，教您如何快速使用引擎。
+GTS引擎通过调用`gts_engint_service`脚本启动一个FastAPI Web服务，通过向服务发送HTTP Post请求，即可无需了解算法细节零门槛进行训练和推理，您还可以结合我们提供的Python SDK（[GTS-Engine-Client](https://github.com/IDEA-CCNL/GTS-Engine-Client)）来更方便地调用服务。下面以examples中的文本分类任务为例，教您如何快速使用引擎。
 
 #### 启动服务
 
 - 您可以直接通过调用命令行启动GTS-Engine的服务。
 
 ```bash
-git clone https://github.com/IDEA-CCNL/GTS-Engine.git #下载源码
-cd GTS-Engine
 mkdir pretrained  #将下载好的模型文件放在pretrained
 mkdir tasks
-CUDA_VISIBLE_DEVICES=0 python gts_engine/gts_engine_service.py #指定GPU 运行api.py
+CUDA_VISIBLE_DEVICES=0 gts_engine_service --task_dir tasks --pretrained_dir pretrained --port 5201
 ```
 
 - 同时也可以通过我们提供的Docker直接运行我们的服务。
@@ -214,7 +250,7 @@ optional arguments:
 
 ## API文档
 
-更多GTS-Engine的内容可参考API文档。
+更多GTS-Engine的内容可参考[API文档](https://gts-engine-doc.readthedocs.io/en/latest/index.html)。
 
 ## 效果展示
 
