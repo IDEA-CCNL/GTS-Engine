@@ -153,7 +153,7 @@ def similarity_pipeline(args):
 
         # Evaluation
         print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+        model = BertUnifiedMCForMatch.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval() 
 
@@ -190,7 +190,7 @@ def nli_pipeline(args):
 
         # Evaluation
         print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+        model = BertUnifiedMCForNLI.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval() 
 
