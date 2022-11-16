@@ -1,25 +1,13 @@
 
-from termios import PARODD
-import time
-import argparse
-import itertools
 import json
-import copy
 import os
 import torch
 import torch.nn as nn
-import random
 import numpy as np
 from tqdm import tqdm
-from collections import defaultdict
 import pytorch_lightning as pl
-from typing import Optional
-from torch.utils.data import Dataset, DataLoader
-from transformers import AutoTokenizer, AutoModel
-from pytorch_lightning import Trainer, seed_everything, loggers
 import sklearn
-# from torchsnooper import snoop
-from collections import OrderedDict
+from torch.utils.data import Dataset, DataLoader
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -102,7 +90,7 @@ def get_token_type(sep_idx,max_length):
     
     return token_type_ids
 
-class TaskDatasetUnifiedMC(Dataset):
+class TaskDatasetUnifiedMCForNLI(Dataset):
     def __init__(self, data_path=None, args=None,used_mask=True, tokenizer=None, load_from_list=False, samples=None, is_test=False, unlabeled=False):
         super().__init__()
         # added_token=['[unused'+str(i+1)+']' for i in range(99)]
@@ -134,6 +122,22 @@ class TaskDatasetUnifiedMC(Dataset):
     def __getitem__(self, index):
         return self.encode(self.data[index],self.used_mask, self.is_test, self.unlabeled)
 
+    def ori2mrc(self,item):
+        new_item = {}
+        new_item["id"] = item["id"]
+        new_item["texta"] = item["sentence1"]
+        new_item["textb"] = item["sentence2"]
+        textb = item["sentence2"]
+        new_item["question"] = "根据这段话"
+        new_item["choice"] = [f"可以推断出：{textb}",f"不能推断出：{textb}",f"很难推断出：{textb}"]
+
+        label2id = {"entailment":0, "contradiction":1, "neutral":2}
+        new_item["label"] = label2id[item["label"]]
+        new_item["answer"] = new_item["choice"][new_item["label"]]
+
+        return new_item
+
+
     def load_data(self, data_path, args=None, load_from_list=False, sentences=None):
         samples = []
         if load_from_list:
@@ -144,11 +148,9 @@ class TaskDatasetUnifiedMC(Dataset):
                 lines = f.readlines()
                 for line in tqdm(lines):
                     item = json.loads(line)
-                    samples.append(item)
-                    # choices_len = len('[MASK]'.join(item['choice']))
-                    # # 如果choice拼起来太长就不要了
-                    # if choices_len < 512:
-                    #     samples.append(item)
+                    new_item = self.ori2mrc(item)
+                    samples.append(new_item)
+
         return samples
 
     def encode(self, item, used_mask, is_test, unlabeled):
@@ -157,24 +159,13 @@ class TaskDatasetUnifiedMC(Dataset):
         while len(self.tokenizer.encode('[MASK]'.join(item['choice']))) > self.max_length-32:
             item['choice'] = [c[:int(len(c)/2)] for c in item['choice']]
 
-        if item['textb']!='':
-            texta =  '[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]' +item['question'] + '[SEP]' +item['texta']+'[SEP]'+item['textb']
-            # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']+'[SEP]'+item['textb']
-            encode_dict = self.tokenizer.encode_plus(texta,
-                                                max_length=self.max_length,
-                                                # padding='max_length',
-                                                padding="longest",
-                                                truncation=True
-                                                )
-        else:
-            texta =  '[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['question'] + '[SEP]' +item['texta']
-            # texta =  item['question'] + '[SEP]' +'[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['texta']
-            encode_dict = self.tokenizer.encode_plus(texta,
-                                                max_length=self.max_length,
-                                                # padding='max_length',
-                                                padding="longest",
-                                                truncation=True
-                                                )
+        texta =  '[MASK]' + '[MASK]'.join(item['choice'])+ '[SEP]'+item['question'] + '[SEP]' +item['texta']
+        encode_dict = self.tokenizer.encode_plus(texta,
+                                            max_length=self.max_length,
+                                            # padding='max_length',
+                                            padding="longest",
+                                            truncation=True
+                                            )
         
         encode_sent = encode_dict['input_ids']
         token_type_ids=encode_dict['token_type_ids']
@@ -243,6 +234,7 @@ class TaskDatasetUnifiedMC(Dataset):
         encoded = {
             "id": item["id"],
             "texta":item["texta"],
+            "textb":item["textb"],
             "question":item["question"],
             "choice":item["choice"],
             "unlabeled_set":item["unlabeled_set"] if "unlabeled_set" in item.keys() else "0",
@@ -273,7 +265,6 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
         parser.add_argument('--valid_batchsize', default=32, type=int)
         parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)
         parser.add_argument('--knn_datastore_data', default='train.json', type=str)
-        parser.add_argument('--label2id_file', default=None, type=str)
         parser.add_argument('--max_len', default=128, type=int)
 
         parser.add_argument('--texta_name', default='text', type=str)
@@ -291,29 +282,18 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
         self.num_workers = args.num_workers
         self.tokenizer = tokenizer
 
-        if args.label2id_file is not None:
-            self.label2id_file = os.path.join(args.data_dir, args.label2id_file)
-        else:
-            self.label2id_file = None
 
-        self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.train_data), 
-        label2id_file= self.label2id_file)
+        self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.train_data))
         args.num_labels = len(self.label_classes)
 
-        self.train_data = TaskDatasetUnifiedMC(os.path.join(
+        self.train_data = TaskDatasetUnifiedMCForNLI(os.path.join(
             args.data_dir, args.train_data), args, used_mask=True, tokenizer=tokenizer, is_test=False, unlabeled=False)
-        self.valid_data = TaskDatasetUnifiedMC(os.path.join(
+        self.valid_data = TaskDatasetUnifiedMCForNLI(os.path.join(
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False)
-        self.test_data = TaskDatasetUnifiedMC(os.path.join(
+        self.test_data = TaskDatasetUnifiedMCForNLI(os.path.join(
             args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False)
-        print("len(valid_data:",len(self.valid_data))
-        if args.use_knn:
-            self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(
-            args.data_dir, args.train_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False)
-        if args.pseudo_labeling:
-            self.unlabeled_data = TaskDatasetUnifiedMC(os.path.join(
-                args.data_dir, args.unlabeled_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True)
-
+        print("len(valid_data):",len(self.valid_data))
+       
     def train_dataloader(self):
         return DataLoader(self.train_data, shuffle=True, collate_fn=self.collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
 
@@ -322,12 +302,6 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.test_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
-
-    def unlabeled_dataloader(self):
-        return DataLoader(self.unlabeled_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
-    
-    def knn_datastore_dataloader(self):
-        return DataLoader(self.knn_datastore_data, shuffle=False, collate_fn=self.collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def collate_fn(self, batch):
         '''
@@ -393,6 +367,7 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
         batch_data = {
             "id":batch_data["id"],
             "texta":batch_data["texta"],
+            "textb":batch_data["textb"],
             "question":batch_data["question"],
             "choice":batch_data["choice"],
             "unlabeled_set": batch_data["unlabeled_set"],
@@ -412,39 +387,26 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
 
         return batch_data
 
-    def get_label_classes(self,file_path=None,label2id_file=None, label_key="label"):
-        if label2id_file is not None:
-            # print(self.label2id_file)
-            with open(label2id_file, 'r', encoding='utf8') as f:
-                label2id = json.load(f)
-                # label_classes = list(label2id.keys())
-                # 按照id键排序
-                # label_classes = OrderedDict(sorted(label2id.items(), key=lambda i: i[1]['id']))
-                # label_classes = list(label_classes.keys())
-                # print(label_classes)
-                # 用dict存储label_classes
-                label_classes = {}
-                for k, v in label2id.items():
-                    label_classes[k] = v["id"]
-        else:
-            with open(file_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                labels = []
-                for line in tqdm(lines):
-                    data = json.loads(line)
-                    # text = data[content_key].strip("\n")
-                    label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-                    # result.append((text, label))
+    def get_label_classes(self,file_path=None,label_key="label"):
+    
+        with open(file_path, 'r', encoding='utf8') as f:
+            lines = f.readlines()
+            labels = []
+            for line in tqdm(lines):
+                data = json.loads(line)
+                # text = data[content_key].strip("\n")
+                label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
+                # result.append((text, label))
 
-                    if label not in labels:
-                        labels.append(label)
+                if label not in labels:
+                    labels.append(label)
 
-                # 传入一个list，把每个标签对应一个数字
-                label_model = sklearn.preprocessing.LabelEncoder()
-                label_model.fit(labels)
-                label_classes = {}
-                for i,item in enumerate(list(label_model.classes_)):
-                    label_classes[int(item)] = i
+            # 传入一个list，把每个标签对应一个数字
+            label_model = sklearn.preprocessing.LabelEncoder()
+            label_model.fit(labels)
+            label_classes = {}
+            for i,item in enumerate(list(label_model.classes_)):
+                label_classes[item] = i
 
         print("label_classes:",label_classes)
         return label_classes

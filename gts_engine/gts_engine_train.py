@@ -8,9 +8,9 @@ import argparse
 import traceback
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
-from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM, MegatronBertConfig
+from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM
 
-from qiankunding_core.utils.evaluation import evaluation,Evaluator,Sentence_Pair_Evaluator
+from qiankunding_core.utils.evaluation import evaluation,Evaluator,SentencePairEvaluator
 from qiankunding_core.utils.tokenization import get_train_tokenizer
 
 from qiankunding_core.utils import knn_utils
@@ -140,7 +140,7 @@ def similarity_pipeline(args):
     data_model = TaskDataModelUnifiedMCForMatch(args, tokenizer)
     #加载模型
     model = BertUnifiedMCForMatch(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args.save_path)
+    trainer, checkpoint = generate_common_trainer(args, args.save_path)
     # training
     trainer.fit(model, data_model)
     #验证集效果最好的模型文件地址
@@ -157,7 +157,7 @@ def similarity_pipeline(args):
         model.cuda()
         model.eval() 
 
-        evaluator = Sentence_Pair_Evaluator(args, model, data_model, output_save_path)
+        evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
         evaluator.evaluation(mode='test', data_set="test")
     # return None
 
@@ -177,7 +177,7 @@ def nli_pipeline(args):
     data_model = TaskDataModelUnifiedMCForNLI(args, tokenizer)
     #加载模型
     model = BertUnifiedMCForNLI(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args.save_path)
+    trainer, checkpoint = generate_common_trainer(args, args.save_path)
     # training
     trainer.fit(model, data_model)
     #验证集效果最好的模型文件地址
@@ -194,7 +194,7 @@ def nli_pipeline(args):
         model.cuda()
         model.eval() 
 
-        evaluator = Sentence_Pair_Evaluator(args, model, data_model, output_save_path)
+        evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
         evaluator.evaluation(mode='test', data_set="test")
 
 

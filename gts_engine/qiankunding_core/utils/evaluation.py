@@ -48,6 +48,7 @@ class Evaluator(object):
         super().__init__()
         self.args, self.model, self.data_model, self.save_path = args, model, data_model, save_path
 
+        self.task_type = args.task_type
         self.label_classes = self.data_model.label_classes
         print("label_classes",self.label_classes)
         with open(self.save_path+"label_classes.json", 'w') as f:
@@ -127,8 +128,12 @@ class Evaluator(object):
         results, y_true, y_pred = self.inference(test_loader=test_loader,data_set=data_set)
         self.save_to_file(data_set, results, y_true, y_pred)
 
-class Sentence_Pair_Evaluator(Evaluator):
+class SentencePairEvaluator(Evaluator):
     def inference(self,test_loader,data_set):
+        if self.task_type == "similarity":
+            id2label = {0:0, 1:1}
+        elif self.task_type == "nli":
+            id2label = {0:"entailment", 1:"contradiction", 2:"neutral"}
         results = []
         y_true = []
         y_pred = []
@@ -145,13 +150,14 @@ class Sentence_Pair_Evaluator(Evaluator):
             for idx, (predict,prob,logit) in enumerate(zip(predicts,probs,logits)):
                 pred = {
                             "id": int(batch["id"][idx]),
-                            'label': self.label_classes_reverse[predict],
-                            'texta': batch['texta'][idx],
-                            "question": batch['question'][idx],
-                            "answer": batch['choice'][idx][self.label_classes_reverse[predict]],
-                            "choice": batch['choice'][idx],
+                            'label': id2label[predict],
+                            'sentence1': batch['texta'][idx],
+                            'sentence2': batch['textb'][idx],
+                            # "question": batch['question'][idx],
+                            # "answer": batch['choice'][idx][self.label_classes_reverse[predict]],
+                            # "choice": batch['choice'][idx],
                             "probs": prob.tolist(),
-                            "logits": logit.tolist(),
+                            # "logits": logit.tolist(),
                         }
                 
                 if data_set=="unlabeled":

@@ -3,12 +3,10 @@ import os
 import argparse
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import pytorch_lightning as pl
-from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
+from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM
 from transformers.optimization import get_linear_schedule_with_warmup
-from transformers import AdamW,Adafactor
-from ..text_classification.base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
+from transformers import Adafactor
+from ..text_classification.base_model import BaseModel
 
 
 import numpy as np
@@ -99,20 +97,13 @@ class BertUnifiedMCForNLI(BaseModel):
         
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='mean')
 
-
-        # print('self.hparams.finetune', self.hparams.finetune)
-        if not self.hparams.finetune:
-            for name, child in self.bert.named_children():
-                for param in child.parameters():
-                    param.requires_grad = False
         self.init_model(args)
     
     def init_model(self, args):
         """
         init function.
         """
-        self.pooler_type = args.pooler_type
-        self._pooler = Pooler(args.pooler_type)
+        pass
 
 
     def train_inputs(self, batch):
@@ -134,8 +125,8 @@ class BertUnifiedMCForNLI(BaseModel):
     def training_step(self, batch, batch_idx):
         inputs = self.train_inputs(batch)
         loss, logits, cls_logits, _ = self.model(**inputs)
-        mask_acc = self.comput_metrix(logits, batch['mlmlabels'], batch['mlmlabels_mask'])
-        cls_acc, ncorrect, ntotal = self.comput_metrix(cls_logits, batch['clslabels'])
+        mask_acc = self.compute_metrix(logits, batch['mlmlabels'], batch['mlmlabels_mask'])
+        cls_acc, ncorrect, ntotal = self.compute_metrix(cls_logits, batch['clslabels'])
 
         self.log('train_loss', loss)
         self.log('train_mask_acc', mask_acc)
@@ -155,8 +146,8 @@ class BertUnifiedMCForNLI(BaseModel):
     def validation_step(self, batch, batch_idx):
         inputs = self.train_inputs(batch)
         loss, logits, cls_logits, _ = self.model(**inputs)
-        mask_acc = self.comput_metrix(logits, batch['mlmlabels'], batch['mlmlabels_mask'])
-        cls_acc, ncorrect, ntotal = self.comput_metrix(cls_logits, batch['clslabels'])
+        mask_acc = self.compute_metrix(logits, batch['mlmlabels'], batch['mlmlabels_mask'])
+        cls_acc, ncorrect, ntotal = self.compute_metrix(cls_logits, batch['clslabels'])
         self.log('val_loss', loss)
         self.log('val_mask_acc', mask_acc)
         self.log('val_cls_acc', cls_acc)
@@ -271,7 +262,7 @@ class BertUnifiedMCForNLI(BaseModel):
         else:
             optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
-            optimizer, int(self.total_step * self.hparams.warmup),
+            optimizer, int(self.total_step * 0.1),
             self.total_step)
 
         return [{
@@ -282,10 +273,9 @@ class BertUnifiedMCForNLI(BaseModel):
                 'frequency': 1
             }
         }]
-
         # return AdamW(self.parameters(),lr=self.hparams.bert_lr)
 
-    def comput_metrix(self, logits, labels, mlmlabels_mask=None):
+    def compute_metrix(self, logits, labels, mlmlabels_mask=None):
         logits = torch.nn.functional.softmax(logits, dim=-1)
         is_mlm = True if len(logits.shape) == 3 else False
         if is_mlm:

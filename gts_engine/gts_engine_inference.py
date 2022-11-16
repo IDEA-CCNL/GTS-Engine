@@ -15,6 +15,8 @@ import qiankunding_core.utils.globalvar as globalvar
 globalvar._init()
 
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
+from qiankunding_core.dataloaders.nli.dataloader_UnifiedMC import TaskDatasetUnifiedMCForNLI,TaskDataModelUnifiedMCForNLI
+from qiankunding_core.dataloaders.similarity.dataloader_UnifiedMC import TaskDatasetUnifiedMCForMatch,TaskDataModelUnifiedMCForMatch
 from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import unifiedmc_collate_fn
 from qiankunding_core.utils.knn_utils import knn_inference
@@ -47,14 +49,14 @@ def load_args(save_path):
 def preprare_inference(task_type, save_path):
     if task_type == "classification":
         return prepare_classification_inference(save_path)
-    elif task_type == "similarity":
-        return prepare_sentence_pair_inference(save_path)
+    elif task_type in ["similarity","nli"]:
+        return prepare_sentence_pair_inference(task_type, save_path)
 
 def inference_samples(task_type, samples, inference_suite):
     if task_type == "classification":
         return classification_inference(samples, inference_suite)
-    elif task_type == "similarity":
-        return sentence_pair_inference(samples, inference_suite)
+    elif task_type in ["similarity","nli"]:
+        return sentence_pair_inference(task_type, samples, inference_suite)
 
 # ------------------------------------------分类模型推理相关-------------------------------------------------
 def prepare_classification_inference(save_path):
@@ -140,11 +142,106 @@ def classification_inference(samples, inference_suite):
     result = {'predictions':pred_labels, 'probabilities':pred_probs}
     return result
 
-def prepare_sentence_pair_inference(save_path):
-    return None
+def prepare_sentence_pair_inference(task_type, save_path):
+    # load args
+    args = load_args(save_path)
 
-def sentence_pair_inference(samples, inference_suite):
-    return None
+    # load tokenizer
+    print("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
+    inference_tokenizer = BertTokenizer.from_pretrained(save_path)
+
+    # load model
+    checkpoint_path = os.path.join(save_path, "best_model.ckpt")
+    inference_model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=inference_tokenizer)
+    inference_model.eval()
+    inference_model = inference_model.cuda()
+
+    if task_type == "similarity":
+        id2label = {0:'0', 1:'1'}
+        data_model = TaskDataModelUnifiedMCForMatch(args, inference_tokenizer)
+    elif task_type == "nli":
+        id2label = {0:"entailment", 1:"contradiction", 2:"neutral"}
+        data_model = TaskDataModelUnifiedMCForNLI(args, inference_tokenizer)
+        
+
+    inference_suite = {
+        "tokenizer": inference_tokenizer,
+        "model": inference_model,
+        "data_model": data_model,
+        "id2label": id2label,
+        "args": args
+    }
+    return inference_suite
+
+def sentence_pair_inference(task_type, samples, inference_suite):
+    # 加载数据
+    inner_samples = []
+    question = "根据这段话"
+
+    for idx, sample in enumerate(samples):
+        textb = sample["sentence2"]
+        label2id = {v:k for k,v in inference_suite["id2label"].items()}
+
+        if task_type == "nli":
+            choice = [f"可以推断出：{textb}",f"不能推断出：{textb}",f"很难推断出：{textb}"]  
+        elif task_type == "similarity":
+            choice = [f"不能理解为：{textb}",f"可以理解为：{textb}"]
+
+        label = label2id[sample["label"]]
+        inner_sample = {
+            "id":idx,
+            "texta": sample["sentence1"],
+            "textb": sample["sentence2"],
+            "question":question,
+            "choice":choice,
+            "label":label
+        }
+        inner_sample["answer"] = inner_sample["choice"][inner_sample["label"]]
+        inner_samples.append(inner_sample)
+
+    if task_type == "nli":
+        dataset = TaskDatasetUnifiedMCForNLI(
+            data_path=None,
+            args=inference_suite["args"],
+            used_mask=False,
+            tokenizer=inference_suite["tokenizer"],
+            load_from_list=True,
+            samples=inner_samples,
+            is_test=True,
+            unlabeled=True
+        )
+    else:
+        dataset = TaskDatasetUnifiedMCForMatch(
+            data_path=None,
+            args=inference_suite["args"],
+            used_mask=False,
+            tokenizer=inference_suite["tokenizer"],
+            load_from_list=True,
+            samples=inner_samples,
+            is_test=True,
+            unlabeled=True
+        )
+
+    
+    dataloader = DataLoader(dataset, shuffle=False, 
+        collate_fn=inference_suite["data_model"].collate_fn, \
+        batch_size=inference_suite["args"].valid_batchsize)
+
+    pred_labels = []
+    pred_probs = []
+
+
+    for batch in dataloader:
+        logits, classify_probs, predicts, labels, sample_embeds = inference_suite["model"].predict(batch)
+
+        final_predicts = list(np.argmax(classify_probs, axis=1))
+        for predict, prob in zip(final_predicts, classify_probs):    
+            pred_labels.append(inference_suite["id2label"][predict])
+            pred_probs.append(prob.tolist())
+
+
+    result = {'predictions':pred_labels, 'probabilities':pred_probs}
+    return result
 
 def main():
     total_parser = argparse.ArgumentParser()
@@ -161,13 +258,17 @@ def main():
     args = total_parser.parse_args()                            
 
     save_path = os.path.join(args.task_dir, "outputs")
-    inference_suite = preprare_inference(args.task_type, save_path)
     samples = []
     for line in open(args.input_path):
         line = line.strip()
         sample = json.loads(line)
         samples.append(sample)
-    result = classification_inference(samples, inference_suite)
+    if args.task_type in ["nli","similarity"]:
+        inference_suite = prepare_sentence_pair_inference(args.task_type, save_path)
+        result = sentence_pair_inference(args.task_type, samples, inference_suite)
+    else:
+        inference_suite = preprare_inference(args.task_type, save_path)
+        result = classification_inference(samples, inference_suite)
 
     with open(args.output_path, encoding="utf8", mode="w") as fout:
         json.dump(result, fout, ensure_ascii=False)
