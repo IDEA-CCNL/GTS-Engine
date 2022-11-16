@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMaskedLM, MegatronBertConfig
 from transformers.optimization import get_linear_schedule_with_warmup
 from transformers import AdamW,Adafactor
-from .base_model import BaseModel, MLPLayer, MLPLayer_simple,OutputLayer, Pooler
+from .base_model import BaseModel, Pooler
 
 
 import numpy as np
@@ -23,26 +23,21 @@ class taskModel(nn.Module):
         self.yes_token = tokenizer.encode("是")[1]
         self.no_token = tokenizer.encode("非")[1]
         
-        global_variable = True
         if "1.3B" in pre_train_dir:
             # v100
-            try:
-                print("gpu_type", globalvar.get_value("gpu_type"))
-            except:
-                # 开启预测的时候 _global_dict 未定义
+            print(globalvar.get_value("gpu_type"))
+            if globalvar.get_value("gpu_type") == "low_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "mid_gpu":
+                self.config.gradient_checkpointing = True
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
+                print("使用gradient_checkpointing！")
+            elif globalvar.get_value("gpu_type") == "high_gpu":
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
-                global_variable = False
-            if global_variable:
-                if globalvar.get_value("gpu_type") == "low_gpu":
-                    self.config.gradient_checkpointing = True
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                    print("使用gradient_checkpointing！")
-                elif globalvar.get_value("gpu_type") == "mid_gpu":
-                    self.config.gradient_checkpointing = True
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                    print("使用gradient_checkpointing！")
-                elif globalvar.get_value("gpu_type") == "high_gpu":
-                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+            else:
+                self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
@@ -93,26 +88,17 @@ class BertUnifiedMC(BaseModel):
         self.save_hf_model_file = os.path.join(self.save_hf_model_path,"pytorch_model.bin")
         self.count = 0
 
-        # self.bert = MegatronBertForMaskedLM.from_pretrained(args.pretrained_model)
-        # self.bert.resize_token_embeddings(new_num_tokens=len(self.tokenizer))
         self.model = taskModel(args.pretrained_model, self.tokenizer)
         
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='mean')
 
-
-        # print('self.hparams.finetune', self.hparams.finetune)
-        if not self.hparams.finetune:
-            for name, child in self.bert.named_children():
-                for param in child.parameters():
-                    param.requires_grad = False
         self.init_model(args)
     
     def init_model(self, args):
         """
         init function.
         """
-        self.pooler_type = args.pooler_type
-        self._pooler = Pooler(args.pooler_type)
+        pass
 
 
     def train_inputs(self, batch):
@@ -215,10 +201,6 @@ class BertUnifiedMC(BaseModel):
         # 转换为label_classes
         # label_idx = list(batch["label_idx"][0].numpy())
 
-        # probs_ = np.array([[prob[i] for i in label_idx[:-1]] for prob in probs])
-        # predicts_ = [label_idx.index(i) for i in predicts]
-        # labels_ = [label_idx.index(i) for i in labels]
-
         probs_ = []
         predicts_ = []
         labels_ = []
@@ -271,7 +253,7 @@ class BertUnifiedMC(BaseModel):
         else:
             optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
-            optimizer, int(self.total_step * self.hparams.warmup),
+            optimizer, int(self.total_step * 0.1),
             self.total_step)
 
         return [{
@@ -282,8 +264,6 @@ class BertUnifiedMC(BaseModel):
                 'frequency': 1
             }
         }]
-
-        # return AdamW(self.parameters(),lr=self.hparams.bert_lr)
 
     def comput_metrix(self, logits, labels, mlmlabels_mask=None):
         logits = torch.nn.functional.softmax(logits, dim=-1)
@@ -315,13 +295,4 @@ class BertUnifiedMC(BaseModel):
             return torch.sum(corr.float())/torch.sum(mlmlabels_mask.float())
         else:
             return torch.sum(corr.float())/labels.size(0), torch.sum(corr.float()), labels.size(0)
-
-
-    #  def configure_sharded_model(self):
-    #      self.mlp = auto_wrap(self.mlp)
-    #      self.output = auto_wrap(self.output)
-    #      self._pooler = auto_wrap(self._pooler)
-    #      #  self.bert = auto_wrap(self.bert)
-    #      self.model = nn.Sequential(self.mlp, self.output, self._pooler, self.bert)
-
 

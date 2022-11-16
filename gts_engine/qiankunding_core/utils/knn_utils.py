@@ -212,7 +212,7 @@ def get_knn_probs(distances, datastore_probs, k, remove_self=False):
 
 def grid_search_for_hyper(model, data_model, datastores):
     """ 超参搜索 """
-    y_true, _, classify_probs, sample_embeds = get_classify_info(model, data_model.test_dataloader())
+    y_true, _, classify_probs, sample_embeds = get_classify_info(model, data_model.val_dataloader())
 
     best_acc = 0.0
     best_hyper = {"lambda_values": [], "k_values": []}
@@ -229,8 +229,8 @@ def grid_search_for_hyper(model, data_model, datastores):
     for index in range(len(datastores)):
         knn_cache.append({})
 
-    k_search_list = [np.arange(0, 32, 1), np.arange(0, 32, 1)]
-    lambda_search_list = [np.linspace(0, 1, 21), np.linspace(0, 1, 21)]
+    k_search_list = [np.arange(0, 32, 1).tolist()] * len(datastores)
+    lambda_search_list = [np.linspace(0, 1, 21).tolist()] * len(datastores)
     for hyper_tuple in itertools.product(*lambda_search_list, *k_search_list):
         lambda_values = list(map(lambda x: round(x, 2), hyper_tuple[:len(lambda_search_list)]))
         k_values = list(hyper_tuple[len(lambda_search_list):])
@@ -260,23 +260,24 @@ def grid_search_for_hyper(model, data_model, datastores):
             print("best acc:", round(best_acc * 100, 2), "\tbest hyper:", best_hyper)
     return best_hyper, y_true, best_y_pred
 
-def pseudo_labeling_with_knn(model, data_model, output_dir):
-    """评估模型效果
+def knn_augmentation(model, data_model, output_dir):
+    """ 使用kNN增加预测的效果
     Args:
         model: 模型对象，BaseModel的子类
         data_model: 数据模型的对象，TaskDataModel的子类
         output_dir: 需要输出到的目录
     """
+    model.cuda()
+    model.eval()
     data_model.setup("test")
-    datastore_names = ["labeled", "unlabeled"]
+    datastore_names = ["labeled"]
     datastores = get_datastores(datastore_names, model, data_model)
     best_hyper, dev_y_true, dev_best_y_pred = grid_search_for_hyper(model, data_model, datastores)
+    return best_hyper, datastores
 
-    data_loader = data_model.unlabeled_dataloader()
-    y_true, _, classify_probs, sample_embeds = get_classify_info(model, data_loader)
-
-    final_probs = (1 - sum(best_hyper["lambda_values"])) * classify_probs
-    for l, k, datastore in zip(best_hyper["lambda_values"], best_hyper["k_values"], datastores):
+def knn_inference(sample_embeds, knn_datastores, knn_best_hyper):
+    total_knn_probs = None
+    for l, k, datastore in zip(knn_best_hyper["lambda_values"], knn_best_hyper["k_values"], knn_datastores):
         if l <= 1e-5 or k <= 0:
             continue
         remove_self = True if datastore.get_dataset_name() == "unlabeled" else False # 检索时是否移除自身
@@ -289,32 +290,8 @@ def pseudo_labeling_with_knn(model, data_model, output_dir):
         distances = pairwise_distances(query_embeds, datastore_embeds, metric="euclidean", n_jobs=1)
         knn_probs = get_knn_probs(
             distances, datastore_probs, k, remove_self=remove_self)
-        final_probs = final_probs + l * knn_probs
-    y_pred = list(np.argmax(final_probs, axis=1))
-    
-    output_items = []
-    for batch in data_loader:
-        batch_size = len(batch["id"])
-        for idx in range(batch_size):
-            item = {
-                "id": int(batch["id"][idx]),
-                "content": batch["sentence"][idx],
-                "unlabeled_set": batch['unlabeled_set'][idx]
-            }
-            output_items.append(item)
-    
-    label_classes_reverse = {v:k for k,v in data_model.label_classes.items()}
-    output_path = os.path.join(output_dir, "unlabeled_set_predictions.json")
-    fout = open(output_path, mode="w")
-    for idx in range(len(output_items)):
-        predict = y_pred[idx]
-        item = output_items[idx]
-        item["probs"] = final_probs[idx].tolist()
-        item["label"] = label_classes_reverse[predict]
-        print(json.dumps(item, ensure_ascii=False), file=fout)
-    fout.close()
-    # 输出knn在dev集上的效果统计
-    eval_results = result_eval(dev_y_true, dev_best_y_pred, label_names=data_model.label_classes)
-    with open(os.path.join(output_dir, "test_set_confusion_matrix_use_knn.json"), "w") as f:
-        json.dump(eval_results, f, indent=4, ensure_ascii=False)
-    pass
+        if total_knn_probs is None:
+            total_knn_probs = knn_probs
+        else:
+            total_knn_probs = total_knn_probs + l * knn_probs
+    return total_knn_probs

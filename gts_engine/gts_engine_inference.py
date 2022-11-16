@@ -1,11 +1,23 @@
 import os
+import sys
 import json
+import pickle
+import argparse
+import numpy as np
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer, AdamW, BertTokenizer
 
+# 如果没有安装gts_engine，请把GTS-Engine/gts-engine加入到系统环境变量
+sys.path.append(os.path.dirname(__file__))
+
+# 设置gpu相关的全局变量
+import qiankunding_core.utils.globalvar as globalvar
+globalvar._init()
+
 from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
 from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
-from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
+from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import unifiedmc_collate_fn
+from qiankunding_core.utils.knn_utils import knn_inference
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -60,17 +72,28 @@ def prepare_classification_inference(save_path):
 
     # load model
     checkpoint_path = os.path.join(save_path, "best_model.ckpt")
-    inference_model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=inference_tokenizer, load_from_tapt=False)
+    inference_model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=inference_tokenizer)
     inference_model.eval()
     inference_model = inference_model.cuda()
 
-    inference_suite = {"tokenizer": inference_tokenizer, "model": inference_model, "args": args, "choice": inference_choice}
+    # load knn data
+    with open(os.path.join(save_path, "knn_best_hyper.json")) as f:
+        knn_best_hyper = json.load(f)
+    with open(os.path.join(save_path, "knn_datastores.pkl"), mode="rb") as f:
+        knn_datastores = pickle.load(f)
+
+    inference_suite = {
+        "tokenizer": inference_tokenizer,
+        "model": inference_model,
+        "args": args,
+        "choice": inference_choice,
+        "knn_best_hyper": knn_best_hyper,
+        "knn_datastores": knn_datastores
+    }
     return inference_suite
 
 def classification_inference(samples, inference_suite):
     # 加载数据
-    data_model = TaskDataModelUnifiedMC(inference_suite["args"], inference_suite["tokenizer"])
-
     inner_samples = []
     question = "请问下面的文字描述属于那个类别？"
 
@@ -95,16 +118,22 @@ def classification_inference(samples, inference_suite):
     )
     
     dataloader = DataLoader(dataset, shuffle=False, 
-        collate_fn=data_model.collate_fn, \
-        batch_size=inference_suite["args"].train_batchsize)
+        collate_fn=unifiedmc_collate_fn, \
+        batch_size=inference_suite["args"].valid_batchsize)
 
     pred_labels = []
     pred_probs = []
 
+    knn_best_hyper = inference_suite["knn_best_hyper"]
+    knn_datastores = inference_suite["knn_datastores"]
     for batch in dataloader:
-        logits, probs, predicts, labels, _ = inference_suite["model"].predict(batch)
-    
-        for idx, (predict,prob) in enumerate(zip(predicts,probs)):    
+        logits, classify_probs, predicts, labels, sample_embeds = inference_suite["model"].predict(batch)
+        knn_lambda = sum(knn_best_hyper["lambda_values"])
+        final_probs = (1 - knn_lambda) * classify_probs
+        knn_probs = knn_inference(sample_embeds, knn_datastores, knn_best_hyper)
+        final_probs = final_probs + knn_lambda * knn_probs
+        final_predicts = list(np.argmax(final_probs, axis=1))
+        for predict, prob in zip(final_predicts, final_probs):    
             pred_labels.append(inference_suite["choice"][predict])
             pred_probs.append(prob.tolist())
 
@@ -116,3 +145,33 @@ def prepare_sentence_pair_inference(save_path):
 
 def sentence_pair_inference(samples, inference_suite):
     return None
+
+def main():
+    total_parser = argparse.ArgumentParser()
+
+    total_parser.add_argument("--task_dir", required=True, 
+                            type=str, help="specific task directory")
+    total_parser.add_argument("--task_type", required=True,
+                            type=str, help="task type for training")
+    total_parser.add_argument("--input_path", required=True,
+                            type=str, help="input path of data which will be inferenced")
+    total_parser.add_argument("--output_path", required=True,
+                            type=str, help="output path of inferenced data")
+    
+    args = total_parser.parse_args()                            
+
+    save_path = os.path.join(args.task_dir, "outputs")
+    inference_suite = preprare_inference(args.task_type, save_path)
+    samples = []
+    for line in open(args.input_path):
+        line = line.strip()
+        sample = json.loads(line)
+        samples.append(sample)
+    result = classification_inference(samples, inference_suite)
+
+    with open(args.output_path, encoding="utf8", mode="w") as fout:
+        json.dump(result, fout, ensure_ascii=False)
+
+if __name__ == '__main__':    
+    main()
+    

@@ -10,7 +10,6 @@ from transformers import AutoModel, AutoTokenizer, AutoConfig, AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix, classification_report
-from ...loss.adversarial_loss import AdversarialLoss
 import time
 import numpy as np
 from tqdm import tqdm
@@ -131,22 +130,9 @@ class BaseModel(pl.LightningModule):
         self.save_hyperparameters(args)
         self.tokenizer = tokenizer
         self.loss_fn = nn.CrossEntropyLoss()
-        self.adv = args.adv
-        if args.adv:
-            self.adv_loss_fn = AdversarialLoss(args)
-        # Set number of different labels here or add it to args
-        # self.nlabels = args.nlabels
-        if args.label2id_file is not None:
-            self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data),
-            label2id_file=os.path.join(args.data_dir, args.label2id_file),label_key=args.label_key)
-        else:
-            # if args.sup_pretrain:
-            #     self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.valid_data),
-            #     label_key=args.label_key)
-            #     self.len_train_dataloader = 1000000 // args.train_batchsize
-            # else:
-                self.label_classes, self.nlabels,self.len_train_dataloader = self.get_classes_and_traindata_num(file_path=os.path.join(args.data_dir, args.train_data),
-                label_key=args.label_key)
+        # self.adv = args.adv
+        # if args.adv:
+        #     self.adv_loss_fn = AdversarialLoss(args)
 
 
     def setup(self, stage) -> None:
@@ -156,8 +142,10 @@ class BaseModel(pl.LightningModule):
                 num_gpus = self.trainer.gpus if self.trainer.gpus is not None else 0
             elif type(self.trainer.gpus)==list:
                 num_gpus = len(self.trainer.gpus) if self.trainer.gpus is not None else 0
-                
-            self.total_step = int(self.trainer.max_epochs * self.len_train_dataloader / \
+            
+            n_train_step = self.get_training_step_num(file_path=os.path.join(self.args.data_dir, self.args.train_data), train_batchsize=self.args.train_batchsize)
+
+            self.total_step = int(self.trainer.max_epochs * n_train_step / \
                 (max(1, num_gpus) * self.trainer.accumulate_grad_batches))
             print('Total training step:', self.total_step)
 
@@ -228,19 +216,10 @@ class BaseModel(pl.LightningModule):
             predictions += x[2]
             labels += x[3]
 
-        # recall = recall_score(labels, predictions, average="macro")
-        # precision = precision_score(labels, predictions, average="macro")
-        # f1 = f1_score(labels, predictions, average='macro')
-        # classification_report_ = classification_report(labels, predictions)
         self.log('valid_acc_epoch', ncorrect / ntotal, on_epoch=True, prog_bar=True)
-        # self.log('valid_recall', recall, on_epoch=True, prog_bar=True)
-        # self.log('valid_precision', precision, on_epoch=True, prog_bar=True)
-        # self.log('valid_f1', f1, on_epoch=True, prog_bar=True)
 
         print("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
         print(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
-        # print(classification_report_)
-        # print('Validation P: {:.3%}, R: {:.3%}, F1: {:.3%}'.format(precision, recall, f1))
 
     def configure_optimizers(self):
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
@@ -255,7 +234,7 @@ class BaseModel(pl.LightningModule):
         }]
         optimizer = AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
-            optimizer, int(self.total_step * self.hparams.warmup),
+            optimizer, int(self.total_step * 0.1),
             self.total_step)
 
         return [{
@@ -267,38 +246,10 @@ class BaseModel(pl.LightningModule):
             }
         }]
 
-    def get_classes_and_traindata_num(self,file_path,label2id_file=None,label_key="label"):
-        if label2id_file is not None:
-            with open(label2id_file, 'r', encoding='utf8') as f:
-                label2id = json.load(f)
-                # label_classes = list(label2id.keys())
-                label_classes = {}
-                for k, v in label2id.items():
-                    label_classes[k] = v["id"]
-            with open(file_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                traindata_len = len(lines)
-        else:
-            with open(file_path, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                traindata_len = len(lines)
-                labels = []
-                for line in tqdm(lines):
-                    data = json.loads(line)
-                    # text = data[content_key].strip("\n")
-                    label = data[label_key] if label_key in data.keys() else 'unlabeled'  # 测试集中没有label标签，默认为0
-                    # result.append((text, label))
+    def get_training_step_num(self, file_path, train_batchsize):
+        with open(file_path, 'r', encoding='utf8') as f:
+            lines = f.readlines()
+            train_data_len = len(lines)
 
-                    if label not in labels:
-                        labels.append(label)
-
-                # 传入一个list，把每个标签对应一个数字
-                label_model = sklearn.preprocessing.LabelEncoder()
-                label_model.fit(labels)
-                # label_classes = list(label_model.classes_)
-                label_classes = {}
-                for i,item in enumerate(list(label_model.classes_)):
-                    label_classes[item] = i
-
-        return label_classes, len(label_classes),traindata_len // self.args.train_batchsize
+        return train_data_len // train_batchsize
 
