@@ -46,7 +46,7 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 
 更多环境需求和软件依赖请参考我们的文档。
 
-我们提供以下三种形式安装方式
+我们提供以下三种安装方式
 1.[pip安装](#pip安装)
 2.[github安装](#github安装)
 3.[Docker安装](#docker安装)
@@ -139,13 +139,17 @@ GTS引擎通过调用`gts_engint_service`脚本启动一个FastAPI Web服务，�
 ```bash
 mkdir pretrained  #将下载好的模型文件放在pretrained
 mkdir tasks
-CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --task_dir tasks --pretrained_dir pretrained --port 5201
+#pip安装方式    启动
+CUDA_VISIBLE_DEVICES=0 gts_engine_service --task_dir tasks --pretrained_dir pretrained --port 5201 
+#github安装方式 启动
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --task_dir tasks --pretrained_dir pretrained --port 5201 
+
 ```
 
 - 同时也可以通过我们已安装的Docker直接运行我们的服务。
 
 ```bash
-#启动docker
+#docker安装方式 启动
 #--mount 注：目录挂载source对应的必须是存在的本地绝对路径
 #-p 本地端口与docker端口映射
 sudo docker run -it --name gts_engine \
