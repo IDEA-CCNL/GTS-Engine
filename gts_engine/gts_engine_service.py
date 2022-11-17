@@ -342,8 +342,8 @@ def main():
     arg_parser = argparse.ArgumentParser()
     
     arg_parser.add_argument('--port', default=5201, type=int)
-    arg_parser.add_argument('--task_dir', default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "tasks"), type=str)
-    arg_parser.add_argument('--pretrained_dir', default=os.path.join(os.path.dirname(os.path.dirname(__file__)), "pretrained"), type=str)
+    arg_parser.add_argument('--task_dir', default=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tasks"), type=str)
+    arg_parser.add_argument('--pretrained_dir', default=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "pretrained"), type=str)
     args = arg_parser.parse_args()
 
     global TASK_DIR

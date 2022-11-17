@@ -46,6 +46,11 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 
 更多环境需求和软件依赖请参考我们的文档。
 
+我们提供以下三种安装方式
+1.[pip安装](#pip安装)
+2.[github安装](#github安装)
+3.[Docker安装](#docker安装)
+
 #### pip安装
 
 您可以通过pip直接进行安装。
@@ -54,7 +59,7 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 pip install gts-engine
 ```
 
-#### 直接安装
+#### github安装
 
 也可以clone下github项目后进行安装。
 
@@ -64,18 +69,13 @@ cd GTS-Engine
 python setup.py install
 ```
 
-#### 使用Docker
+#### Docker安装
 
 我们提供一个打包好GTS-Engine的Docker来运行我们的引擎。
 
 ```bash
-docker run -it --name  gst_engine \
--p 5201:5201 \
---mount type=bind,source=/raid/liuyibo/GTS-Engine/files,target=/workspace/gts_teacher_service/files \
-gts_engine_image:v0  
-
-#运行api.py
-CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
+#下载docker
+sudo docker pull gtsfactory/gts-engine:v1.0
 ```
 
 #### Python SDK
@@ -85,6 +85,10 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 ## 快速开始
 
 我们支持两种方式来使用我们的引擎：通过Web服务的方式和通过命令行调用的方式。更多`快速开始`的详情，请参考我们的[文档](https://gts-engine-doc.readthedocs.io/en/latest/docs/quick_start.html)。
+
+1.[Web服务](#web服务)
+2.[调用命令行](#调用命令行)
+
 
 ### 数据预处理
 
@@ -108,10 +112,10 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 
 - **测试数据**
 
-每行是一个样本，采用json格式，数据字段必须含有`"label"`字段。
+每行是一个样本，采用json格式，数据字段必须含有`"text"`和`"label"`字段。
 
 ```json
-{"text": "上联：草根登上星光道，怎么对下联？"}
+{"text": "姚明要建立中国篮球名人堂，哪些人可以入围？", "label": "体育"}
 ```
 
 - **标签数据**
@@ -135,20 +139,29 @@ GTS引擎通过调用`gts_engint_service`脚本启动一个FastAPI Web服务，�
 ```bash
 mkdir pretrained  #将下载好的模型文件放在pretrained
 mkdir tasks
-CUDA_VISIBLE_DEVICES=0 gts_engine_service --task_dir tasks --pretrained_dir pretrained --port 5201
+#pip安装方式    启动
+CUDA_VISIBLE_DEVICES=0 gts_engine_service --task_dir tasks --pretrained_dir pretrained --port 5201 
+#github安装方式 启动
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --task_dir tasks --pretrained_dir pretrained --port 5201 
+
 ```
 
-- 同时也可以通过我们提供的Docker直接运行我们的服务。
+- 同时也可以通过我们已安装的Docker直接运行我们的服务。
 
 ```bash
-#启动docker
-docker run -it --name  gst_engine \
+#docker安装方式 启动
+#--mount 注：目录挂载source对应的必须是存在的本地绝对路径
+#-p 本地端口与docker端口映射
+sudo docker run -it --name gts_engine \
 -p 5201:5201 \
---mount type=bind,source=/raid/liuyibo/GTS-Engine/files,target=/workspace/gts_teacher_service/files \
-gts_engine_image:v0  
-
-#运行api.py
-CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
+--mount type=bind,source=/usr/tasks,target=/workspace/GTS-Engine/tasks \
+gtsfactory/gts-engine:v1
+#更新代码
+cd GTS-Engine
+git pull
+cd gts_engine
+#启动服务
+CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --port 5201
 ```
 
 #### 开始训练
@@ -158,10 +171,10 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py
 ```python
 from gts_engine_client import GTSEngineClient
 #ip和port参数与启动服务的ip和port一致
-client = GTSEngineClient(ip="192.168.190.2", port="5207")
+client = GTSEngineClient(ip="192.168.190.2", port="5201")
 # 创建任务
 client.create_task(task_name="tnews_classification", task_type="classification")
-# 上传文件
+# 上传文件  注：要上传的文件地址写绝对路径
 client.upload_file(
   task_id="tnews_classification",
   local_data_path="examples/text_classification/tnews_train.json")
