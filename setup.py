@@ -1,10 +1,14 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name="gts_engine",
-    version="0.1.1",
-    description="gts_engine",
-    long_description="git_engine development suite: a powerful NLU training system",
+    version="0.1.2",
+    description="git_engine development suite: a powerful NLU training system",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     license="MIT Licence",
     url="https://github.com/IDEA-CCNL/GTS-Engine",
     author="pankunhao",
@@ -38,5 +42,11 @@ setup(
             'gts_engine_train = gts_engine.gts_engine_train:main',
             'gts_engine_inference = gts_engine.gts_engine_inference:main'
         ]
-    }
+    },
+
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+    ],
 )
