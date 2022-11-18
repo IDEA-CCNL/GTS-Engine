@@ -48,7 +48,7 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 
 更多环境需求和软件依赖请参考我们的[文档](https://gts-engine-doc.readthedocs.io/en/latest/docs/requirement.html)。
 
-我们提供以下三种安装方式：
+我们提供以下三种安装方式，更详尽的`安装`教程，请参考我们的[文档](https://gts-engine-doc.readthedocs.io/en/latest/docs/quick_start.html)
   - [pip安装](#pip安装)
   - [github安装](#github安装)
   - [Docker安装](#docker安装)
@@ -77,7 +77,7 @@ python setup.py install
 
 ```bash
 #下载docker
-sudo docker pull gtsfactory/gts-engine:v1.0
+sudo docker pull gtsfactory/gts-engine:v0
 ```
 
 #### Python SDK
@@ -156,7 +156,7 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --task_dir tasks --pretraine
 sudo docker run -it --name gts_engine \
 -p 5201:5201 \
 --mount type=bind,source=/usr/tasks,target=/workspace/GTS-Engine/tasks \
-gtsfactory/gts-engine:v1
+gtsfactory/gts-engine:v0
 #更新代码
 cd GTS-Engine
 git pull
@@ -285,7 +285,7 @@ GTS-Engine将专注于解决各种自然语言理解任务。乾坤鼎引擎通�
 - [封神框架](https://github.com/IDEA-CCNL/Fengshenbang-LM)
 - [GTS模型自动生产平台](https://gtsfactory.com)
 - [CCNL技术团队知乎账号-封神空间](https://www.zhihu.com/people/feng-shen-kong-jian)
-- 
+
 
 ## 引用
 
