@@ -121,7 +121,12 @@ def classification_pipeline(args):
 
         # evaluation(args, model, data_model, output_save_path, mode='test', data_set="test")
         evaluator = Evaluator(args, model, data_model, output_save_path)
-        evaluator.evaluation(mode='test', data_set="test")
+        test_acc = evaluator.evaluation(mode='test', data_set="test")
+
+        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
+        task_info["test_acc"] = test_acc
+        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
+                json.dump(task_info, f, indent=4)
     
 
 def similarity_pipeline(args):
@@ -158,7 +163,12 @@ def similarity_pipeline(args):
         model.eval() 
 
         evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
-        evaluator.evaluation(mode='test', data_set="test")
+        test_acc = evaluator.evaluation(mode='test', data_set="test")
+
+        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
+        task_info["test_acc"] = test_acc
+        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
+                json.dump(task_info, f, indent=4)
     # return None
 
 def nli_pipeline(args):
@@ -195,7 +205,12 @@ def nli_pipeline(args):
         model.eval() 
 
         evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
-        evaluator.evaluation(mode='test', data_set="test")
+        test_acc = evaluator.evaluation(mode='test', data_set="test")
+
+        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
+        task_info["test_acc"] = test_acc
+        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
+                json.dump(task_info, f, indent=4)
 
 
 def train(args):
@@ -299,6 +314,7 @@ def main():
 
     try:
         train(args)
+        task_info = json.load(open(task_info_path))
         task_info["status"] = "Train Success"
         task_info["status_code"] = 2
         task_info["save_path"] = args.save_path

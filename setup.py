@@ -32,6 +32,7 @@ setup(
         "tqdm==4.62.3",
         "transformers==4.18.0",
         "uvicorn==0.19.0",
+        "python-multipart==0.0.5",
     ],
 
     scripts=[],
