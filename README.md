@@ -268,7 +268,24 @@ optional arguments:
 
 ## 效果展示
 
-GTS-Engine将专注于解决各种自然语言理解任务。乾坤鼎引擎通过一套训练流水线，已经达到了人类算法专家的水准。2022年11月11日，GTS乾坤鼎引擎在中文语言理解权威评测基准FewCLUE榜单上登顶。GTS-Engine系列会持续在各个NLU任务上不断优化，持续集成，带来更好的开箱即用的体验。
+GTS-Engine将专注于解决各种自然语言理解任务。乾坤鼎引擎通过一套训练流水线，已经达到了人类算法专家的水准。2022年11月18日，GTS乾坤鼎引擎在中文语言理解权威评测基准FewCLUE榜单上登顶。GTS-Engine系列会持续在各个NLU任务上不断优化，持续集成，带来更好的开箱即用的体验。
+
+![avatar](pics/gts_fewclue.png)
+
+## GTS大事件
+
+- [IDEA研究院GTSfactory入选信通院首批大模型优秀应用案例](https://mp.weixin.qq.com/s/bYwPsmJsGehCABWs8nC9SQ) 2022.08.30
+- [GTS模型生产平台开放公测，用AI自动化生产AI模型](https://mp.weixin.qq.com/s/AFp22hzElkBmJD_VHW0njQ) 2022.05.23
+
+## 相关链接
+
+- [封神榜官网](https://fengshenbang-lm.com)
+- [封神榜Huggingface](https://huggingface.co/IDEA-CCNL)
+- [封神榜模型体验中心](https://demo.fengshenbang-lm.com)
+- [封神框架](https://github.com/IDEA-CCNL/Fengshenbang-LM)
+- [GTS模型自动生产平台](https://gtsfactory.com)
+- [CCNL技术团队知乎账号-封神空间](https://www.zhihu.com/people/feng-shen-kong-jian)
+- 
 
 ## 引用
 
