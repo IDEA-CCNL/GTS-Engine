@@ -127,6 +127,8 @@ class Evaluator(object):
 
         results, y_true, y_pred = self.inference(test_loader=test_loader,data_set=data_set)
         self.save_to_file(data_set, results, y_true, y_pred)
+        acc = accuracy_score(y_true, y_pred)
+        return acc
 
 class SentencePairEvaluator(Evaluator):
     def inference(self,test_loader,data_set):
