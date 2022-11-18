@@ -96,7 +96,11 @@ def check_task_status(check_task_input: CheckTaskInput):
     task_info = json.load(open(task_info_path))
     status = task_info["status"]
     status_code = task_info["status_code"]
-    return {"ret_code": status_code, "message": status}
+    if status_code == 2:
+        return {"ret_code": status_code, "message": status, "test_acc": task_info["test_acc"]}
+    else:
+        return {"ret_code": status_code, "message": status}
+
 
 
 # ---------------------------------------文件上传---------------------------------------------------
@@ -247,7 +251,7 @@ def stop_train(stop_train_input: StopTrainInput):
     print("train process %d is killed" % task_info["train_pid"])
 
     task_info["status"] = "Train Stopped"
-    task_info["status_code"] = 3
+    task_info["status_code"] = 4
     with open(task_info_path, mode="w") as f:
         json.dump(task_info, f, indent=4)
 
@@ -277,7 +281,7 @@ def start_inference(start_inference_input: StartInferenceInput):
     inference_suite = preprare_inference(task_type, save_path)
 
     task_info["status"] = "On Inference"
-    task_info["statue_code"] = 3
+    task_info["status_code"] = 5
     with open(task_info_path, mode="w") as f:
         json.dump(task_info, f, indent=4)
 
