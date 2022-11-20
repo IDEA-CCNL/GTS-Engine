@@ -28,10 +28,10 @@ GTS-Engine计划开源两个系列的引擎，分别为**乾坤鼎**系列和**�
 
 本次发布的是**乾坤鼎**系列的Beta版本，引擎仍在快速迭代中，更多的功能更新请持续关注我们的Github。
 
-您也可以使用我们的模型自动生产平台[GTSfactory](https://gtsfactory.com)来训练你的AI模型。无需海量数据，无需算法基础，只需要上传几份小样本的数据集，就能走完从构建数据集到模型训练、下载部署的全流程，帮助中小企业和个人开发者大大减少获得AI模型的成本。我们将逐步开源 GTSfactory，让更多的人可以参与到 GTS 训练体系中来，将 IDEA-CCNL 坚持的「用 AI 生产 AI」的理念传播开来。
+您也可以使用我们的**模型自动生产平台**[GTSfactory](https://gtsfactory.com)来训练你的AI模型。无需海量数据，无需算法基础，只需要上传几份小样本的数据集，就能走完从构建数据集到模型训练、下载部署的全流程，帮助中小企业和个人开发者大大减少获得AI模型的成本。我们将逐步开源 GTSfactory，让更多的人可以参与到 GTS 训练体系中来，将 IDEA-CCNL 坚持的「用 AI 生产 AI」的理念传播开来。
 
 <div align="center">
-  <img src=pics/gtsfactory.png width=50% />
+  <img src=pics/gtsfactory.png width=70% />
 </div>
 
 ## 更新日志
@@ -181,8 +181,13 @@ CUDA_VISIBLE_DEVICES=0 python gts_engine_service.py --port 5201
 from gts_engine_client import GTSEngineClient
 #ip和port参数与启动服务的ip和port一致
 client = GTSEngineClient(ip="192.168.190.2", port="5201")
+
 # 创建任务
-client.create_task(task_name="tnews_classification", task_type="classification")
+client.create_task(
+  task_name="tnews_classification",
+  task_type="classification",
+  engine_type="qiankunding")
+
 # 上传文件  注：要上传的文件地址写绝对路径
 client.upload_file(
   task_id="tnews_classification",
@@ -196,6 +201,7 @@ client.upload_file(
 client.upload_file(
   task_id="tnews_classification",
   local_data_path="examples/text_classification/tnews_label.json")
+
 # 开始训练
 client.start_train(
   task_id="tnews_classification",
@@ -232,6 +238,7 @@ client.inference(
 ```bash
 usage: gts_engine_train.py [-h]
                           --task_dir TASK_DIR
+                          --engine_type ENGINE_TYPE
                           --task_type TASK_TYPE
                           [--num_workers NUM_WORKERS]
                           [--train_batchsize TRAIN_BATCHSIZE]
@@ -250,17 +257,19 @@ usage: gts_engine_train.py [-h]
                           [--min_epochs MIN_EPOCHS]
 ```
 
-您可以通过`-h`查看详细的参数说明，也可以通过`examples/text_classification/run_train.sh`直接运行训练示例。
+您可以通过`-h`查看详细的参数说明，也可以通过`examples/text_classification/run_train_qiankunding.sh`直接运行训练示例。
 
 #### 开始推理
 
 ```bash
-usage: gts_engine_inference.py [-h] --task_dir TASK_DIR --task_type TASK_TYPE --input_path INPUT_PATH --output_path OUTPUT_PATH
+usage: gts_engine_inference.py [-h] --task_dir TASK_DIR --engine_type {qiankunding,bagualu} --task_type {classification,similarity,nli} --input_path INPUT_PATH --output_path OUTPUT_PATH
 
 optional arguments:
   -h, --help            show this help message and exit
   --task_dir TASK_DIR   specific task directory
-  --task_type TASK_TYPE
+  --engine_type {qiankunding,bagualu}
+                        engine type
+  --task_type {classification,similarity,nli}
                         task type for training
   --input_path INPUT_PATH
                         input path of data which will be inferenced
@@ -268,7 +277,7 @@ optional arguments:
                         output path of inferenced data
 ```
 
-您可以通过`examples/text_classification/run_inference.sh`直接运行推理示例。
+您可以通过`examples/text_classification/run_inference_qiankunding.sh`直接运行推理示例。
 
 ## API文档
 
