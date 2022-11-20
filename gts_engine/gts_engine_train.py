@@ -10,208 +10,28 @@ import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM
 
-from qiankunding_core.utils.evaluation import evaluation,Evaluator,SentencePairEvaluator
-from qiankunding_core.utils.tokenization import get_train_tokenizer
-
-from qiankunding_core.utils import knn_utils
-
 from pytorch_lightning import Trainer, seed_everything, loggers
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # 如果没有安装gts_engine，请把GTS-Engine/gts-engine加入到系统环境变量
 sys.path.append(os.path.dirname(__file__))
 
-from qiankunding_core.utils.evaluation import evaluation
-from qiankunding_core.utils.tokenization import get_train_tokenizer
-from qiankunding_core.utils import knn_utils
-from qiankunding_core.dataloaders.text_classification.dataloader_UnifiedMC import TaskDataModelUnifiedMC
-from qiankunding_core.models.text_classification.bert_UnifiedMC import BertUnifiedMC
+from pipelines import *
+from qiankunding.utils.tokenization import get_train_tokenizer
+from qiankunding.utils import knn_utils
 
-from qiankunding_core.dataloaders.similarity.dataloader_UnifiedMC import TaskDataModelUnifiedMCForMatch
-from qiankunding_core.models.similarity.bert_UnifiedMC import BertUnifiedMCForMatch
+from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
+from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
 
-from qiankunding_core.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
-from qiankunding_core.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
+from gts_common.registry import PIPELINE_REGISTRY
 
 # 设置gpu相关的全局变量
-import qiankunding_core.utils.globalvar as globalvar
+import qiankunding.utils.globalvar as globalvar
 globalvar._init()
-from qiankunding_core.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+from qiankunding.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
 globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
 globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
-
-def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
-    if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
-        print("model already exists.")
-        return
-    cache_path = os.path.join(pretrained_model_dir, "cache")
-    model = model_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
-    tokenizer = tokenizer_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
-    model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
-    tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
-    shutil.rmtree(cache_path)
-    print("model %s is downloaded from huggingface." % model_name)
-
-def generate_common_trainer(args, save_path):
-    # Prepare Trainer
-    checkpoint = ModelCheckpoint(dirpath=save_path,
-                                    save_top_k=1,
-                                    save_last=False,
-                                    monitor='valid_acc_epoch',
-                                    mode='max',
-                                    filename='best_model')
-
-    checkpoint.CHECKPOINT_NAME_LAST = "{epoch}-last"
-    early_stop = EarlyStopping(monitor='valid_acc_epoch',
-                                mode='max',
-                                patience=10
-                                ) 
-
-    logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
-    trainer = Trainer.from_argparse_args(args, 
-                                            logger=logger,
-                                            callbacks=[checkpoint, early_stop])
-    return trainer, checkpoint
-
-def classification_pipeline(args):
-    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
-    # download pretrained model if not exists
-    download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
-    # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, model_name)
-    # set knn datastore
-    args.knn_datastore_data = args.train_data
-    # init tokenizer
-    tokenizer = get_train_tokenizer(args=args)            
-    tokenizer.save_pretrained(args.save_path)
-    # init label
-    shutil.copyfile(os.path.join(args.data_dir, args.label_data), os.path.join(args.save_path, "label.json"))
-    # init model
-    data_model = TaskDataModelUnifiedMC(args, tokenizer)
-    #加载模型
-    model = BertUnifiedMC(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args, args.save_path)
-    # training
-    trainer.fit(model, data_model)
-    #验证集效果最好的模型文件地址
-    checkpoint_path = checkpoint.best_model_path
-
-    # knn lm
-    model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-    model.cuda()
-    model.eval()
-    knn_best_hyper, knn_datastores = knn_utils.knn_augmentation(model, data_model, args.save_path)
-    with open(os.path.join(args.save_path, "knn_best_hyper.json"), mode="w") as f:
-        json.dump(knn_best_hyper, f, indent=4)
-    with open(os.path.join(args.save_path, "knn_datastores.pkl"), mode="wb") as f:
-        pickle.dump(knn_datastores, f)
-
-    if args.test_data:
-        output_save_path = os.path.join(args.save_path, 'predictions/')
-        if not os.path.exists(output_save_path):
-            os.makedirs(output_save_path)
-
-        # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-        model.cuda()
-        model.eval() 
-
-        # evaluation(args, model, data_model, output_save_path, mode='test', data_set="test")
-        evaluator = Evaluator(args, model, data_model, output_save_path)
-        test_acc = evaluator.evaluation(mode='test', data_set="test")
-
-        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
-        task_info["test_acc"] = test_acc
-        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
-                json.dump(task_info, f, indent=4)
-    
-
-def similarity_pipeline(args):
-    """ write a traininig pipeline and return the checkpoint path of the best model """
-    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
-    # download pretrained model if not exists
-    download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
-    # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, model_name)
-    # init tokenizer
-    tokenizer = get_train_tokenizer(args=args)            
-    tokenizer.save_pretrained(args.save_path)
-    # init label
-    # shutil.copyfile(os.path.join(args.data_dir, args.label_data), os.path.join(args.save_path, "label.json"))
-    # init model
-    data_model = TaskDataModelUnifiedMCForMatch(args, tokenizer)
-    #加载模型
-    model = BertUnifiedMCForMatch(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args, args.save_path)
-    # training
-    trainer.fit(model, data_model)
-    #验证集效果最好的模型文件地址
-    checkpoint_path = checkpoint.best_model_path
-    
-    if args.test_data:
-        output_save_path = os.path.join(args.save_path, 'predictions/')
-        if not os.path.exists(output_save_path):
-            os.makedirs(output_save_path)
-
-        # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMCForMatch.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-        model.cuda()
-        model.eval() 
-
-        evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
-        test_acc = evaluator.evaluation(mode='test', data_set="test")
-
-        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
-        task_info["test_acc"] = test_acc
-        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
-                json.dump(task_info, f, indent=4)
-    # return None
-
-def nli_pipeline(args):
-    """ write a traininig pipeline and return the checkpoint path of the best model """
-    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
-    # download pretrained model if not exists
-    download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
-    # Set path to load pretrained model
-    args.pretrained_model = os.path.join(args.pretrained_model_dir, model_name)
-    # init tokenizer
-    tokenizer = get_train_tokenizer(args=args)            
-    tokenizer.save_pretrained(args.save_path)
-    # init label
-    # shutil.copyfile(os.path.join(args.data_dir, args.label_data), os.path.join(args.save_path, "label.json"))
-    # init model
-    data_model = TaskDataModelUnifiedMCForNLI(args, tokenizer)
-    #加载模型
-    model = BertUnifiedMCForNLI(args, tokenizer)
-    trainer, checkpoint = generate_common_trainer(args, args.save_path)
-    # training
-    trainer.fit(model, data_model)
-    #验证集效果最好的模型文件地址
-    checkpoint_path = checkpoint.best_model_path
-    
-    if args.test_data:
-        output_save_path = os.path.join(args.save_path, 'predictions/')
-        if not os.path.exists(output_save_path):
-            os.makedirs(output_save_path)
-
-        # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMCForNLI.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-        model.cuda()
-        model.eval() 
-
-        evaluator = SentencePairEvaluator(args, model, data_model, output_save_path)
-        test_acc = evaluator.evaluation(mode='test', data_set="test")
-
-        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
-        task_info["test_acc"] = test_acc
-        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
-                json.dump(task_info, f, indent=4)
-
 
 def train(args):
     # Set global random seed
@@ -223,7 +43,6 @@ def train(args):
         os.makedirs(save_path)
     args.output_dir = save_path
 
-
     # Save args
     with open(os.path.join(save_path, 'args.json'), 'w') as f:
         json.dump(vars(args), f, indent=4)
@@ -233,19 +52,18 @@ def train(args):
         print(k, ":", v, end=',\t')
     print('\n' + '-' * 64)
 
-    if args.task_type == "classification":
-        classification_pipeline(args)
-    elif args.task_type == "similarity":
-        similarity_pipeline(args)
-    elif args.task_type == "nli":
-        nli_pipeline(args)
+    train_pipeline_module = "pipelines." + args.engine_type + "_" + args.task_type
+    train_pipeline = PIPELINE_REGISTRY.get(name="train_pipeline", suffix=train_pipeline_module)
+    train_pipeline(args)
 
 def main():
     total_parser = argparse.ArgumentParser()
 
+    total_parser.add_argument("--engine_type", required=True, choices=["qiankunding", "bagualu"],
+                            type=str, help="engine type")
     total_parser.add_argument("--task_dir", required=True, 
                             type=str, help="specific task directory")
-    total_parser.add_argument("--task_type", required=True,
+    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli"],
                             type=str, help="task type for training")
     total_parser.add_argument('--num_workers', default=8,
                             type=int, help="number of workers for data preprocessing.")
