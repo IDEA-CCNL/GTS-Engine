@@ -154,7 +154,8 @@ class TrainInput(BaseModel):
     max_num_epoch: int = 1 # 最大训练轮次
     min_num_epoch: int = 1 # 最小训练轮次
     seed: int = 42 # 随机种子
-    gpuid: int = 0
+    gpuid: int = 0 # 使用的GPU卡序号
+    train_mode: str = "standard"
     
         
 @app.post('/api/train')
@@ -201,6 +202,7 @@ def start_train(train_input: TrainInput):
     args = [
         "--task_dir=%s" % specific_task_dir,
         "--engine_type=%s" % task_info["engine_type"],
+        "--train_mode=%s" % train_input.train_mode,
         "--task_type=%s" % task_info["task_type"],
         "--train_data=%s" % train_input.train_data,
         "--valid_data=%s" % train_input.val_data,
