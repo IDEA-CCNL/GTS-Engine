@@ -8,18 +8,19 @@ mkdir -p $WORK_DIR/tasks
 mkdir -p $WORK_DIR/pretrained
 
 PRETRAINED_DIR=$WORK_DIR/pretrained
-TASK_DIR=$WORK_DIR/tasks/text_classification_example
+TASK_DIR=$WORK_DIR/tasks/nli_example
 mkdir -p $TASK_DIR
 
-export CUDA_VISIBLE_DEVICES=7 
+export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_train.py \
     --task_dir=$TASK_DIR \
-    --task_type=classification \
-    --train_data=tnews_train.json \
-    --valid_data=tnews_val.json \
-    --test_data=tnews_test.json \
-    --label_data=tnews_label.json \
-    --data_dir=$WORK_DIR/examples/text_classification \
+    --train_mode=standard \
+    --engine_type=qiankunding \
+    --task_type=nli \
+    --train_data=train.json \
+    --valid_data=dev.json \
+    --test_data=test.json \
+    --data_dir=$WORK_DIR/examples/nli \
     --save_path=$TASK_DIR/outputs \
     --pretrained_model_dir=$PRETRAINED_DIR \
     --train_batchsize=2 \

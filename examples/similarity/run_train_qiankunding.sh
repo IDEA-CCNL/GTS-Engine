@@ -8,17 +8,19 @@ mkdir -p $WORK_DIR/tasks
 mkdir -p $WORK_DIR/pretrained
 
 PRETRAINED_DIR=$WORK_DIR/pretrained
-TASK_DIR=$WORK_DIR/tasks/nli_example
+TASK_DIR=$WORK_DIR/tasks/similarity_example
 mkdir -p $TASK_DIR
 
 export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_train.py \
     --task_dir=$TASK_DIR \
-    --task_type=nli \
+    --train_mode=standard \
+    --engine_type=qiankunding \
+    --task_type=similarity \
     --train_data=train.json \
     --valid_data=dev.json \
     --test_data=test.json \
-    --data_dir=$WORK_DIR/examples/nli \
+    --data_dir=$WORK_DIR/examples/similarity \
     --save_path=$TASK_DIR/outputs \
     --pretrained_model_dir=$PRETRAINED_DIR \
     --train_batchsize=2 \

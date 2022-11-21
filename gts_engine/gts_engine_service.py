@@ -44,12 +44,14 @@ async def index(request: Request):
 # ---------------------------------------创建任务---------------------------------------------------
 class CreateTaskInput(BaseModel):
     task_name: str = "" # 任务名称
+    engine_type: str = "" # 引擎类型
     task_type: str = "" # 任务类型
 
 @app.post('/api/create_task/')
 def create_task(create_task_input: CreateTaskInput):
     task_name = create_task_input.task_name
     task_type = create_task_input.task_type
+    engine_type = create_task_input.engine_type
     if not task_name:
         task_name = task_type + "_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     task_id = task_name # 任务名称等于任务id
@@ -63,7 +65,8 @@ def create_task(create_task_input: CreateTaskInput):
             "status": "Initialized",
             "status_code": 0,
             "task_type": task_type,
-            "task_name": task_name
+            "task_name": task_name,
+            "engine_type": engine_type,
         }
         specific_task_dir = os.path.join(TASK_DIR, task_id)
         if not os.path.exists(specific_task_dir):
@@ -151,7 +154,8 @@ class TrainInput(BaseModel):
     max_num_epoch: int = 1 # 最大训练轮次
     min_num_epoch: int = 1 # 最小训练轮次
     seed: int = 42 # 随机种子
-    gpuid: int = 0
+    gpuid: int = 0 # 使用的GPU卡序号
+    train_mode: str = "standard"
     
         
 @app.post('/api/train')
@@ -197,6 +201,8 @@ def start_train(train_input: TrainInput):
     print('start training...')
     args = [
         "--task_dir=%s" % specific_task_dir,
+        "--engine_type=%s" % task_info["engine_type"],
+        "--train_mode=%s" % train_input.train_mode,
         "--task_type=%s" % task_info["task_type"],
         "--train_data=%s" % train_input.train_data,
         "--valid_data=%s" % train_input.val_data,
@@ -271,14 +277,15 @@ def start_inference(start_inference_input: StartInferenceInput):
     specific_task_dir = os.path.join(TASK_DIR, task_id)
     task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if os.path.exists(task_info_path):
-        task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
+        task_info = json.load(open(task_info_path, 'r', encoding='utf-8'))
     else:
-        return {"ret_code":-100, "message": "task_id not exits"}
+        return {"ret_code": -100, "message": "task_id not exits"}
 
     save_path = task_info['save_path']
     task_type = task_info["task_type"]
+    engine_type = task_info["engine_type"]
 
-    inference_suite = preprare_inference(task_type, save_path)
+    inference_suite = preprare_inference(engine_type, task_type, save_path)
 
     task_info["status"] = "On Inference"
     task_info["status_code"] = 5
@@ -302,10 +309,11 @@ def predict(inputs: PredictInput):
     if os.path.exists(task_info_path):
         task_info = json.load(open(task_info_path,'r', encoding='utf-8'))
     else:
-        return {"ret_code":-100, "message": "task_id not exits"}
+        return {"ret_code": -100, "message": "task_id not exits"}
     
     task_type = task_info["task_type"]
-    
+    engine_type = task_info["engine_type"]
+
     for sentence in sentences:
         if not isinstance(sentence, dict):
             return {"ret_code": -101, "message": "每条样本必须是字典形式"}
@@ -313,7 +321,7 @@ def predict(inputs: PredictInput):
             if "content" not in sentence:
                 return {"ret_code": -101, "message": "每条样本里必须包含content字段"}
 
-    result = inference_samples(task_type, sentences, inference_suite)
+    result = inference_samples(engine_type, task_type, sentences, inference_suite)
 
     return {'ret_code':200, "result": result, "message": "预测成功"}
 
