@@ -15,6 +15,8 @@ from qiankunding.utils.tokenization import get_train_tokenizer
 from qiankunding.utils import knn_utils
 from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC, TaskDataModelUnifiedMC, unifiedmc_collate_fn
 from qiankunding.models.text_classification.bert_UnifiedMC import BertUnifiedMC
+from qiankunding.dataloaders.text_classification.dataloader_tcbert import TaskDataModelTcBert
+from qiankunding.models.text_classification.tcbert import TcBert
 from qiankunding.utils.evaluation import Evaluator
 from qiankunding.utils.knn_utils import knn_inference
 
@@ -33,9 +35,15 @@ def train_pipeline(args):
     # init label
     shutil.copyfile(os.path.join(args.data_dir, args.label_data), os.path.join(args.save_path, "label.json"))
     # init model
-    data_model = TaskDataModelUnifiedMC(args, tokenizer)
+    if args.train_mode == "standard":
+        data_model = TaskDataModelUnifiedMC(args, tokenizer)
+    elif args.train_mode == "advanced":
+        data_model = TaskDataModelTcBert(args, tokenizer)
     #加载模型
-    model = BertUnifiedMC(args, tokenizer)
+    if args.train_mode == "standard":
+        model = BertUnifiedMC(args, tokenizer)
+    elif args.train_mode == "advanced":
+        model = TcBert(args, tokenizer)
     trainer, checkpoint = generate_common_trainer(args, args.save_path)
     # training
     trainer.fit(model, data_model)
@@ -43,34 +51,46 @@ def train_pipeline(args):
     checkpoint_path = checkpoint.best_model_path
 
     # knn lm
-    model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-    model.cuda()
-    model.eval()
-    knn_best_hyper, knn_datastores = knn_utils.knn_augmentation(model, data_model, args.save_path)
-    with open(os.path.join(args.save_path, "knn_best_hyper.json"), mode="w") as f:
-        json.dump(knn_best_hyper, f, indent=4)
-    with open(os.path.join(args.save_path, "knn_datastores.pkl"), mode="wb") as f:
-        pickle.dump(knn_datastores, f)
+    if args.train_mode == "standard":
+        model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+        model.cuda()
+        model.eval()
+        knn_best_hyper, knn_datastores = knn_utils.knn_augmentation(model, data_model, args.save_path)
+        with open(os.path.join(args.save_path, "knn_best_hyper.json"), mode="w") as f:
+            json.dump(knn_best_hyper, f, indent=4)
+        with open(os.path.join(args.save_path, "knn_datastores.pkl"), mode="wb") as f:
+            pickle.dump(knn_datastores, f)
 
-    if args.test_data:
+        if args.test_data:
+            output_save_path = os.path.join(args.save_path, 'predictions/')
+            if not os.path.exists(output_save_path):
+                os.makedirs(output_save_path)
+
+            # Evaluation
+            print("Load checkpoint from {}".format(checkpoint_path))
+            model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+            model.cuda()
+            model.eval() 
+
+            # evaluation(args, model, data_model, output_save_path, mode='test', data_set="test")
+            evaluator = Evaluator(args, model, data_model, output_save_path)
+            test_acc = evaluator.evaluation(mode='test', data_set="test")
+
+            task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
+            task_info["test_acc"] = test_acc
+            with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
+                    json.dump(task_info, f, indent=4)
+
+    elif args.train_mode == "advanced":
+        print("Load checkpoint from {}".format(checkpoint_path))
+        model = TcBert.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+        model.cuda()
+        model.eval()
         output_save_path = os.path.join(args.save_path, 'predictions/')
         if not os.path.exists(output_save_path):
             os.makedirs(output_save_path)
-
-        # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
-        model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
-        model.cuda()
-        model.eval() 
-
-        # evaluation(args, model, data_model, output_save_path, mode='test', data_set="test")
         evaluator = Evaluator(args, model, data_model, output_save_path)
-        test_acc = evaluator.evaluation(mode='test', data_set="test")
-
-        task_info = json.load(open(os.path.join(args.task_dir, "task_info.json")))
-        task_info["test_acc"] = test_acc
-        with open(os.path.join(args.task_dir, "task_info.json"), mode="w") as f:
-                json.dump(task_info, f, indent=4)
+        test_acc = evaluator.evaluation(mode='test', data_set="unlabeled", threshold=args.threshold)
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def prepare_inference(save_path):

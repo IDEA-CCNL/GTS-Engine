@@ -150,12 +150,13 @@ class TrainInput(BaseModel):
     val_data: str = "" # 验证集名称 
     test_data: str = "" # 测试集名称
     label_data: str = "" # 标签数据名称
+    unlabeled_data: str = "" # 无标签数据
     max_len: int = 512 # 文本最大长度
-    max_num_epoch: int = 1 # 最大训练轮次
-    min_num_epoch: int = 1 # 最小训练轮次
+    max_num_epoch: int = 3 # 最大训练轮次
+    min_num_epoch: int = 3 # 最小训练轮次
     seed: int = 42 # 随机种子
     gpuid: int = 0 # 使用的GPU卡序号
-    train_mode: str = "standard"
+    train_mode: str = "standard" # 训练模式
     
         
 @app.post('/api/train')
@@ -163,6 +164,12 @@ def start_train(train_input: TrainInput):
     task_id = train_input.task_id
     if not service_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "任务id不存在"}
+
+    if train_input.train_mode == "advanced":
+        if  train_input.unlabeled_data is None or not train_input.unlabeled_data:
+            return {"ret_code": -101, "message": "高级模式需提供无标签数据"}
+        if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.unlabeled_data), "unlabeled"):
+            return {"ret_code": -101, "message":"无标签数据不存在或者数据格式不合法"}
 
     specific_task_dir = os.path.join(TASK_DIR, task_id)
     task_data_dir = os.path.join(specific_task_dir, "data")
@@ -196,7 +203,7 @@ def start_train(train_input: TrainInput):
 
     train_batch_size = 1
     val_batch_size = 4
-    val_check_interval = 0.25
+    val_check_interval = 0.5
 
     print('start training...')
     args = [
@@ -208,6 +215,7 @@ def start_train(train_input: TrainInput):
         "--valid_data=%s" % train_input.val_data,
         "--test_data=%s" % train_input.test_data,
         "--label_data=%s" % train_input.label_data,
+        "--unlabeled_data=%s" % train_input.unlabeled_data,
         "--pretrained_model_dir=%s" % PRETRAINED_DIR,
         "--data_dir=%s" % task_data_dir,
         "--save_path=%s" % task_output_dir,

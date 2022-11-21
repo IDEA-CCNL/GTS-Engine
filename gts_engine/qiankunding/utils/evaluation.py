@@ -85,7 +85,7 @@ class Evaluator(object):
 
         print("Evaluation file saved at {}".format(self.save_path))
 
-    def inference(self,test_loader,data_set):
+    def inference(self, test_loader, data_set, threshold):
         results = []
         y_true = []
         y_pred = []
@@ -103,16 +103,19 @@ class Evaluator(object):
                 
                 pred = {
                 # "id": int(batch["id"][idx]),
-                'text': batch['sentence'][idx],
+                'content': batch['sentence'][idx],
                 'label': self.label_classes_reverse[predict],
                 # 'content': batch['sentence'][idx],
                 "probs": prob.tolist(),
             }
-
-                results.append(pred)
+                if data_set=="unlabeled":
+                    if max(prob.tolist()) > threshold:
+                        results.append(pred)
+                else:
+                    results.append(pred)
         return results, y_true, y_pred
 
-    def evaluation(self, mode, data_set):
+    def evaluation(self, mode, data_set, threshold=0):
         self.data_model.setup(mode)
         tokenizer = self.data_model.tokenizer
         
@@ -125,9 +128,11 @@ class Evaluator(object):
         elif data_set=="train":
             test_loader = self.data_model.train_dataloader()
 
-        results, y_true, y_pred = self.inference(test_loader=test_loader,data_set=data_set)
+        results, y_true, y_pred = self.inference(test_loader=test_loader,data_set=data_set, threshold=threshold)
         self.save_to_file(data_set, results, y_true, y_pred)
-        acc = accuracy_score(y_true, y_pred)
+        acc = None
+        if len(y_true) > 0:
+            acc = accuracy_score(y_true, y_pred)
         return acc
 
 class SentencePairEvaluator(Evaluator):

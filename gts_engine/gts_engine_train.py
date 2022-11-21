@@ -23,6 +23,7 @@ from qiankunding.utils import knn_utils
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
 
+from qiankunding.utils.utils import json2list, list2json
 from gts_common.registry import PIPELINE_REGISTRY
 
 # 设置gpu相关的全局变量
@@ -54,6 +55,16 @@ def train(args):
 
     train_pipeline_module = "pipelines." + args.engine_type + "_" + args.task_type
     train_pipeline = PIPELINE_REGISTRY.get(name="train_pipeline", suffix=train_pipeline_module)
+    if args.train_mode == "advanced":
+        train_pipeline(args)
+        # shutil.rmtree(os.path.join(args.save_path, "best_model.ckpt"))
+        os.remove(os.path.join(args.save_path, "best_model.ckpt"))
+        pseudo_data = json2list(os.path.join(save_path, 'predictions','unlabeled_set_predictions.json'))
+        train_data = json2list(os.path.join(args.data_dir, args.train_data))
+        train_add_pseudo = train_data + pseudo_data
+        list2json(train_add_pseudo, os.path.join(args.data_dir, "train_add_pseudo.json"))
+        args.train_data = "train_add_pseudo.json"
+        args.train_mode = "standard"
     train_pipeline(args)
 
 def main():
@@ -90,15 +101,20 @@ def main():
                             type=str, help="filename of test dataset")      
     total_parser.add_argument('--label_data', default='labels.json',
                             type=str, help="filename of label data")
-    # total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
+    total_parser.add_argument('--unlabeled_data', default='test.json', 
+                            type=str, help="filename of unlabeled data")   #unlabeled.json
     total_parser.add_argument('--save_path', default='output',
                             type=str, help="save path for trained model and other logs")
+    total_parser.add_argument('--threshold', default=0.8,
+                            type=float, help="pseudo threshold")
 
     # * Args for general setting
     total_parser.add_argument('--seed', default=1234,
                             type=int, help="random seed for training")
     total_parser.add_argument('--lr', default=2e-5,
                             type=float, help="learning rate")
+
+
 
     total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
@@ -110,7 +126,6 @@ def main():
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
     args.val_check_interval = 0.25 
-
 
     print('args', args)
     torch.set_num_threads(8)
