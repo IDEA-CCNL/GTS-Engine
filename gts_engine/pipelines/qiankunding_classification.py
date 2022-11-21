@@ -15,13 +15,13 @@ from qiankunding.utils.tokenization import get_train_tokenizer
 from qiankunding.utils import knn_utils
 from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC, TaskDataModelUnifiedMC, unifiedmc_collate_fn
 from qiankunding.models.text_classification.bert_UnifiedMC import BertUnifiedMC
-from qiankunding.dataloaders.text_classification.dataloader_tcbert import TaskDataModelTcBert
-from qiankunding.models.text_classification.tcbert import TcBert
+from qiankunding.dataloaders.text_classification.dataloader_tcbert import TaskDataModelTCBert
+from qiankunding.models.text_classification.tcbert import TCBert
 from qiankunding.utils.evaluation import Evaluator
 from qiankunding.utils.knn_utils import knn_inference
+from qiankunding.utils.utils import json2list, list2json
 
-@PIPELINE_REGISTRY.register(suffix=__name__)
-def train_pipeline(args):
+def train_classification(args):
     model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
     # download pretrained model if not exists
     download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
@@ -38,12 +38,12 @@ def train_pipeline(args):
     if args.train_mode == "standard":
         data_model = TaskDataModelUnifiedMC(args, tokenizer)
     elif args.train_mode == "advanced":
-        data_model = TaskDataModelTcBert(args, tokenizer)
+        data_model = TaskDataModelTCBert(args, tokenizer)
     #加载模型
     if args.train_mode == "standard":
         model = BertUnifiedMC(args, tokenizer)
     elif args.train_mode == "advanced":
-        model = TcBert(args, tokenizer)
+        model = TCBert(args, tokenizer)
     trainer, checkpoint = generate_common_trainer(args, args.save_path)
     # training
     trainer.fit(model, data_model)
@@ -83,7 +83,7 @@ def train_pipeline(args):
 
     elif args.train_mode == "advanced":
         print("Load checkpoint from {}".format(checkpoint_path))
-        model = TcBert.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
+        model = TCBert.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval()
         output_save_path = os.path.join(args.save_path, 'predictions/')
@@ -91,6 +91,24 @@ def train_pipeline(args):
             os.makedirs(output_save_path)
         evaluator = Evaluator(args, model, data_model, output_save_path)
         test_acc = evaluator.evaluation(mode='test', data_set="unlabeled", threshold=args.threshold)
+
+
+@PIPELINE_REGISTRY.register(suffix=__name__)
+def train_pipeline(args):
+    if args.train_mode == "advanced":
+        print("******start advanced train******")
+        train_classification(args)
+        # shutil.rmtree(os.path.join(args.save_path, "best_model.ckpt"))
+        os.remove(os.path.join(args.save_path, "best_model.ckpt"))
+        pseudo_data = json2list(os.path.join(args.save_path, 'predictions','unlabeled_set_predictions.json'), use_key=["content", "label"])
+        train_data = json2list(os.path.join(args.data_dir, args.train_data), use_key=["content", "label"])
+        train_add_pseudo = train_data + pseudo_data
+        list2json(train_add_pseudo, os.path.join(args.data_dir, "train_add_pseudo.json"), use_key=["content", "label"] )
+        args.train_data = "train_add_pseudo.json"
+        args.train_mode = "standard"
+    print("******start standard train******")
+    train_classification(args)
+
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def prepare_inference(save_path):

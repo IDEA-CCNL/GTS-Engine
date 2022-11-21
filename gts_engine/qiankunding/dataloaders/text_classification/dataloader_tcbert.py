@@ -84,7 +84,7 @@ class TaskDatasetTcBert(Dataset):
         return encoded
 
 
-class TaskDataModelTcBert(pl.LightningDataModule):
+class TaskDataModelTCBert(pl.LightningDataModule):
     @staticmethod
     def add_data_specific_args(parent_args):
         parser = parent_args.add_argument_group('TASK NAME DataModel')
@@ -95,11 +95,8 @@ class TaskDataModelTcBert(pl.LightningDataModule):
         parser.add_argument('--train_batchsize', default=16, type=int)
         parser.add_argument('--valid_batchsize', default=32, type=int)
         parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)
-        parser.add_argument('--knn_datastore_data', default='train.json', type=str)
         parser.add_argument('--max_len', default=128, type=int)
 
-        parser.add_argument('--texta_name', default='text', type=str)
-        parser.add_argument('--textb_name', default='sentence2', type=str)
         parser.add_argument('--content_key', default="content",help="content key in json file")
         parser.add_argument('--label_key', default="label",help="label key in json file")
 
@@ -120,16 +117,10 @@ class TaskDataModelTcBert(pl.LightningDataModule):
         self.train_data = TaskDatasetTcBert(os.path.join(
             args.data_dir, args.train_data), args,  tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)
         self.valid_data = TaskDatasetTcBert(os.path.join(
-            args.data_dir, args.valid_data), args, tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)
-        self.test_data = TaskDatasetTcBert(os.path.join(
-            args.data_dir, args.test_data), args,  tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)
-        # print("len(valid_data:",len(self.valid_data))
-        self.knn_datastore_data = TaskDatasetTcBert(os.path.join(
-            args.data_dir, args.train_data), args, tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)
-        print("len(valid_data:",len(self.valid_data))
-        if args.unlabeled_data:
-            self.unlabeled_data = TaskDatasetTcBert(os.path.join(
-                args.data_dir, args.unlabeled_data), args, tokenizer=tokenizer, unlabeled=True, label_classes=self.label_classes)
+            args.data_dir, args.valid_data), args, tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)     
+        self.unlabeled_data = TaskDatasetTcBert(os.path.join(
+            args.data_dir, args.unlabeled_data), args, tokenizer=tokenizer, unlabeled=True, label_classes=self.label_classes)
+        print("unlabeled_data_len:",len(self.unlabeled_data))
 
     def train_dataloader(self):
         return DataLoader(self.train_data, shuffle=True, collate_fn=tcbert_collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
@@ -137,14 +128,8 @@ class TaskDataModelTcBert(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(self.valid_data, shuffle=False, collate_fn=tcbert_collate_fn, batch_size=self.valid_batchsize, pin_memory=False, num_workers=self.num_workers)
 
-    def test_dataloader(self):
-        return DataLoader(self.test_data, shuffle=False, collate_fn=tcbert_collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
-
     def unlabeled_dataloader(self):
         return DataLoader(self.unlabeled_data, shuffle=False, collate_fn=tcbert_collate_fn, batch_size=self.test_batchsize, pin_memory=False, num_workers=self.num_workers)
-    
-    def knn_datastore_dataloader(self):
-        return DataLoader(self.knn_datastore_data, shuffle=False, collate_fn=tcbert_collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
 
     def get_label_classes(self,file_path=None):
         

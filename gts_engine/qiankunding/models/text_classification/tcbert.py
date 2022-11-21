@@ -40,15 +40,12 @@ class taskModel(nn.Module):
             self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
         self.bert_encoder.resize_token_embeddings(new_num_tokens=len(tokenizer))
-
-        # self.cls_layer = nn.Linear(self.config.hidden_size, 1)
         
         self.loss_func = torch.nn.CrossEntropyLoss(reduction='mean')
 
-        # self.linearClsfier = nn.Linear(self.config.hidden_size, self.nlabels)
         self.dropout = nn.Dropout(0.1)
         self.nlabels = nlabels
-        self.linearClsfier = nn.Linear(config.hidden_size, self.nlabels)
+        self.linear_classifier = nn.Linear(config.hidden_size, self.nlabels)
 
     def forward(self, input_ids, attention_mask, token_type_ids,position_ids=None, mlmlabels=None, clslabels=None, clslabels_mask=None, mlmlabels_mask=None):
 
@@ -66,13 +63,13 @@ class taskModel(nn.Module):
         cls_logits = hidden_states[:,0]
         cls_logits = self.dropout(cls_logits)
 
-        logits =  self.linearClsfier(cls_logits)
+        logits = self.linear_classifier(cls_logits)
 
         # print('logits', logits, logits.size())
         return outputs.loss, logits, mlm_logits, hidden_states
 
 
-class TcBert(BaseModel):
+class TCBert(BaseModel):
 
     def __init__(self, args, tokenizer) -> None:
         super().__init__(args, tokenizer)
