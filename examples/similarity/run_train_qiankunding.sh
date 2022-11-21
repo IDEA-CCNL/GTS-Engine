@@ -14,6 +14,7 @@ mkdir -p $TASK_DIR
 export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_train.py \
     --task_dir=$TASK_DIR \
+    --train_mode=standard \
     --engine_type=qiankunding \
     --task_type=similarity \
     --train_data=train.json \

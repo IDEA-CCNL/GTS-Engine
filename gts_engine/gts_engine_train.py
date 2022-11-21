@@ -61,6 +61,8 @@ def main():
 
     total_parser.add_argument("--engine_type", required=True, choices=["qiankunding", "bagualu"],
                             type=str, help="engine type")
+    total_parser.add_argument("--train_mode", required=True, choices=["fast", "standard", "advanced"],
+                            type=str, help="training mode")
     total_parser.add_argument("--task_dir", required=True, 
                             type=str, help="specific task directory")
     total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli"],
