@@ -318,6 +318,17 @@ optional arguments:
 }
 ```
 
+## 联系我们
+
+IDEA研究院CCNL技术团队已创建封神榜+GTS开源讨论群，我们将在讨论群中不定期更新发布GTS新特性、封神榜新模型与系列技术文章。请扫描下面二维码或者微信搜索“fengshenbang-lm”，添加封神空间小助手进群交流！
+
+![avartar](pics/wechat_qrcode.png)
+
+我们也在持续招人，欢迎投递简历！
+
+![avartar](pics/contactus.png)
+
+
 ## 开源协议
 
 GTS-Engine遵循[Apache-2.0开源协议](https://github.com/IDEA-CCNL/GTS-Engine/blob/main/LICENSE)。
