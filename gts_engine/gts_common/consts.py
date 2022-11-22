@@ -4,7 +4,7 @@ from enum import Enum
 
 Path = str
 
-class GTSEngineTrainArgs(Namespace):
+class GTSEngineArgs(Namespace):
     engine_type: Literal["qiankunding", "bagualu"]
     train_mode: Literal["fast", "standard", "advanced"]
     task_dir: Path
@@ -27,8 +27,6 @@ class GTSEngineTrainArgs(Namespace):
     num_sanity_val_steps: int
     accumulate_grad_batches: int
     val_check_interval: float
-    
-class GTSEngineInfArgs(Namespace): ...
     
 class TRAIN_MODE(Enum):
     STD = "standard"
