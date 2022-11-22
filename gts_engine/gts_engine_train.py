@@ -24,7 +24,7 @@ from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifie
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_engine.gts_common.consts import GTSEngineTrainArgs
+from gts_engine.gts_common.consts import GTSEngineArgs
 
 # 设置gpu相关的全局变量
 import qiankunding.utils.globalvar as globalvar
@@ -104,7 +104,7 @@ def main():
     total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
     # * Args for data preprocessing
-    args = total_parser.parse_args(namespace=GTSEngineTrainArgs())
+    args = total_parser.parse_args(namespace=GTSEngineArgs())
 
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1

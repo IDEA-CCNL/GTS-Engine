@@ -17,6 +17,7 @@ mode_to_module_factory: Dict[TRAIN_MODE, BaseBGLModuleFatrory] = {
 def train_pipeline(args: GTSEngineArgs):
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory = mode_to_module_factory[train_mode]
+    module_factory.prepare_training(args)
     module_factory.generate_training_pipeline(args).main()
     
 @PIPELINE_REGISTRY.register(suffix=__name__) # type: ignore
@@ -28,5 +29,5 @@ def prepare_inference(save_path):
 
 @PIPELINE_REGISTRY.register(suffix=__name__) # type: ignore
 def inference(samples, inference_engine: BaseInferenceEngine):
-    results = inference_engine.inference(sample)
+    results = inference_engine.inference(samples)
     return results

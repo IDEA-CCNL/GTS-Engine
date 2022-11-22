@@ -133,3 +133,6 @@ test**.sh
 output/
 tasks/
 /test*
+
+# others
+/*.tmp
