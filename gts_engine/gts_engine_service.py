@@ -164,16 +164,16 @@ def start_train(train_input: TrainInput):
     task_id = train_input.task_id
     if not service_utils.is_task_valid(TASK_DIR, task_id):
         return {"ret_code": -100, "message": "任务id不存在"}
-
+    
+    specific_task_dir = os.path.join(TASK_DIR, task_id)
+    task_data_dir = os.path.join(specific_task_dir, "data")
+    
     if train_input.train_mode == "advanced":
         if  train_input.unlabeled_data is None or not train_input.unlabeled_data:
             return {"ret_code": -101, "message": "高级模式需提供无标签数据"}
         if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.unlabeled_data), "unlabeled"):
             return {"ret_code": -101, "message":"无标签数据不存在或者数据格式不合法"}
 
-    specific_task_dir = os.path.join(TASK_DIR, task_id)
-    task_data_dir = os.path.join(specific_task_dir, "data")
-    
     task_info_path = os.path.join(specific_task_dir, "task_info.json")
     if not os.path.exists(task_info_path):
         return {"ret_code": -102, "message": "任务信息文件不存在"}
