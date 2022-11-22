@@ -22,7 +22,10 @@ from qiankunding.utils.knn_utils import knn_inference
 from qiankunding.utils.utils import json2list, list2json
 
 def train_classification(args):
-    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
+    if args.train_mode == "standard":
+        model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
+    elif args.train_mode == "advanced":
+        model_name = "Erlangshen-TCBert-1.3B-Classification-Chinese"
     # download pretrained model if not exists
     download_model_from_huggingface(args.pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
     # Set path to load pretrained model
