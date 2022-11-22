@@ -12,7 +12,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 
-class TaskDatasetTcBert(Dataset):
+class TaskDatasetTCBert(Dataset):
     def __init__(self, data_path=None, args=None, tokenizer=None, load_from_list=False, samples=None,  unlabeled=False, label_classes=None):
         super().__init__()
 
@@ -97,9 +97,6 @@ class TaskDataModelTCBert(pl.LightningDataModule):
         parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)
         parser.add_argument('--max_len', default=128, type=int)
 
-        parser.add_argument('--content_key', default="content",help="content key in json file")
-        parser.add_argument('--label_key', default="label",help="label key in json file")
-
         return parent_args
 
     def __init__(self, args, tokenizer):
@@ -114,11 +111,11 @@ class TaskDataModelTCBert(pl.LightningDataModule):
         self.choice, self.label_classes = self.get_label_classes(file_path=os.path.join(args.data_dir, args.label_data))
         args.num_labels = len(self.choice)
 
-        self.train_data = TaskDatasetTcBert(os.path.join(
+        self.train_data = TaskDatasetTCBert(os.path.join(
             args.data_dir, args.train_data), args,  tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)
-        self.valid_data = TaskDatasetTcBert(os.path.join(
+        self.valid_data = TaskDatasetTCBert(os.path.join(
             args.data_dir, args.valid_data), args, tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)     
-        self.unlabeled_data = TaskDatasetTcBert(os.path.join(
+        self.unlabeled_data = TaskDatasetTCBert(os.path.join(
             args.data_dir, args.unlabeled_data), args, tokenizer=tokenizer, unlabeled=True, label_classes=self.label_classes)
         print("unlabeled_data_len:",len(self.unlabeled_data))
 
