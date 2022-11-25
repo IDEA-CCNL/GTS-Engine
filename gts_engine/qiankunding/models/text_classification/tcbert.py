@@ -20,7 +20,7 @@ from ...utils import globalvar as globalvar
 class taskModel(nn.Module):
     def __init__(self, pre_train_dir: str, tokenizer, nlabels, config):
         super().__init__()
-        
+        self.config = AutoConfig.from_pretrained(pre_train_dir)
         if "1.3B" in pre_train_dir:
             # v100
             print(globalvar.get_value("gpu_type"))
@@ -37,7 +37,6 @@ class taskModel(nn.Module):
             else:
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
-            self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
         self.bert_encoder.resize_token_embeddings(new_num_tokens=len(tokenizer))
         

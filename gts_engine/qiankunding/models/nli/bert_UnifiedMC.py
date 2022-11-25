@@ -20,7 +20,7 @@ class taskModel(nn.Module):
         super().__init__()
         self.yes_token = tokenizer.encode("是")[1]
         self.no_token = tokenizer.encode("非")[1]
-        
+        self.config = AutoConfig.from_pretrained(pre_train_dir)
         global_variable = True
         if "1.3B" in pre_train_dir:
             # v100
@@ -42,7 +42,6 @@ class taskModel(nn.Module):
                 elif globalvar.get_value("gpu_type") == "high_gpu":
                     self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
-            self.config = AutoConfig.from_pretrained(pre_train_dir)
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
         self.bert_encoder.resize_token_embeddings(new_num_tokens=len(tokenizer))
 
