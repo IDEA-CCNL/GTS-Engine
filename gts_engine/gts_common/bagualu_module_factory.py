@@ -30,7 +30,11 @@ class BaseBGLModuleFatrory(metaclass=ABCMeta):
     
     def generate_inference_engine(self, args: GTSEngineArgs) -> BaseInferenceEngine:
         """通过GTS-Engine参数实例化agualu InferenceEngine"""
-        return self._inference_engine_cls(self._parse_inference_args(args))
+        parsed_args_list = self._parse_inference_args(args)
+        print(f"\n------------------------- parsed args for {self._inference_engine_cls.__name__} -------------------------")
+        print(f"\n{' '.join(parsed_args_list)}\n")
+        print("------------------------------------------------------------------------------------------\n")
+        return self._inference_engine_cls(parsed_args_list)
     
     def prepare_inference(self, args: GTSEngineArgs) -> None:
         """推理准备处理，如数据格式转换等"""
@@ -60,8 +64,11 @@ class BaseBGLModuleFatrory(metaclass=ABCMeta):
 ## Derived
 #############################################################################################
 
+########################################################################################
+##################################### finetune-std #####################################
+
 class GTSEngineTypeCheckedArgs(BaseModel):
-    """对GTS-Engine相关参数进行类型检查"""
+    """GTS-Engine相关参数进行runtime类型检查与转换"""
     task_dir: DirectoryPath
     pretrained_model_dir: DirectoryPath
     data_dir: DirectoryPath
@@ -90,7 +97,7 @@ class CLS_STD_ModuleFactory(BaseBGLModuleFatrory):
             train_data_path=args.train_data_path,
             valid_data_path=args.valid_data_path,
             test_data_path=args.test_data_path,
-            label_data_path=self.__get_label2id_path(args), # 将在prepare_training中通过label_data生成label2id.json
+            label_data_path=self.__get_label2id_path(args), # 将在prepare_training()中通过label_data生成label2id.json
             gpus=args.gpus,
             train_mode=TRAIN_MODE(args.train_mode),
             seed=args.seed
@@ -135,5 +142,5 @@ class CLS_STD_ModuleFactory(BaseBGLModuleFatrory):
         return Path(args.task_dir) / "label2id.json"
     
     
-    
-    
+########################################################################################
+##################################### finetune-fast #####################################
