@@ -90,15 +90,20 @@ def main():
                             type=str, help="filename of test dataset")      
     total_parser.add_argument('--label_data', default='labels.json',
                             type=str, help="filename of label data")
-    # total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
+    total_parser.add_argument('--unlabeled_data', default='test.json', 
+                            type=str, help="filename of unlabeled data")   #unlabeled.json
     total_parser.add_argument('--save_path', default='output',
                             type=str, help="save path for trained model and other logs")
+    total_parser.add_argument('--threshold', default=0.8,
+                            type=float, help="pseudo threshold")
 
     # * Args for general setting
     total_parser.add_argument('--seed', default=1234,
                             type=int, help="random seed for training")
     total_parser.add_argument('--lr', default=2e-5,
                             type=float, help="learning rate")
+
+
 
     total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
@@ -109,9 +114,7 @@ def main():
     args.gpus = 1
     args.num_sanity_val_steps = 1000 
     args.accumulate_grad_batches = 8 
-    args.val_check_interval = 0.25 
-
-
+    args.val_check_interval = 0.5 
     print('args', args)
     torch.set_num_threads(8)
     

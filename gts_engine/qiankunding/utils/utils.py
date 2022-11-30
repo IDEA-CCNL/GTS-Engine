@@ -58,6 +58,29 @@ def write2json_by_line(data_list, data_path, data_name=""):
             fout.write(result+"\n")
         print("{}({}) saved into {}".format(data_name, len(data_list), data_path))
 
+def json2list(data_path, use_key):
+    data_list = []
+    with open(data_path, 'r', encoding='utf8') as f:
+        lines = f.readlines()
+        for line in lines:
+            sample_dict = {}
+            item = json.loads(line)
+            for key in use_key:
+                sample_dict[key] = item[key]
+            data_list.append(sample_dict)
+    return data_list
+
+
+def list2json(data_list, data_path, use_key):
+    with open(data_path, "w", encoding="utf-8") as fout:
+        for idx, result in enumerate(data_list):
+            # print(result["id"])
+            sample_dict = {}
+            result["id"] = idx
+            for key in use_key:
+                sample_dict[key] = result[key]
+            result = json.dumps(sample_dict,ensure_ascii=False)
+            fout.write(result+"\n")
 
     
 
