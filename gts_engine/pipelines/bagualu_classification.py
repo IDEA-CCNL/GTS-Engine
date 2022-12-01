@@ -1,12 +1,13 @@
-from typing import List, Literal, Tuple, Type, Callable, Dict
+from typing import List, Literal, Tuple, Type, Callable, Dict, Any
 from argparse import Namespace
 from enum import Enum
 
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.consts import GTSEngineArgs, TRAIN_MODE
 from gts_common.bagualu_module_factory import CLS_STD_ModuleFactory, BaseBGLModuleFatrory
-from bagualu.gts_student_lib.framework import BaseInferenceEngine
 from gts_common.pipeline_utils import load_args
+from bagualu.gts_student_lib.framework import BaseInferenceEngine
+from bagualu.gts_student_lib.framework.base_modules.classification_finetune.consts import InferenceSample
 
 
 mode_to_module_factory: Dict[TRAIN_MODE, BaseBGLModuleFatrory] = {
@@ -28,6 +29,7 @@ def prepare_inference(save_path):
     return module_factory.generate_inference_engine(args)
 
 @PIPELINE_REGISTRY.register(suffix=__name__) # type: ignore
-def inference(samples, inference_engine: BaseInferenceEngine):
-    results = inference_engine.inference(samples)
+def inference(samples: List[Dict[str, Any]], inference_engine: BaseInferenceEngine):
+    inf_sample_list = [InferenceSample(text=sample["content"]) for sample in samples]
+    results = inference_engine.inference(inf_sample_list)
     return results

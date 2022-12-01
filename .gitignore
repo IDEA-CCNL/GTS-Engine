@@ -136,3 +136,5 @@ tasks/
 
 # others
 /*.tmp
+.vscode
+/*_output.json

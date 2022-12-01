@@ -5,7 +5,7 @@ from pathlib import Path
 import os
 
 from bagualu.gts_student_lib.framework import BaseTrainingPipeline, BaseInferenceEngine
-from bagualu.gts_student_ft_std import FtStdTrainingPipeline
+from bagualu.gts_student_ft_std import FtStdTrainingPipeline, FtStdInferenceEngine
 from bagualu.gts_student_lib.utils.json_utils import load_json, dump_json
 from .consts import GTSEngineArgs, TRAIN_MODE
 
@@ -34,7 +34,9 @@ class BaseBGLModuleFatrory(metaclass=ABCMeta):
         print(f"\n------------------------- parsed args for {self._inference_engine_cls.__name__} -------------------------")
         print(f"\n{' '.join(parsed_args_list)}\n")
         print("------------------------------------------------------------------------------------------\n")
-        return self._inference_engine_cls(parsed_args_list)
+        inference_engine = self._inference_engine_cls(parsed_args_list)
+        inference_engine.prepare_inference()
+        return inference_engine
     
     def prepare_inference(self, args: GTSEngineArgs) -> None:
         """推理准备处理，如数据格式转换等"""
@@ -65,9 +67,9 @@ class BaseBGLModuleFatrory(metaclass=ABCMeta):
 #############################################################################################
 
 ########################################################################################
-##################################### finetune-std #####################################
+##################################### cls-std #####################################
 
-class GTSEngineTypeCheckedArgs(BaseModel):
+class TypeCheckedTrainArgs(BaseModel):
     """GTS-Engine相关参数进行runtime类型检查与转换"""
     task_dir: DirectoryPath
     pretrained_model_dir: DirectoryPath
@@ -80,6 +82,11 @@ class GTSEngineTypeCheckedArgs(BaseModel):
     gpus: int
     train_mode: TRAIN_MODE
     seed: int
+    
+class TypeCheckedInfArgs(BaseModel):
+    model_save_dir: DirectoryPath
+    label2id_path: FilePath
+    
 
 class CLS_STD_ModuleFactory(BaseBGLModuleFatrory):
     
@@ -89,7 +96,7 @@ class CLS_STD_ModuleFactory(BaseBGLModuleFatrory):
     
     def _parse_training_args(self, args: GTSEngineArgs) -> List[str]:
         # args类型检查
-        type_checked_args = GTSEngineTypeCheckedArgs(
+        type_checked_args = TypeCheckedTrainArgs(
             task_dir=Path(args.task_dir),
             pretrained_model_dir=Path(args.pretrained_model_dir),
             data_dir=Path(args.data_dir),
@@ -133,14 +140,21 @@ class CLS_STD_ModuleFactory(BaseBGLModuleFatrory):
             
     @property
     def _inference_engine_cls(self):
-        ...
+        return FtStdInferenceEngine
     
     def _parse_inference_args(self, args: GTSEngineArgs) -> List[str]:
-        ...
-    
+        type_checked_args = TypeCheckedInfArgs(
+            label2id_path=self.__get_label2id_path(args),
+            model_save_dir=Path(args.task_dir) / "outputs" / "student_output" / "finetune_output"
+        )
+        args_parse_list: List[str] = []
+        args_parse_list.extend(["--model_save_dir", str(type_checked_args.model_save_dir)])
+        args_parse_list.extend(["--label2id_path", str(type_checked_args.label2id_path)])
+        return args_parse_list
+        
     def __get_label2id_path(self, args: GTSEngineArgs) -> FilePath:
         return Path(args.task_dir) / "label2id.json"
     
     
 ########################################################################################
-##################################### finetune-fast #####################################
+##################################### cls-fast #####################################
