@@ -50,4 +50,4 @@ class BaseInferenceLightningClf(LightningModule):
         for inf_output in results[0]:
             res["predictions"].extend(inf_output["predictions"])
             res["probabilities"].extend(inf_output["probabilities"])
-        results = res # type: ignore 
+        results[0] = res # type: ignore 
