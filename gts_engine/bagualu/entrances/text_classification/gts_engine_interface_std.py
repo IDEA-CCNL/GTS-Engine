@@ -57,6 +57,7 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
         args_parse_list.extend(["--run_mode", "online"])
         args_parse_list.extend(["--train_data_path", str(type_checked_args.train_data_path)])
         args_parse_list.extend(["--dev_data_path", str(type_checked_args.valid_data_path)])
+        args_parse_list.extend(["--aug_eda_path", str(self.__get_eda_cache_path(args))])
         if type_checked_args.test_data_path is not None:
             args_parse_list.extend(["--test_data_path", str(type_checked_args.test_data_path)])
         try:
@@ -92,4 +93,7 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
         return args_parse_list
         
     def __get_label2id_path(self, args: GtsEngineArgs) -> FilePath:
-        return Path(args.task_dir) / "label2id.json"
+        return Path(args.task_dir) / f"{args.train_data.split('.')[0]}_label2id.json"
+    
+    def __get_eda_cache_path(self, args: GtsEngineArgs) -> FilePath:
+        return Path(args.task_dir) / f"{args.train_data.split('.')[0]}_eda_augment.json"
