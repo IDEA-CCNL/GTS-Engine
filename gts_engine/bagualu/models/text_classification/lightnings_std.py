@@ -6,14 +6,14 @@ import torch
 from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import InfBatch, InferenceEngineOutput, EncodedTrainSample, LabelGuidedInferenceOutput, EncodedInfSample
+from ...lib.framework.classification_finetune.consts import InfBatch, InferenceEngineOutput, EncodedTrainSample, InferenceModelOutput, EncodedInfSample
 from ...lib.framework.classification_finetune import StdPrompt, BaseTrainingLightningClf, BaseInferenceLightningClf
 from ...lib.components.schedulers import warmup_linear_decay_scheduler_factory
 from ...lib.components.metrics import Logits2Acc
 from ...lib.components.losses import compute_kl_loss
 from ...lib.utils import LoggerManager
 
-from ...models.text_classification.models_std import LabelGuidedTrainModel, LabelGuidedOnnxInferenceModel
+from ...models.text_classification.models_std import TrainingModelClfStd, InferenceModelClfStd
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd, InferenceArgumentsClfStd
 
 class TrainLightningClfStd(BaseTrainingLightningClf):
@@ -30,7 +30,7 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
     ):
         super().__init__()
         self._args = args
-        self._model: LabelGuidedTrainModel = LabelGuidedTrainModel(
+        self._model: TrainingModelClfStd = TrainingModelClfStd(
             self._args.pretrained_model_dir,
             class_num
         )
@@ -187,11 +187,11 @@ class PredictLightningClfStd(BaseTrainingLightningClf):
         best_hyper=None,
     ):
         super().__init__()
-        self._model: LabelGuidedOnnxInferenceModel = LabelGuidedOnnxInferenceModel(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper)
+        self._model: InferenceModelClfStd = InferenceModelClfStd(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper)
         self._prompt = prompt
         
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
-        return LabelGuidedInferenceOutput(**self._model.forward(input_ids, input_mask, input_seg))
+        return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
     
     def predict_step(self, batch: Dict[str, Any], batch_idx: int, dataloader_idx: int = 0) -> List[Tuple[int, str]]:
         encoded_sample_batch = EncodedInfSample(**batch)
@@ -226,11 +226,11 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
         best_hyper=None,
     ):
         super().__init__()
-        self._model: LabelGuidedOnnxInferenceModel = LabelGuidedOnnxInferenceModel(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper) # type: ignore
+        self._model: InferenceModelClfStd = InferenceModelClfStd(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper) # type: ignore
         self._prompt = prompt
         
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
-        return LabelGuidedInferenceOutput(**self._model.forward(input_ids, input_mask, input_seg))
+        return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
         
     def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceEngineOutput:
         inference_output = self.forward(

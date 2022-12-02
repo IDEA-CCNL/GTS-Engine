@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.metrics import pairwise_distances
 
 from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import PromptToken, LabelGuidedTrainModelOutput, LabelGuidedInferenceOutput
+from ...lib.framework.classification_finetune.consts import PromptToken, TrainingModelOutput, InferenceModelOutput
 from ...lib.framework.classification_finetune import StdPrompt
 from ...lib.components.losses import MaxMultiLogits, LabelSmoothing
 from ...lib.components.knn_tools import inference_with_knn
@@ -19,7 +19,7 @@ from ...lib.components.knn_tools import inference_with_knn
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 
 
-class LabelGuidedTrainModel(nn.Module):
+class TrainingModelClfStd(nn.Module):
     
     def __init__(self, pretrained_model_dir: str, class_num: int, last_layers: int = 1):
         super().__init__()
@@ -43,7 +43,7 @@ class LabelGuidedTrainModel(nn.Module):
         sample_weight: Optional[Tensor] = None,
         label_id_clf: Optional[Tensor] = None,
         is_training: bool = True
-    ) -> LabelGuidedTrainModelOutput:
+    ) -> TrainingModelOutput:
         bert_output: MaskedLMOutput = self._bert_encoder.forward(**asdict(bert_input), output_hidden_states=True) # type: ignore
         loss_mlm = bert_output.loss
         logits = bert_output.logits
@@ -62,7 +62,7 @@ class LabelGuidedTrainModel(nn.Module):
                 loss_cls = loss_cls * proced_weight
             loss_ce = loss_cls.float().mean()
         loss = loss_ce + loss_mlm if is_training else loss_ce
-        return LabelGuidedTrainModelOutput(
+        return TrainingModelOutput(
             loss_total=loss,
             loss_ce=loss_ce,
             loss_mlm=loss_mlm,
@@ -79,7 +79,7 @@ class InfModelArgsProto(Protocol):
     inference_label_prompt: str
     max_length: int
 
-class LabelGuidedOnnxInferenceModel(nn.Module):
+class InferenceModelClfStd(nn.Module):
 
     def __init__(
         self,

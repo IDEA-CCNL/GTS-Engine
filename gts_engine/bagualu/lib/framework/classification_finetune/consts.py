@@ -116,7 +116,7 @@ Label2Id = Dict[str, Label2IdValue]
 #############################################################################################
 
 @dataclass
-class LabelGuidedTrainModelOutput:
+class TrainingModelOutput:
     loss_total: Tensor
     loss_ce: Tensor
     loss_mlm: Tensor
@@ -127,7 +127,7 @@ class LabelGuidedTrainModelOutput:
     loss_ner: Tensor
     
 @dataclass
-class LabelGuidedInferenceOutput:
+class InferenceModelOutput:
     probs: Tensor
     positions: Tensor
     embeds: Tensor
