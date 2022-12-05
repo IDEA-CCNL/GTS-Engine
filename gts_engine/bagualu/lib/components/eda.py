@@ -1,4 +1,4 @@
-from typing import Generator, Optional, List, Dict, Protocol, Sequence, Type, TypeVar, Generic
+from typing import Generator, Optional, List, Dict, Protocol, Sequence, Type, TypeVar, Generic, Union
 import os
 from transformers.tokenization_utils import PreTrainedTokenizer
 from dataclasses import asdict, dataclass
@@ -6,6 +6,7 @@ import multiprocessing as mp
 from tqdm import tqdm
 import time
 import copy
+from pydantic import FilePath
 
 from ..utils.json import load_json, load_json_list, dump_json_list, dump_dataclass_json_list
 from .text_tools import segment_text
@@ -33,7 +34,7 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
         self._alpha = alpha
         self._tokenizer = tokenizer
     
-    def eda_aug(self, sample_list: Sequence[_SampleType], aug_path: str, aug_num: int = 10) -> Sequence[_SampleType]:
+    def eda_aug(self, sample_list: Sequence[_SampleType], aug_path: Union[FilePath, str], aug_num: int = 10) -> Sequence[_SampleType]:
         self.__sample_cls = type(sample_list[0])
         if os.path.exists(aug_path):
             self.info("EDA file exists, load data...")
@@ -50,7 +51,7 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
     #############################################################################################
     ######################################## private ##########################################    
     
-    def __load_data(self, aug_path: str) -> List[_SampleType]:
+    def __load_data(self, aug_path: Union[FilePath, str]) -> List[_SampleType]:
         eda_sample_list_raw = load_json_list(aug_path)
         eda_sample_list = [self.__sample_cls(**eda_sample_raw) for eda_sample_raw in eda_sample_list_raw] # type: ignore
         return eda_sample_list

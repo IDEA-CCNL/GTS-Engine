@@ -1,6 +1,7 @@
 from typing import Optional
 import os
-import time
+from pydantic import FilePath
+from pathlib import Path
 
 from ...lib.framework.base_arguments import GeneralParser
 from ...lib.components.lightning_callbacks.adaptive_val_intervals import ADAPTIVE_VAL_INTERVAL_MODE
@@ -8,15 +9,15 @@ from ...lib.framework.classification_finetune import BaseTrainingArgumentsClf, B
 
 class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
     
-    _aug_eda_path: Optional[str]
+    _aug_eda_path: Optional[FilePath]
     @property
-    def aug_eda_path(self) -> str:
+    def aug_eda_path(self) -> FilePath:
         """eda缓存文件"""
-        return os.path.join(self.input_dir, "eda_augment.json") if self._aug_eda_path is None else self._aug_eda_path
+        return self.input_dir / "eda_augment.json" if self._aug_eda_path is None else self._aug_eda_path
     
     def _add_args(self, parser: GeneralParser) -> None:
         super()._add_args(parser)
-        parser.add_argument("--aug_eda_path", dest="_aug_eda_path", type=str, default=None, help="[可选]指定eda文件缓存路径")
+        parser.add_argument("--aug_eda_path", dest="_aug_eda_path", type=Path, default=None, help="[可选]指定eda文件缓存路径")
         parser.add_argument("--seed", dest="seed", type=int, default=42)
         parser.add_argument("--use_knn", dest="use_knn", default=False, action="store_true",
                             help="whether or not to use knn component")# 不传入时，才为false

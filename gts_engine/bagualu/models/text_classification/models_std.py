@@ -21,7 +21,7 @@ from ...arguments.text_classification.arguments_std import TrainingArgumentsClfS
 
 class TrainingModelClfStd(nn.Module):
     
-    def __init__(self, pretrained_model_dir: str, class_num: int, last_layers: int = 1):
+    def __init__(self, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
         super().__init__()
         self._bert_encoder: BertForMaskedLM = BertForMaskedLM.from_pretrained(pretrained_model_dir) # type: ignore
         self._config = BertConfig.from_pretrained(pretrained_model_dir)
@@ -75,7 +75,7 @@ class TrainingModelClfStd(nn.Module):
 
 
 class InfModelArgsProto(Protocol):
-    pretrained_model_dir: str
+    pretrained_model_dir: Path
     inference_label_prompt: str
     max_length: int
 

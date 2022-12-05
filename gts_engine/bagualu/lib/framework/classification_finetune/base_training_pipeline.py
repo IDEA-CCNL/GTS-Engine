@@ -10,6 +10,8 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger, TensorBoardLogger
 from typing import List, Literal, Tuple, Dict, Union, Any
 import torch
+from pathlib import Path
+from pydantic import DirectoryPath
 
 from ...utils import LoggerManager
 from ...components import TokenizerGenerator, StdDataReader
@@ -96,7 +98,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         return LoggerManager.get_logger(self._args.logger)
        
     @property
-    def _output_dir(self) -> str:
+    def _output_dir(self) -> DirectoryPath:
         """输出地址"""
         return self._args.ft_output_dir
     
@@ -122,7 +124,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                         model = "meta_ernie_base"
                 pretrained_model_dir = os.path.join(self._args.pretrained_model_root, model)
                 self._logger.info(f"using auto selected pretrained model: {pretrained_model_dir}")
-        self._args.pretrained_model_dir = pretrained_model_dir
+        self._args.pretrained_model_dir = Path(pretrained_model_dir)
         
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
@@ -141,7 +143,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         
     def _get_lightning_loggers(self) -> List[PlLogger]:
         tb_logger = TensorBoardLogger(
-            save_dir=self._args.log_dir,
+            save_dir=str(self._args.log_dir),
             name="tensor_board_logs",
             version=self._task_name,
             max_queue=2, 
@@ -202,7 +204,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         prediction_trainer = Trainer(
             accelerator="gpu",
             devices=1,
-            default_root_dir=self._output_dir,
+            default_root_dir=str(self._output_dir),
             enable_progress_bar=False,
             auto_select_gpus=True
         )

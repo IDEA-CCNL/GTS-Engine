@@ -19,11 +19,11 @@ class BertInput:
 ## Enums
 #############################################################################################
 
-class TRAIN_MOD(Enum):
-    DEFAULT = 0
-    STUDENT = 1
-    GTS = 2
-    FAST = 3
+class TRAIN_MODE(Enum):
+    DEFAULT = "0"
+    STUDENT = "1"
+    GTS = "2"
+    FAST = "3"
 
 class RUN_MODE(Enum):
     OFFLINE = "offline"

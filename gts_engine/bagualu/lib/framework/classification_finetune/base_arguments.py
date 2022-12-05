@@ -18,62 +18,58 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     dataset: str
     gpu_num: int
     load_data_ratio: float
-    selected_pretrained_model_dir: Optional[str]
-    timestamp: str
+    selected_pretrained_model_dir: Optional[DirectoryPath]
     """指定的预训练模型路径"""
+    timestamp: str
     debug: bool
     """是否为debug模式"""
+    run_mode: RUN_MODE
     
+    _train_data_path: Optional[FilePath]
     @property
-    def run_mode(self) -> RUN_MODE:
-        return RUN_MODE(self._run_mode)
-    _run_mode: str
-    
-    _train_data_path: Optional[str]
-    @property
-    def train_data_path(self) -> str:
+    def train_data_path(self) -> FilePath:
         """训练数据集"""
-        return os.path.join(self.protocol_args.input_dir, "labeled_sample.json") if self._train_data_path is None else self._train_data_path
+        return self.input_dir / "labeled_sample.json" if self._train_data_path is None else self._train_data_path
     
-    _dev_data_path: Optional[str]
+    _dev_data_path: Optional[FilePath]
     @property
-    def dev_data_path(self) -> str:
+    def dev_data_path(self) -> FilePath:
         """验证数据集"""
-        return os.path.join(self.protocol_args.input_dir, "test.json") if self._dev_data_path is None else self._dev_data_path
+        return self.input_dir / "test.json" if self._dev_data_path is None else self._dev_data_path
     
-    _test_data_path: Optional[str]
+    _test_data_path: Optional[FilePath]
     @property
-    def test_data_path(self) -> str:
+    def test_data_path(self) -> FilePath:
         """离线测试数据集"""
-        return os.path.join(self.protocol_args.input_dir, "test_public.json") if self._test_data_path is None else self._test_data_path
+        return self.input_dir / "test_public.json"  if self._test_data_path is None else self._test_data_path
     
-    _online_test_data_path: Optional[str]
+    _online_test_data_path: Optional[FilePath]
     @property
-    def online_test_data_path(self) -> str:
+    def online_test_data_path(self) -> FilePath:
         """无标注推理数据集"""
-        return os.path.join(self.protocol_args.input_dir, "test_online.json") if self._online_test_data_path is None else self._online_test_data_path
+        return self.input_dir / "test_online.json" if self._online_test_data_path is None else self._online_test_data_path
     
-    _label2id_path: Optional[str]
+    _label2id_path: Optional[FilePath]
     @property
-    def label2id_path(self) -> str:
+    def label2id_path(self) -> FilePath:
         """label2id文件"""
-        return os.path.join(self.protocol_args.input_dir, "label2id.json") if self._label2id_path is None else self._label2id_path
+        return self.input_dir / "label2id.json" if self._label2id_path is None else self._label2id_path
     
-    _log_dir: Optional[str]
+    _log_dir: Optional[DirectoryPath]
     @property
-    def log_dir(self) -> str:
-        return self.protocol_args.log_dir if self._log_dir is None else self._log_dir
+    def log_dir(self) -> DirectoryPath:
+        return self.log_dir if self._log_dir is None else self._log_dir
     
     def _add_args(self, parser: GeneralParser) -> None:
-        parser.add_argument("--train_data_path", dest="_train_data_path", type=str, default=None, help="[可选]指定训练数据集路径")
-        parser.add_argument("--dev_data_path", dest="_dev_data_path", type=str, default=None, help="[可选]指定验证数据集路径")
-        parser.add_argument("--test_data_path", dest="_test_data_path", type=str, default=None, help="[可选]指定离线测试数据集路径")
-        parser.add_argument("--online_test_data_path", dest="_online_test_data_path", type=str, default=None, help="[可选]指定在线测试数据集路径")
+        parser.add_argument("--train_data_path", dest="_train_data_path", type=Path, default=None, help="[可选]指定训练数据集路径")
+        parser.add_argument("--dev_data_path", dest="_dev_data_path", type=Path, default=None, help="[可选]指定验证数据集路径")
+        parser.add_argument("--test_data_path", dest="_test_data_path", type=Path, default=None, help="[可选]指定离线测试数据集路径")
+        parser.add_argument("--online_test_data_path", dest="_online_test_data_path", type=Path, default=None, help="[可选]指定在线测试数据集路径")
         parser.add_argument("--dataset", dest="dataset", type=str, help="数据集名称/路径名", default="default")
-        parser.add_argument("--label2id_path", dest="_label2id_path", type=str, default=None, help="[可选]指定label2id文件路径")
-        parser.add_argument("--log_dir", dest="_log_dir", type=str, default=None, help="[可选]指定日志文件保存路径")
-        parser.add_argument("--run_mode", dest="_run_mode", type=str, 
-                            choices=[item.value for item in RUN_MODE], default=RUN_MODE.ONLINE.value, 
+        parser.add_argument("--label2id_path", dest="_label2id_path", type=Path, default=None, help="[可选]指定label2id文件路径")
+        parser.add_argument("--log_dir", dest="_log_dir", type=Path, default=None, help="[可选]指定日志文件保存路径")
+        parser.add_argument("--run_mode", dest="run_mode", type=RUN_MODE, 
+                            choices=RUN_MODE, default=RUN_MODE.ONLINE, 
                             help="运行模式 [offline - 离线测试 | online - 上线运行]")
         parser.add_argument("--load_data_ratio", dest="load_data_ratio", type=float, default=1, help="[可选]指定加载数据比例（0到1之间），用于测试")
         parser.add_argument("--selected_pretrained_model_dir", dest="selected_pretrained_model_dir", type=str, default=None, help="[可选]指定预训练模型路径")
@@ -84,7 +80,7 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     #############################################################################################
     ######################################## 固定参数 ##########################################
     
-    pretrained_model_dir: str
+    pretrained_model_dir: DirectoryPath
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："
     training_label_prompt = "[unused1][unused2][MASK][MASK][MASK][unused3][unused4]"
@@ -104,15 +100,15 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     clip_norm = 0.25
     learning_rate = 2e-5
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
-    timestamp=str(int(time.time()))
+    timestamp = str(int(time.time()))
     
     @property
-    def ft_output_dir(self) -> str:
-        if self._run_mode == 'offline':
-            output_path = os.path.join(self.protocol_args.output_dir, self.dataset)
-            output_path = os.path.join(output_path, self.timestamp)
+    def ft_output_dir(self) -> DirectoryPath:
+        if self.run_mode == RUN_MODE.OFFLINE:
+            output_path = self.protocol_args.output_dir / self.dataset
+            output_path = output_path / self.timestamp
         else:
-            output_path = os.path.join(self.protocol_args.student_output_dir, 'finetune_output')
+            output_path = self.protocol_args.student_output_dir / 'finetune_output'
         return output_path
     
     @property
@@ -148,5 +144,5 @@ class BaseInferenceArgumentsClf(BaseArguments):
         return self.model_save_dir / "finetune_pytorch.bin"
     
     @property
-    def pretrained_model_dir(self) -> Path:
+    def pretrained_model_dir(self) -> DirectoryPath:
         return self.model_save_dir

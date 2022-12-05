@@ -35,7 +35,7 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             callbacks=callbacks,
             max_epochs=self._args.epoch,
             gradient_clip_val=self._args.clip_norm,
-            default_root_dir=self._output_dir,
+            default_root_dir=str(self._output_dir),
             enable_progress_bar=False,
             auto_select_gpus=True,
             strategy="dp",

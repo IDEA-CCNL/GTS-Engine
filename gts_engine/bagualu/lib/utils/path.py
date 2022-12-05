@@ -1,8 +1,10 @@
 import os
 from typing import Literal
 import shutil
+from typing import Union
+from pathlib import Path
 
-def mk_inexist_dir(path: str, r: bool = True, clean: bool = False):
+def mk_inexist_dir(path: Union[str, Path], r: bool = True, clean: bool = False):
     """创建不存在的路径 
 
     Args:
@@ -19,7 +21,7 @@ def mk_inexist_dir(path: str, r: bool = True, clean: bool = False):
         shutil.rmtree(path)
         os.mkdir(path)
         
-def get_file_size(path: str, unit: Literal["kb", "mb", "gb"]) -> float:
+def get_file_size(path: Union[str, Path], unit: Literal["kb", "mb", "gb"]) -> float:
     """获取文件在指定单位下的大小"""
     if unit == "kb":
         scale = 1024
