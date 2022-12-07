@@ -158,5 +158,21 @@ class InfBatch(TypedDict):
     input_ids: Tensor
     input_seg: Tensor
     input_mask: Tensor
-    my_id: Tensor
+    my_id: List[int]
+    """自定义辅助id"""
+    
+class TrainBatch(TypedDict):
+    input_ids: Tensor
+    input_seg: Tensor
+    input_mask: Tensor
+    mask_positions: Tensor
+    labels: Tensor
+    label_id: Tensor
+    label_id_clf: Tensor
+    id: List[int]
+    """数据集自带id"""
+    weight: Tensor
+    soft_label: Tensor
+    seq_len: Tensor
+    my_id: List[int]
     """自定义辅助id"""

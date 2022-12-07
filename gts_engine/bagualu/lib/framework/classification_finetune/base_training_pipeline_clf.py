@@ -350,7 +350,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         dump_json(eval_results, os.path.join(self._output_dir, "result.json"), indent=2)
         
     def _load_test_results(self, path: str):
-        test_results_list = load_json_list(path, PredictionResult)
+        test_results_list = list(load_json_list(path, PredictionResult))
         id2label = {key: val.label for key, val in self._prompt.id2label.items()}
         label2id = {val: key for key, val in id2label.items()}
         y_true = [label2id[result.label] for result in test_results_list] # type: ignore

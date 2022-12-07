@@ -6,7 +6,7 @@ import torch
 from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import InfBatch, InferenceEngineOutput, EncodedTrainSample, InferenceModelOutput, EncodedInfSample
+from ...lib.framework.classification_finetune.consts import InfBatch, InferenceEngineOutput, InferenceModelOutput, TrainBatch
 from ...lib.framework.classification_finetune import StdPrompt, BaseTrainingLightningClf, BaseInferenceLightningClf
 from ...lib.components.schedulers import warmup_linear_decay_scheduler_factory
 from ...lib.components.metrics import Logits2Acc
@@ -67,19 +67,18 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
     ## training 
     #############################################################################################
     
-    def training_step(self, batch: Dict[str, Any], batch_idx: int):
-        encoded_sample_batch = EncodedTrainSample(**batch)
+    def training_step(self, batch: TrainBatch, batch_idx: int):
         bert_input = BertInput(
-            input_ids=encoded_sample_batch.input_ids,
-            attention_mask=encoded_sample_batch.input_mask,
-            token_type_ids=encoded_sample_batch.input_seg,
-            labels=encoded_sample_batch.labels
+            input_ids=batch["input_ids"],
+            attention_mask=batch["input_mask"],
+            token_type_ids=batch["input_seg"],
+            labels=batch["labels"]
         )
-        batch_size = encoded_sample_batch.input_ids.shape[0]
+        batch_size = batch["input_ids"].shape[0]
         model_output = self._model.forward(
             bert_input,
-            sample_weight=encoded_sample_batch.weight,
-            label_id_clf=encoded_sample_batch.label_id_clf
+            sample_weight=batch["weight"],
+            label_id_clf=batch["label_id_clf"]
         )
         loss = model_output["loss_total"].float()
         
@@ -88,8 +87,8 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
             logits = model_output["logits"]
             model_output = self._model.forward(
                 bert_input,
-                sample_weight=encoded_sample_batch.weight,
-                label_id_clf=encoded_sample_batch.label_id_clf
+                sample_weight=batch["weight"],
+                label_id_clf=batch["label_id_clf"]
             )
             loss2 = model_output["loss_total"].float()
             logits2 = model_output["logits"]
@@ -133,24 +132,23 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
     def on_validation_epoch_start(self) -> None:
         self._logger.info("validating...")
     
-    def validation_step(self, batch: Dict[str, Any], batch_idx: int):
-        encoded_sample_batch = EncodedTrainSample(**batch)
+    def validation_step(self, batch: TrainBatch, batch_idx: int):
         bert_input = BertInput(
-            input_ids=encoded_sample_batch.input_ids,
-            attention_mask=encoded_sample_batch.input_mask,
-            token_type_ids=encoded_sample_batch.input_seg,
-            labels=encoded_sample_batch.labels
+            input_ids=batch["input_ids"],
+            attention_mask=batch["input_mask"],
+            token_type_ids=batch["input_seg"],
+            labels=batch["labels"]
         )
         model_output = self._model.forward(
             bert_input, 
-            sample_weight=encoded_sample_batch.weight,
-            label_id_clf=encoded_sample_batch.label_id_clf,
+            sample_weight=batch["weight"],
+            label_id_clf=batch["label_id_clf"],
             is_training=False
         )
         loss = model_output["loss_total"].float()
         logits = model_output["logits"]
-        acc, _ = self._logits_2_acc.forward(logits, encoded_sample_batch.label_id_clf)
-        batch_size = len(encoded_sample_batch.input_ids)
+        acc, _ = self._logits_2_acc.forward(logits, batch["label_id_clf"])
+        batch_size = len(batch["input_ids"])
         return {"loss": loss, "acc": acc, "batch_size": batch_size} 
 
     def validation_step_end(self, validation_step_outputs: Dict[str, Tensor]): 
@@ -193,12 +191,11 @@ class PredictLightningClfStd(BaseTrainingLightningClf):
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
         return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
     
-    def predict_step(self, batch: Dict[str, Any], batch_idx: int, dataloader_idx: int = 0) -> List[Tuple[int, str]]:
-        encoded_sample_batch = EncodedInfSample(**batch)
+    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> List[Tuple[int, str]]:
         inference_output = self.forward(
-            input_ids=encoded_sample_batch.input_ids,
-            input_mask=encoded_sample_batch.input_mask,
-            input_seg=encoded_sample_batch.input_seg
+            input_ids=batch["input_ids"],
+            input_mask=batch["input_mask"],
+            input_seg=batch["input_seg"]
         )
         id_list: List[int] = batch["my_id"]
         prediction_id_list: List[int] = inference_output["positions"].squeeze().tolist()
