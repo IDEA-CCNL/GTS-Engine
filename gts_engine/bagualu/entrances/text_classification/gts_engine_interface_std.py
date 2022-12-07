@@ -22,6 +22,12 @@ class TypeCheckedTrainArgs(BaseModel):
     gpus: int
     train_mode: TRAIN_MODE
     seed: int
+    num_workers: int
+    train_batchsize: int
+    valid_batchsize: int
+    test_batchsize: int
+    max_length: int
+    learning_rate: float
     
 class TypeCheckedInfArgs(BaseModel):
     model_save_dir: DirectoryPath
@@ -46,7 +52,13 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
             label_data_path=self.__get_label2id_path(args), # 将在prepare_training()中通过label_data生成label2id.json
             gpus=args.gpus,
             train_mode=TRAIN_MODE(args.train_mode),
-            seed=args.seed
+            seed=args.seed,
+            num_workers=args.num_workers,
+            train_batchsize=args.train_batchsize,
+            valid_batchsize=args.valid_batchsize,
+            test_batchsize=args.test_batchsize,
+            max_length=args.max_len,
+            learning_rate=args.lr
         )
         args_parse_list: List[str] = []
         args_parse_list.extend(["--gts_input_path", str(type_checked_args.task_dir)])
@@ -58,6 +70,12 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
         args_parse_list.extend(["--train_data_path", str(type_checked_args.train_data_path)])
         args_parse_list.extend(["--dev_data_path", str(type_checked_args.valid_data_path)])
         args_parse_list.extend(["--aug_eda_path", str(self.__get_eda_cache_path(args))])
+        args_parse_list.extend(["--num_workers", str(type_checked_args.num_workers)])
+        args_parse_list.extend(["--train_batchsize", str(type_checked_args.train_batchsize)])
+        args_parse_list.extend(["--valid_batchsize", str(type_checked_args.valid_batchsize)])
+        args_parse_list.extend(["--test_batchsize", str(type_checked_args.test_batchsize)])
+        args_parse_list.extend(["--max_length", str(type_checked_args.max_length)])
+        args_parse_list.extend(["--learning_rate", str(type_checked_args.learning_rate)])
         if type_checked_args.test_data_path is not None:
             args_parse_list.extend(["--test_data_path", str(type_checked_args.test_data_path)])
         try:

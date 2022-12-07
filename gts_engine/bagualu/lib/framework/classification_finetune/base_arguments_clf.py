@@ -24,6 +24,13 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     debug: bool
     """是否为debug模式"""
     run_mode: RUN_MODE
+    num_workers: int
+    train_batchsize: int
+    valid_batchsize: int
+    test_batchsize: int
+    max_length: int
+    seed: int
+    learning_rate: float
     
     _train_data_path: Optional[FilePath]
     @property
@@ -73,9 +80,16 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
                             help="运行模式 [offline - 离线测试 | online - 上线运行]")
         parser.add_argument("--load_data_ratio", dest="load_data_ratio", type=float, default=1, help="[可选]指定加载数据比例（0到1之间），用于测试")
         parser.add_argument("--selected_pretrained_model_dir", dest="selected_pretrained_model_dir", type=str, default=None, help="[可选]指定预训练模型路径")
+        parser.add_argument("--seed", dest="seed", type=int, default=42)
         parser.add_argument("--debug", action="store_true", help="[可选]debug模式")
-        gpu_group = parser.add_mutually_exclusive_group()
-        gpu_group.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
+        parser.add_argument("--num_workers", dest="num_workers", type=int, default=6)
+        parser.add_argument("--train_batchsize", dest="train_batchsize", type=int, default=8)
+        parser.add_argument("--valid_batchsize", dest="valid_batchsize", type=int, default=8)
+        parser.add_argument("--test_batchsize", dest="test_batchsize", type=int, default=8)
+        parser.add_argument("--max_length", dest="max_length", type=int, default=512)
+        parser.add_argument("--seed", dest="seed", type=int, default=42)
+        parser.add_argument("--learning_rate", dest="learning_rate", type=float, default=2e-5)
+        parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
         
     #############################################################################################
     ######################################## 固定参数 ##########################################
@@ -86,7 +100,6 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     training_label_prompt = "[unused1][unused2][MASK][MASK][MASK][unused3][unused4]"
     inference_label_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     label_guided_rate = 0.5
-    max_length = 512
     wwm_mask_rate = 0.12
     batch_size_per_device = 8
     @property
@@ -98,7 +111,6 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         return self.epoch - 1
     warm_up_epoch = 1
     clip_norm = 0.25
-    learning_rate = 2e-5
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
     timestamp = str(int(time.time()))
     
