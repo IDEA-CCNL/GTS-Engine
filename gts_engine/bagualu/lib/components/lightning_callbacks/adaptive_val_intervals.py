@@ -129,7 +129,7 @@ class AdaptiveValIntervalTrainLoss(BaseAdaptiveValidationInterval):
         self.__train_loss_smooth_list = ExponentialSmoothingList(level=2, alpha=0.9, warmup_steps=10)
         self.__diff_smooth_list = ExponentialSmoothingList(level=2, alpha=0.9, warmup_steps=10)
         self.__diff_ratio_max = DynamicMax(top_n=3)
-        self.__sample_gap = max(min(15 // ((batch_size // 8) ** 0.5), self.__batch_num_per_epoch // 8), 1)
+        self.__sample_gap = max(min(15 // max(int((batch_size // 8) ** 0.5), 1), self.__batch_num_per_epoch // 8), 1)
         self.__trigger_count = 0 # 连续触发次数
         self.__trigger_count_thres = 2 # 连续触发次数阈值
         self.__ratio_thres = 0.8 # 比例阈值 # TODO: 根据batch_size放缩，需要更多实验支撑

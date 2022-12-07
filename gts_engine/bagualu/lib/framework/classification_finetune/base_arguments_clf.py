@@ -25,9 +25,9 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     """是否为debug模式"""
     run_mode: RUN_MODE
     num_workers: int
-    train_batchsize: int
-    valid_batchsize: int
-    test_batchsize: int
+    train_batchsize_per_device: int
+    valid_batchsize_per_device: int
+    test_batchsize_per_device: int
     max_length: int
     seed: int
     learning_rate: float
@@ -83,11 +83,10 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         parser.add_argument("--seed", dest="seed", type=int, default=42)
         parser.add_argument("--debug", action="store_true", help="[可选]debug模式")
         parser.add_argument("--num_workers", dest="num_workers", type=int, default=6)
-        parser.add_argument("--train_batchsize", dest="train_batchsize", type=int, default=8)
-        parser.add_argument("--valid_batchsize", dest="valid_batchsize", type=int, default=8)
-        parser.add_argument("--test_batchsize", dest="test_batchsize", type=int, default=8)
+        parser.add_argument("--train_batchsize", dest="train_batchsize_per_device", type=int, default=8)
+        parser.add_argument("--valid_batchsize", dest="valid_batchsize_per_device", type=int, default=8)
+        parser.add_argument("--test_batchsize", dest="test_batchsize_per_device", type=int, default=8)
         parser.add_argument("--max_length", dest="max_length", type=int, default=512)
-        parser.add_argument("--seed", dest="seed", type=int, default=42)
         parser.add_argument("--learning_rate", dest="learning_rate", type=float, default=2e-5)
         parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
         
@@ -101,10 +100,15 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     inference_label_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     label_guided_rate = 0.5
     wwm_mask_rate = 0.12
-    batch_size_per_device = 8
     @property
-    def batch_size(self) -> int:
-        return self.batch_size_per_device * self.device_num
+    def train_batch_size(self) -> int:
+        return self.train_batchsize_per_device * self.device_num
+    @property
+    def test_batch_size(self) -> int:
+        return self.test_batchsize_per_device * self.device_num
+    @property
+    def valid_batch_size(self) -> int:
+        return self.valid_batchsize_per_device * self.device_num
     epoch = 5
     @property
     def decay_epoch(self): 

@@ -74,7 +74,7 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             adaptive_test_interval_cls = AdaptiveValIntervalFixed
         adaptive_test_interval = adaptive_test_interval_cls(
             int(self._data_module.train_sample_num * self._args.load_data_ratio),
-            self._args.batch_size,
+            self._args.train_batch_size,
             self._args.logger
         )
         if dev_num == 0: # 无验证数据时，保存最终模型

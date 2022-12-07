@@ -66,13 +66,13 @@ class DataModuleClfStd(BaseDataModuleClf):
         sample_list = self._load_raw_train_sample_list()
         self._logger.info(f"number of training sample: {len(sample_list)}")
         lg_dataset = self._get_train_dataset(sample_list)
-        return DataLoader(dataset=lg_dataset, batch_size=self._args.batch_size, num_workers=6 * self._args.device_num, shuffle=True)
+        return DataLoader(dataset=lg_dataset, batch_size=self._args.train_batch_size, num_workers=6 * self._args.device_num, shuffle=True)
 
     def reparse_args(self):
         """根据数据信息更改训练参数"""
         if len(self._prompt.label_ids) <= 5:
             self._args.label_guided_rate = 0.3
-        step_per_epoch = self.train_sample_num // self._args.batch_size
+        step_per_epoch = self.train_sample_num // self._args.train_batch_size
         steps = step_per_epoch * self._args.epoch
         min_steps = min(1400 // self._args.device_num, 40 * step_per_epoch)
         if steps < min_steps:
@@ -80,8 +80,8 @@ class DataModuleClfStd(BaseDataModuleClf):
         if self.dev_sample_num == 0:
             self._args.epoch = int(0.75 * self._args.epoch)
         self._logger.info(f"reparsing epoch: {self._args.epoch}")
-        self._logger.info(f"batch size per device: {self._args.batch_size_per_device}")
-        self._logger.info(f"total batch size: {self._args.batch_size}")
+        self._logger.info(f"batch size per device: {self._args.train_batchsize_per_device}")
+        self._logger.info(f"total batch size: {self._args.train_batch_size}")
 
         if len(self._prompt.label_ids) < self._args.rdrop_gate:
             # 类别数<rdrop gate时，使用rdrop
@@ -95,7 +95,7 @@ class DataModuleClfStd(BaseDataModuleClf):
         self._logger.info(f"number of training sample: {len(sample_list)}")
         lg_dataset = self._get_train_dataset(sample_list)
         # cs-kd: 实现pairbatch,实现同类别采样
-        sampler = lambda lg_dataset : PairBatchSampler(lg_dataset, self._args.batch_size)
+        sampler = lambda lg_dataset : PairBatchSampler(lg_dataset, self._args.train_batch_size)
         if self._args.use_knn:
             return DataLoader(dataset=lg_dataset,
                             batch_sampler=sampler(lg_dataset),  # type: ignore
@@ -104,4 +104,4 @@ class DataModuleClfStd(BaseDataModuleClf):
                             persistent_workers=True,
                             pin_memory=True)
         else:
-            return DataLoader(dataset=lg_dataset, batch_size=self._args.batch_size, num_workers=6 * self._args.device_num, shuffle=True)
+            return DataLoader(dataset=lg_dataset, batch_size=self._args.train_batch_size, num_workers=6 * self._args.device_num, shuffle=True)

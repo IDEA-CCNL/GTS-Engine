@@ -51,7 +51,7 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
             decay_epoch=self._args.decay_epoch,
             epoch=self._args.epoch,
             train_data_length=self._sample_num,
-            batch_size=self._args.batch_size
+            batch_size=self._args.train_batch_size
         )
         scheduler_config = {
             "scheduler": scheduler,
