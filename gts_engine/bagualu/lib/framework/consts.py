@@ -1,19 +1,17 @@
-from dataclasses import dataclass, field
 from typing import NewType, NamedTuple, Dict, List, Optional, Protocol, Union
+from typing_extensions import TypedDict
 from enum import Enum
 from torch import Tensor
-from argparse import ArgumentParser, Namespace, _ArgumentGroup
 
 #############################################################################################
 ## Types
 #############################################################################################
 
-@dataclass
-class BertInput:
+class BertInput(TypedDict):
     input_ids: Tensor
     attention_mask: Tensor
     token_type_ids: Tensor
-    labels: Optional[Tensor] = None
+    labels: Optional[Tensor]
 
 #############################################################################################
 ## Enums

@@ -1,7 +1,8 @@
-from .base_training_pipeline import BaseTrainingPipelineClf
-from .base_arguments import BaseTrainingArgumentsClf, BaseInferenceArgumentsClf
-from .base_data_module import BaseDataModuleClf
-from .base_lightning import BaseTrainingLightningClf, BaseInferenceLightningClf
-from .base_dataset import BaseDatasetClf
-from .base_inference_engine import BaseInferenceEngineClf
+from .base_training_pipeline_clf import BaseTrainingPipelineClf
+from .base_arguments_clf import BaseTrainingArgumentsClf, BaseInferenceArgumentsClf
+from .base_data_module_clf import BaseDataModuleClf
+from .base_lightnings_clf import BaseTrainingLightningClf, BaseInferenceLightningClf
+from .base_dataset_clf import BaseDatasetClf
+from .base_inference_engine_clf import BaseInferenceEngineClf
 from .prompt import StdPrompt
+from .data_reader_clf import DataReaderClf

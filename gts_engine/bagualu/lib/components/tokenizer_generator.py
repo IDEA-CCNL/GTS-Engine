@@ -21,7 +21,7 @@ class TokenizerGenerator:
         pretrained_model_config_path = os.path.join(pretrained_model_dir, 'config.json')
         if not os.path.exists(pretrained_model_config_path):
             raise Exception(f"model config file {pretrained_model_config_path} does not exist")
-        model_config: Dict = load_json(pretrained_model_config_path) # type: ignore
+        model_config: Dict = load_json(pretrained_model_config_path)
         if "vocab_size" not in model_config:
             raise Exception(f"model config does not have field: 'vocab_size'")
         return cls.__get_ernie_tokenizer(pretrained_model_dir) if model_config['vocab_size'] == 18000 \

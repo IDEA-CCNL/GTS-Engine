@@ -8,10 +8,9 @@ import time
 import copy
 from pydantic import FilePath
 
-from ..utils.json import load_json, load_json_list, dump_json_list, dump_dataclass_json_list
+from ..utils.json import load_json_list, dump_json_list
 from .text_tools import segment_text
 from ..framework.mixin import OptionalLoggerMixin
-from .standard_data_reader import StdDataReader
 
 class SampleProto(Protocol):
     """传入的数据需要有text字段"""
@@ -43,7 +42,7 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
             self.info("generating EDA data...")
             start = time.time()
             eda_sample_list = self.__generate_data(sample_list, aug_num)
-            dump_dataclass_json_list(eda_sample_list, aug_path)
+            dump_json_list(eda_sample_list, aug_path)
             end = time.time()
             self.info(f"generating EDA data...finished, consuming {end - start:.4f}s")
             return eda_sample_list
@@ -52,8 +51,7 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
     ######################################## private ##########################################    
     
     def __load_data(self, aug_path: Union[FilePath, str]) -> List[_SampleType]:
-        eda_sample_list_raw = load_json_list(aug_path)
-        eda_sample_list = [self.__sample_cls(**eda_sample_raw) for eda_sample_raw in eda_sample_list_raw] # type: ignore
+        eda_sample_list = list(load_json_list(aug_path, type_=self.__sample_cls))
         return eda_sample_list
     
     def __generate_data(self, sample_list: Sequence[_SampleType], aug_num: int = 10) -> List[_SampleType]:

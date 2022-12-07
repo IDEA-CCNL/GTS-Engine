@@ -3,7 +3,7 @@ from abc import abstractmethod, ABCMeta
 from pydantic import FilePath
 
 from .consts import PromptLabelParseOutput, PromptToken, PromptLabel
-from ...components import StdDataReader
+from .data_reader_clf import DataReaderClf
 
 class PromptBase(metaclass=ABCMeta):
     
@@ -12,7 +12,7 @@ class PromptBase(metaclass=ABCMeta):
         self._mask_token = '[MASK]'
         self._prompt = prompt
         self._label2id_path = label2id_path
-        self._label_des2tag = StdDataReader.load_label2id(label2id_path)
+        self._label_des2tag = DataReaderClf.read_label2id(label2id_path)
         self.parse_label()
     
     @abstractmethod
@@ -26,9 +26,6 @@ class PromptBase(metaclass=ABCMeta):
     @property
     def mask_token(self):
         return self._mask_token
-    
-
-
 
 class StdPrompt(PromptBase):
     """通用Prompt"""

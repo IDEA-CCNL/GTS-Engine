@@ -1,22 +1,20 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from torch import Tensor
 from typing import List, Optional, Protocol, TypedDict, Dict, NamedTuple
 from torch import Tensor
 from transformers.tokenization_utils import PreTrainedTokenizer
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 #############################################################################################
 ## Sample & Data
 #############################################################################################
 
-@dataclass
-class RawSample:
+class RawSample(BaseModel):
     """数据在json文件中储存的字段"""
     content: str
     id: int
     label: Optional[str] = None
-    probs: List[float] = field(default_factory=list) # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
+    probs: List[float] = Field(default_factory=list) # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
     
 @dataclass
 class LabeledSample:
@@ -75,7 +73,6 @@ class InfSampleProto(Protocol):
     """用于推理的数据格式"""
     id: int
     text: str
-    
 
 class InferenceEngineInputSample(BaseModel):
     text: str
@@ -103,8 +100,7 @@ class PromptLabelParseOutput(NamedTuple):
     id2label: Dict[int, PromptLabel]
     label_ids: List[PromptToken]
 
-@dataclass
-class Label2IdValue:
+class Label2IdValue(BaseModel):
     id: int
     label_desc_en: Optional[str] = None
     label_desc_zh: Optional[str] = None
@@ -114,9 +110,7 @@ Label2Id = Dict[str, Label2IdValue]
 #############################################################################################
 ## In / Out
 #############################################################################################
-
-@dataclass
-class TrainingModelOutput:
+class TrainingModelOutput(TypedDict):
     loss_total: Tensor
     loss_ce: Tensor
     loss_mlm: Tensor
@@ -126,10 +120,9 @@ class TrainingModelOutput:
     loss_ctr: Tensor
     loss_ner: Tensor
     
-@dataclass
-class InferenceModelOutput:
-    probs: Tensor
+class InferenceModelOutput(TypedDict):
     positions: Tensor
+    probs: Tensor
     embeds: Tensor
 
 @dataclass

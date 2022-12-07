@@ -9,12 +9,13 @@ from collections import Counter
 from sklearn.model_selection import train_test_split
 import random
 
-from ...components import StdDataReader, LoggerManager
+from ...components import LoggerManager
 from .prompt import StdPrompt
 from .consts import Label2Token, LabeledSample, UnlabeledSample, InfSampleProto
-from .base_arguments import BaseTrainingArgumentsClf
+from .base_arguments_clf import BaseTrainingArgumentsClf
 from ..consts import TRAINING_STAGE
-from .base_dataset import BaseDatasetClf
+from .base_dataset_clf import BaseDatasetClf
+from .data_reader_clf import DataReaderClf
 
     
 class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
@@ -163,7 +164,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         """加载训练Sample列表"""
         train_data_path = self._args.train_data_path
         if train_data_path is not None and os.path.exists(train_data_path):
-            return list(StdDataReader.load_labeled_sample(self._args.train_data_path, self._prompt.label2token))
+            return list(DataReaderClf.read_labeled_sample(self._args.train_data_path, self._prompt.label2token))
         else:
             raise Exception("no training data is passed")
         
@@ -171,7 +172,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         """加载验证Sample列表"""
         dev_data_path = self._args.dev_data_path
         if dev_data_path is not None and os.path.exists(dev_data_path):
-            return list(StdDataReader.load_labeled_sample(dev_data_path, self._prompt.label2token))
+            return list(DataReaderClf.read_labeled_sample(dev_data_path, self._prompt.label2token))
         else:
             return []
     
@@ -179,7 +180,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         """加载离线测试Sample列表"""
         test_data_path = self._args.test_data_path
         if test_data_path is not None and os.path.exists(test_data_path):
-            return list(StdDataReader.load_labeled_sample(test_data_path, self._prompt.label2token))
+            return list(DataReaderClf.read_labeled_sample(test_data_path, self._prompt.label2token))
         else:
             raise Exception("no valid test data path is passed")
     
@@ -187,7 +188,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         """加载在线推理Sample列表"""
         online_test_data_path = self._args.online_test_data_path
         if online_test_data_path is not None and os.path.exists(online_test_data_path):
-            return list(StdDataReader.load_unlabeled_sample(online_test_data_path))
+            return list(DataReaderClf.read_unlabeled_sample(online_test_data_path))
         else:
             raise Exception("no valid online test data path is passed")
         

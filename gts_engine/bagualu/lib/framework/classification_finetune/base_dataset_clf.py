@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 from typing import Generic, Protocol, Sequence, Union, TypeVar
 from dataclasses import asdict, is_dataclass
 
-from .base_arguments import BaseTrainingArgumentsClf
+from .base_arguments_clf import BaseTrainingArgumentsClf
 from .prompt import StdPrompt
 from .consts import PreTrainedTokenizer
 from collections import defaultdict

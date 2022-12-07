@@ -81,23 +81,23 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
             sample_weight=encoded_sample_batch.weight,
             label_id_clf=encoded_sample_batch.label_id_clf
         )
-        loss = model_output.loss_total.float()
+        loss = model_output["loss_total"].float()
         
         if self._args.use_rdrop:
             # rdrop
-            logits = model_output.logits
+            logits = model_output["logits"]
             model_output = self._model.forward(
                 bert_input,
                 sample_weight=encoded_sample_batch.weight,
                 label_id_clf=encoded_sample_batch.label_id_clf
             )
-            loss2 = model_output.loss_total.float()
-            logits2 = model_output.logits
+            loss2 = model_output["loss_total"].float()
+            logits2 = model_output["logits"]
             kl_loss = compute_kl_loss(logits, logits2)
             loss  = (loss+loss2)/2 + self._args.rdrop_alpha * kl_loss
         lr = self.lr_schedulers().get_last_lr()[-1] # type: ignore
-        loss_ce = model_output.loss_ce
-        loss_mlm = model_output.loss_mlm
+        loss_ce = model_output["loss_ce"]
+        loss_mlm = model_output["loss_mlm"]
         return {
             "loss": loss,
             "lr": lr,
@@ -147,8 +147,8 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
             label_id_clf=encoded_sample_batch.label_id_clf,
             is_training=False
         )
-        loss = model_output.loss_total.float()
-        logits = model_output.logits
+        loss = model_output["loss_total"].float()
+        logits = model_output["logits"]
         acc, _ = self._logits_2_acc.forward(logits, encoded_sample_batch.label_id_clf)
         batch_size = len(encoded_sample_batch.input_ids)
         return {"loss": loss, "acc": acc, "batch_size": batch_size} 
@@ -201,7 +201,7 @@ class PredictLightningClfStd(BaseTrainingLightningClf):
             input_seg=encoded_sample_batch.input_seg
         )
         id_list: List[int] = batch["my_id"]
-        prediction_id_list: List[int] = inference_output.positions.squeeze().tolist()
+        prediction_id_list: List[int] = inference_output["positions"].squeeze().tolist()
         if not isinstance(prediction_id_list, list): # 可能出现最后一个batch是单个值的情况
             prediction_id_list = [prediction_id_list]
         prediction_label_list = [self._prompt.id2label[prediction_id].label for prediction_id in prediction_id_list]
@@ -238,11 +238,11 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
             batch["input_mask"],
             batch["input_seg"]
         )
-        prediction_id_list: List[int] = inference_output.positions.squeeze().tolist()
+        prediction_id_list: List[int] = inference_output["positions"].squeeze().tolist()
         if not isinstance(prediction_id_list, list): # 可能出现最后一个batch是单个值的情况
             prediction_id_list = [prediction_id_list]
         prediction_label_list = [self._prompt.id2label[prediction_id].label for prediction_id in prediction_id_list]
-        probabilities_list = inference_output.probs.tolist()
+        probabilities_list = inference_output["probs"].tolist()
         return InferenceEngineOutput(
             predictions=prediction_label_list,
             probabilities=probabilities_list

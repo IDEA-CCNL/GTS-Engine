@@ -71,7 +71,7 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
     def prepare_training(self, args: GtsEngineArgs) -> None:
         # 将label_data数据转为label2id格式
         assert args.label_data_path is not None
-        label_data: Dict[str, List[str]] = load_json(args.label_data_path) # type: ignore
+        label_data = load_json(args.label_data_path, type_=Dict[str, List[str]])
         label2id = {
             label: {"id": idx, "label_desc_zh": label}
             for idx, label in enumerate(label_data["labels"])

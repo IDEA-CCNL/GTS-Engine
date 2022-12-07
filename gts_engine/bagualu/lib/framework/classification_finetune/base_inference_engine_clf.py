@@ -8,9 +8,9 @@ import shutil
 from torch.utils.data import DataLoader
 
 from ..base_inference_engine import BaseInferenceEngine
-from .base_arguments import BaseInferenceArgumentsClf
-from .base_lightning import BaseInferenceLightningClf
-from .base_dataset import BaseDatasetClf
+from .base_arguments_clf import BaseInferenceArgumentsClf
+from .base_lightnings_clf import BaseInferenceLightningClf
+from .base_dataset_clf import BaseDatasetClf
 from .consts import InferenceEngineInputSampleList, InferenceEngineOutput
 from ..mixin import OptionalLoggerMixin
 from ...components import TokenizerGenerator

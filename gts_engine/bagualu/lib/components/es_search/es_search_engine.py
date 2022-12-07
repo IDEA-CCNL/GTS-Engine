@@ -13,10 +13,10 @@ from tqdm import tqdm
 from .es_search_args import ESSearchArgs
 from .es_search_client import search_client_factory
 from ...framework.classification_finetune.consts import Label2Token, LabeledSample
+from ...framework.classification_finetune import DataReaderClf
 from ...framework.consts import RUN_MODE
 from ...components import ProtocolArgs, LoggerManager
 from ...framework.mixin import OptionalLoggerMixin
-from ..standard_data_reader import StdDataReader
 
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -117,12 +117,12 @@ class ESSearchEngine(OptionalLoggerMixin):
                 sample_handler: Callable[[LabeledSample], Id_Text] = lambda sample : (sample.id, sample.text + ',这是' + sample.label)
             else:
                 sample_handler: Callable[[LabeledSample], Id_Text] = lambda sample : (sample.id, sample.text)
-            for sample in StdDataReader.load_labeled_sample(self._args.train_data_path, self._label2token):
+            for sample in DataReaderClf.read_labeled_sample(self._args.train_data_path, self._label2token):
                 if sample.label not in text_dict.keys():
                     text_dict[sample.label] = []
                 text_dict[sample.label].append(sample_handler(sample))
         if self._args.unlabeld_data_path is not None and os.path.exists(self._args.unlabeld_data_path):
-            text_dict["unlabeled"] = [(sample.id, sample.text) for sample in StdDataReader.load_unlabeled_sample(self._args.unlabeld_data_path)]
+            text_dict["unlabeled"] = [(sample.id, sample.text) for sample in DataReaderClf.read_unlabeled_sample(self._args.unlabeld_data_path)]
             
         return text_dict
     

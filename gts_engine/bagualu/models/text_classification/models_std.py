@@ -44,7 +44,7 @@ class TrainingModelClfStd(nn.Module):
         label_id_clf: Optional[Tensor] = None,
         is_training: bool = True
     ) -> TrainingModelOutput:
-        bert_output: MaskedLMOutput = self._bert_encoder.forward(**asdict(bert_input), output_hidden_states=True) # type: ignore
+        bert_output: MaskedLMOutput = self._bert_encoder.forward(**bert_input, output_hidden_states=True) # type: ignore
         loss_mlm = bert_output.loss
         logits = bert_output.logits
         hidden_states = bert_output.hidden_states
@@ -153,8 +153,8 @@ class InferenceModelClfStd(nn.Module):
             probs = knn_prob
             positions = torch.argmax(probs, dim=-1)
             
-        return { # onnx只支持字典格式的输出，字段顺序要与推理使用时一致
-            "positions": positions,
-            "probs": probs,
-            "embeds": embeds,
-        } 
+        return InferenceModelOutput(
+            positions=positions,
+            probs=probs,
+            embeds=embeds
+        )

@@ -14,7 +14,7 @@ class LabelSmoothing(torch.nn.Module):
         self.confidence = 1.0 - smoothing
         self.smoothing = smoothing
 
-    def forward(self, x: torch.Tensor, target: torch.Tensor):
+    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         logprobs = torch.nn.functional.log_softmax(x, dim=-1) # type: ignore
 
         nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))

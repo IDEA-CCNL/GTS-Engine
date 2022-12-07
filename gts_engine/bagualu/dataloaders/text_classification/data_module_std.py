@@ -3,9 +3,9 @@ import math
 import os
 from torch.utils.data import DataLoader
 
-from ...lib.framework.classification_finetune import BaseDataModuleClf
+from ...lib.framework.classification_finetune import BaseDataModuleClf, DataReaderClf
 from ...lib.framework.classification_finetune.consts import LabeledSample
-from ...lib.components import StdDataReader, EDA
+from ...lib.components import EDA
 from ...lib.components.samplers import PairBatchSampler
 
 from ...dataloaders.text_classification.datasets_std import TrainDatasetClfStd, TestDatasetClfStd, InfDatasetClfStd
@@ -44,7 +44,7 @@ class DataModuleClfStd(BaseDataModuleClf):
     def _load_train_sample_list(self):
         sample_list: List[LabeledSample] = []
         if self._args.train_data_path is not None:
-            sample_list += list(StdDataReader.load_labeled_sample(self._args.train_data_path, self._prompt.label2token))
+            sample_list += list(DataReaderClf.read_labeled_sample(self._args.train_data_path, self._prompt.label2token))
         else:
             raise Exception("no training data is passed")
         if self._args.aug_eda_gate:
@@ -57,7 +57,7 @@ class DataModuleClfStd(BaseDataModuleClf):
     def _load_raw_train_sample_list(self) -> List[LabeledSample]:
         sample_list: List[LabeledSample] = []
         if self._args.train_data_path is not None:
-            sample_list += list(StdDataReader.load_labeled_sample(self._args.train_data_path, self._prompt.label2token))
+            sample_list += list(DataReaderClf.read_labeled_sample(self._args.train_data_path, self._prompt.label2token))
         else:
             raise Exception("no training data is passed")
         return sample_list

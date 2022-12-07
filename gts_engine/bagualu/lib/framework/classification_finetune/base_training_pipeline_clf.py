@@ -14,18 +14,19 @@ from pathlib import Path
 from pydantic import DirectoryPath
 
 from ...utils import LoggerManager
-from ...components import TokenizerGenerator, StdDataReader
+from ...components import TokenizerGenerator
 from .prompt import StdPrompt
 from ..base_training_pipeline import BaseTrainingPipeline
 from ..consts import TRAINING_STAGE
-from ...utils.json import dump_dataclass_json_list, load_dataclass_json_list, dump_json, load_json
+from ...utils.json import dump_json_list, load_json_list, dump_json, load_json
 from ...utils.path import get_file_size
 from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
 from ...utils.statistics import interval_mean, acc
-from .base_arguments import BaseTrainingArgumentsClf
-from .base_data_module import BaseDataModuleClf
-from .base_lightning import BaseTrainingLightningClf
+from .base_arguments_clf import BaseTrainingArgumentsClf
+from .base_data_module_clf import BaseDataModuleClf
+from .base_lightnings_clf import BaseTrainingLightningClf
 from .consts import DevOutput, LabeledSample, InfSampleProto, PredictionResult, TrainingSettings
+from .data_reader_clf import DataReaderClf
 
 class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
     
@@ -112,11 +113,11 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 pretrained_model_dir = tapt_output_dir
                 self._logger.info(f"using tapt output as pretrained model: {pretrained_model_dir}")
             else:
-                label2id = load_json(self._args.label2id_path)
+                label2id = DataReaderClf.read_label2id(self._args.label2id_path)
                 if len(label2id) == 2:
                     model = "macbert_base_binary"
                 else:
-                    sample_list = list(StdDataReader.load_unlabeled_sample(self._args.train_data_path))
+                    sample_list = list(DataReaderClf.read_unlabeled_sample(self._args.train_data_path))
                     sentence_len_list = [len(sample.text) for sample in sample_list]
                     if interval_mean(sentence_len_list) < 100:
                         model = "macbert_base"
@@ -215,7 +216,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 dataloaders=self._data_module.val_dataloader(stage=TRAINING_STAGE.INFERENCE)
             )
             dev_results = self._generate_prediction_results(dev_prediction_output, self._data_module.dev_sample_list) # type: ignore
-            dump_dataclass_json_list(dev_results, os.path.join(self._output_dir, "test_prediction_results.json"))
+            dump_json_list(dev_results, os.path.join(self._output_dir, "test_prediction_results.json"))
         if os.path.exists(self._args.test_data_path):
             self._logger.info("predicting on test data..")
             test_prediction_output = prediction_trainer.predict(
@@ -223,7 +224,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 dataloaders=self._data_module.test_dataloader(stage=TRAINING_STAGE.INFERENCE)
             )
             test_results = self._generate_prediction_results(test_prediction_output, self._data_module.test_sample_list) # type: ignore
-            dump_dataclass_json_list(test_results, os.path.join(self._output_dir, "offline_test_prediction_results.json"))
+            dump_json_list(test_results, os.path.join(self._output_dir, "offline_test_prediction_results.json"))
         if os.path.exists(self._args.online_test_data_path):
             self._logger.info("predicting on online test data..")
             online_test_prediction_output = prediction_trainer.predict(
@@ -231,7 +232,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 dataloaders=self._data_module.online_test_dataloader()
             )
             online_test_results = self._generate_prediction_results(online_test_prediction_output, self._data_module.online_test_sample_list) # type: ignore
-            dump_dataclass_json_list(online_test_results, os.path.join(self._output_dir, "online_test_prediction_results.json"))
+            dump_json_list(online_test_results, os.path.join(self._output_dir, "online_test_prediction_results.json"))
 
     def _generate_prediction_results(self, prediction_output: Dict[int, str], sample_list: Union[List[InfSampleProto], List[LabeledSample]]) -> List[PredictionResult]:
         assert len(prediction_output) == len(sample_list)
@@ -349,7 +350,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         dump_json(eval_results, os.path.join(self._output_dir, "result.json"), indent=2)
         
     def _load_test_results(self, path: str):
-        test_results_list = load_dataclass_json_list(path, PredictionResult)
+        test_results_list = load_json_list(path, PredictionResult)
         id2label = {key: val.label for key, val in self._prompt.id2label.items()}
         label2id = {val: key for key, val in id2label.items()}
         y_true = [label2id[result.label] for result in test_results_list] # type: ignore
