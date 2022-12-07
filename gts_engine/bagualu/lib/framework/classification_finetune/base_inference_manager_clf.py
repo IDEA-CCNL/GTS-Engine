@@ -7,16 +7,16 @@ import torch
 import shutil
 from torch.utils.data import DataLoader
 
-from ..base_inference_engine import BaseInferenceEngine
+from ..base_inference_manager import BaseInferenceManager
 from .base_arguments_clf import BaseInferenceArgumentsClf
 from .base_lightnings_clf import BaseInferenceLightningClf
 from .base_dataset_clf import BaseDatasetClf
-from .consts import InferenceEngineInputSampleList, InferenceEngineOutput
+from .consts import InferenceManagerInputSampleList, InferenceManagerOutput
 from ..mixin import OptionalLoggerMixin
 from ...components import TokenizerGenerator
 from .prompt import StdPrompt
 
-class BaseInferenceEngineClf(BaseInferenceEngine, OptionalLoggerMixin):
+class BaseInferenceManagerClf(BaseInferenceManager, OptionalLoggerMixin):
     
     _args: BaseInferenceArgumentsClf
     
@@ -38,12 +38,12 @@ class BaseInferenceEngineClf(BaseInferenceEngine, OptionalLoggerMixin):
             auto_select_gpus=True
         )
         
-    def inference(self, sample: InferenceEngineInputSampleList) -> InferenceEngineOutput:
+    def inference(self, sample: InferenceManagerInputSampleList) -> InferenceManagerOutput:
         self.info(f"processing data...")
         dataset = self._get_dataset(sample)
         dataloader = DataLoader(dataset, batch_size=self._args.batch_size, num_workers=6)
         self.info(f"predicting on data...")
-        inf_output: InferenceEngineOutput = self._trainer.predict( # type: ignore
+        inf_output: InferenceManagerOutput = self._trainer.predict( # type: ignore
             model=self._inf_lightning,
             dataloaders=dataloader
         )
@@ -61,7 +61,7 @@ class BaseInferenceEngineClf(BaseInferenceEngine, OptionalLoggerMixin):
     def _get_inf_lightning(self) -> BaseInferenceLightningClf: ...
     
     @abstractmethod
-    def _get_dataset(self, sample: InferenceEngineInputSampleList) -> BaseDatasetClf: ...
+    def _get_dataset(self, sample: InferenceManagerInputSampleList) -> BaseDatasetClf: ...
     
     
     

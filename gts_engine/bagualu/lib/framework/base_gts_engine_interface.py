@@ -7,7 +7,7 @@ from enum import Enum
 import os
 
 from .base_training_pipeline import BaseTrainingPipeline
-from .base_inference_engine import BaseInferenceEngine
+from .base_inference_manager import BaseInferenceManager
 
 PathStr = str
 
@@ -73,24 +73,24 @@ class BaseGtsEngineInterface(metaclass=ABCMeta):
     def generate_training_pipeline(self, args: GtsEngineArgs) -> BaseTrainingPipeline: 
         """通过GTS-Engine参数实例化bagualu TrainingPipeline"""
         parsed_args_list = self._parse_training_args(args)
-        print(f"\n------------------------- parsed args for {self._training_pipeline_cls.__name__} -------------------------")
+        print(f"\n------------------------- parsed args for {self._training_pipeline_type.__name__} -------------------------")
         print(f"\n{' '.join(parsed_args_list)}\n")
         print("------------------------------------------------------------------------------------------\n")
-        return self._training_pipeline_cls(parsed_args_list)
+        return self._training_pipeline_type(parsed_args_list)
     
     def prepare_training(self, args: GtsEngineArgs) -> None:
         """训练准备处理，如数据格式转换等"""
         return None
     
-    def generate_inference_engine(self, args: GtsEngineArgs) -> BaseInferenceEngine:
-        """通过GTS-Engine参数实例化agualu InferenceEngine"""
+    def generate_inference_manager(self, args: GtsEngineArgs) -> BaseInferenceManager:
+        """通过GTS-Engine参数实例化agualu InferenceManager"""
         parsed_args_list = self._parse_inference_args(args)
-        print(f"\n------------------------- parsed args for {self._inference_engine_cls.__name__} -------------------------")
+        print(f"\n------------------------- parsed args for {self._inference_manager_type.__name__} -------------------------")
         print(f"\n{' '.join(parsed_args_list)}\n")
         print("------------------------------------------------------------------------------------------\n")
-        inference_engine = self._inference_engine_cls(parsed_args_list)
-        inference_engine.prepare_inference()
-        return inference_engine
+        inference_manager = self._inference_manager_type(parsed_args_list)
+        inference_manager.prepare_inference()
+        return inference_manager
     
     def prepare_inference(self, args: GtsEngineArgs) -> None:
         """推理准备处理，如数据格式转换等"""
@@ -99,7 +99,7 @@ class BaseGtsEngineInterface(metaclass=ABCMeta):
     ########################### abstract ################################
     
     @abstractproperty
-    def _training_pipeline_cls(self) -> Type[BaseTrainingPipeline]:
+    def _training_pipeline_type(self) -> Type[BaseTrainingPipeline]:
         """对应bagualu TrainingPipeline类"""
         ...
     
@@ -108,10 +108,10 @@ class BaseGtsEngineInterface(metaclass=ABCMeta):
         """将GTS-Engine参数解析为bagualu TrainingPipeline启动参数字符串列表"""
         
     @abstractproperty
-    def _inference_engine_cls(self) -> Type[BaseInferenceEngine]:
-        """对应bagualu InferenceEngine 类"""
+    def _inference_manager_type(self) -> Type[BaseInferenceManager]:
+        """对应bagualu InferenceManager 类"""
         ...
         
     @abstractmethod
     def _parse_inference_args(self, args: GtsEngineArgs) -> List[str]:
-        """将GTS-Engine参数解析为bagualu InferenceEngine启动参数字符串列表"""
+        """将GTS-Engine参数解析为bagualu InferenceManager启动参数字符串列表"""

@@ -6,7 +6,7 @@ import torch
 from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import InfBatch, InferenceEngineOutput, InferenceModelOutput, TrainBatch
+from ...lib.framework.classification_finetune.consts import InfBatch, InferenceManagerOutput, InferenceModelOutput, TrainBatch
 from ...lib.framework.classification_finetune import StdPrompt, BaseTrainingLightningClf, BaseInferenceLightningClf
 from ...lib.components.schedulers import warmup_linear_decay_scheduler_factory
 from ...lib.components.metrics import Logits2Acc
@@ -229,7 +229,7 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
         return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
         
-    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceEngineOutput:
+    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceManagerOutput:
         inference_output = self.forward(
             batch["input_ids"],
             batch["input_mask"],
@@ -240,7 +240,7 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
             prediction_id_list = [prediction_id_list]
         prediction_label_list = [self._prompt.id2label[prediction_id].label for prediction_id in prediction_id_list]
         probabilities_list = inference_output["probs"].tolist()
-        return InferenceEngineOutput(
+        return InferenceManagerOutput(
             predictions=prediction_label_list,
             probabilities=probabilities_list
         )

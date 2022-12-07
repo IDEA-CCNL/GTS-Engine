@@ -74,10 +74,10 @@ class InfSampleProto(Protocol):
     id: int
     text: str
 
-class InferenceEngineInputSample(BaseModel):
+class InferenceManagerInputSample(BaseModel):
     text: str
 
-InferenceEngineInputSampleList = List[InferenceEngineInputSample]
+InferenceManagerInputSampleList = List[InferenceManagerInputSample]
 
 #############################################################################################
 ## Prompt & Label
@@ -150,7 +150,7 @@ class TrainingSettings:
     decay_epoch: int
     dropout_rate: float
 
-class InferenceEngineOutput(TypedDict):
+class InferenceManagerOutput(TypedDict):
     predictions: List[str]
     probabilities: List[List[float]]
     

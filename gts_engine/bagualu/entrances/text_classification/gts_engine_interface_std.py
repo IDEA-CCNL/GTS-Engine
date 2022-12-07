@@ -6,7 +6,7 @@ from ...lib.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngine
 from ...lib.utils.json import dump_json, load_json
 
 from .training_pipeline_std import TrainingPipelineClfStd
-from .inference_engine_std import InferenceEngineClfStd
+from .inference_manager_std import InferenceManagerClfStd
 
 
 class TypeCheckedTrainArgs(BaseModel):
@@ -30,7 +30,7 @@ class TypeCheckedInfArgs(BaseModel):
 class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
     
     @property
-    def _training_pipeline_cls(self):
+    def _training_pipeline_type(self):
         return TrainingPipelineClfStd
     
     def _parse_training_args(self, args: GtsEngineArgs) -> List[str]:
@@ -79,8 +79,8 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
         dump_json(label2id, self.__get_label2id_path(args))
             
     @property
-    def _inference_engine_cls(self):
-        return InferenceEngineClfStd
+    def _inference_manager_type(self):
+        return InferenceManagerClfStd
     
     def _parse_inference_args(self, args: GtsEngineArgs) -> List[str]:
         type_checked_args = TypeCheckedInfArgs(

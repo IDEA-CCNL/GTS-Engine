@@ -6,9 +6,9 @@ from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.pipeline_utils import load_args
 
 from bagualu.lib.framework.base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface, TRAIN_MODE
-from bagualu.lib.framework.classification_finetune.consts import InferenceEngineInputSample
+from bagualu.lib.framework.classification_finetune.consts import InferenceManagerInputSample
 from bagualu.entrances.text_classification import GtsEngineInterfaceClfStd
-from bagualu.lib.framework.classification_finetune import BaseInferenceEngineClf
+from bagualu.lib.framework.classification_finetune import BaseInferenceManagerClf
 
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
@@ -27,10 +27,10 @@ def prepare_inference(save_path):
     args: GtsEngineArgs = load_args(save_path) # type: ignore
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory = mode_to_interface[train_mode]
-    return module_factory.generate_inference_engine(args)
+    return module_factory.generate_inference_manager(args)
 
 @PIPELINE_REGISTRY.register(suffix=__name__) # type: ignore
-def inference(samples: List[Dict[str, Any]], inference_engine: BaseInferenceEngineClf):
-    inf_sample_list = [InferenceEngineInputSample(text=sample["content"]) for sample in samples]
-    results = inference_engine.inference(inf_sample_list)
+def inference(samples: List[Dict[str, Any]], inference_manager: BaseInferenceManagerClf):
+    inf_sample_list = [InferenceManagerInputSample(text=sample["content"]) for sample in samples]
+    results = inference_manager.inference(inf_sample_list)
     return results

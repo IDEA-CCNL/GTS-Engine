@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 
 from ...lib.framework.classification_finetune import BaseTrainingPipelineClf
-from ...lib.framework.classification_finetune.consts import InferenceEngineInputSample
+from ...lib.framework.classification_finetune.consts import InferenceManagerInputSample
 from ...lib.framework.consts import TRAINING_STAGE
 from ...lib.components.lightning_callbacks.adaptive_val_intervals import AdaptiveValIntervalTrainLoss, ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed
 from ...lib.components.knn_tools import BasicDatastore, grid_search_for_hyper, get_datastore

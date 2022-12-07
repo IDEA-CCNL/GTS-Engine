@@ -5,7 +5,7 @@ from logging import Logger
 from abc import ABCMeta, abstractmethod
 from typing import List
 
-from .consts import InfBatch, InferenceEngineOutput
+from .consts import InfBatch, InferenceManagerOutput
 
 class BaseTrainingLightningClf(LightningModule):
     
@@ -42,11 +42,11 @@ class BaseInferenceLightningClf(LightningModule):
         self._model.load_state_dict(state_dict, strict=False) # type: ignore
         
     @abstractmethod
-    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceEngineOutput:
+    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceManagerOutput:
         ...
         
-    def on_predict_epoch_end(self, results: List[List[InferenceEngineOutput]]) -> None:
-        res = InferenceEngineOutput(predictions=[], probabilities=[])
+    def on_predict_epoch_end(self, results: List[List[InferenceManagerOutput]]) -> None:
+        res = InferenceManagerOutput(predictions=[], probabilities=[])
         for inf_output in results[0]:
             res["predictions"].extend(inf_output["predictions"])
             res["probabilities"].extend(inf_output["probabilities"])

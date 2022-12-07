@@ -7,7 +7,7 @@ from .mixin import ArgsMixin
 InfSample = BaseModel
 InfOutput = Dict
 
-class BaseInferenceEngine(ArgsMixin, metaclass=ABCMeta):
+class BaseInferenceManager(ArgsMixin, metaclass=ABCMeta):
     
     def __init__(self, args_parse_list: Optional[List[str]] = None):
         ArgsMixin.__init__(self, args_parse_list)

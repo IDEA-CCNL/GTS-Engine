@@ -1,13 +1,13 @@
 from typing import List
 
-from ...lib.framework.classification_finetune import BaseInferenceEngineClf
-from ...lib.framework.classification_finetune.consts import InferenceEngineInputSampleList
+from ...lib.framework.classification_finetune import BaseInferenceManagerClf
+from ...lib.framework.classification_finetune.consts import InferenceManagerInputSampleList
 
 from ...models.text_classification.lightnings_std import InferenceLightningClfStd
 from ...dataloaders.text_classification.datasets_std import InfDatasetClfStd
 from ...arguments.text_classification.arguments_std import InferenceArgumentsClfStd
 
-class InferenceEngineClfStd(BaseInferenceEngineClf):
+class InferenceManagerClfStd(BaseInferenceManagerClf):
     
     _args: InferenceArgumentsClfStd
 
@@ -18,7 +18,7 @@ class InferenceEngineClfStd(BaseInferenceEngineClf):
             self._tokenizer
         )
     
-    def _get_dataset(self, sample: List[InferenceEngineInputSampleList]) -> InfDatasetClfStd:
+    def _get_dataset(self, sample: List[InferenceManagerInputSampleList]) -> InfDatasetClfStd:
         return InfDatasetClfStd(
             sample, self._tokenizer, self._prompt, 
             self._args.inference_label_prompt,
