@@ -138,3 +138,4 @@ tasks/
 /*.tmp
 .vscode
 /*_output.json
+/pretrained
