@@ -66,7 +66,7 @@ def main():
                             type=str, help="training mode")
     total_parser.add_argument("--task_dir", required=True, 
                             type=str, help="specific task directory")
-    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli"],
+    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli", "ie"],
                             type=str, help="task type for training")
     total_parser.add_argument('--num_workers', default=8,
                             type=int, help="number of workers for data preprocessing.")
