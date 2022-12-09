@@ -48,7 +48,7 @@ def is_data_format_valid(data_path, data_type):
                 if "content" not in data or "label" not in data:
                     valid = False
                     break
-            if data_type == 'test':
+            if data_type == 'test' or data_type == "unlabeled":
                 if "content" not in data:
                     valid = False
                     break
