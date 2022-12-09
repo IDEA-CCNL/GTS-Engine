@@ -32,7 +32,7 @@ def main():
                             type=str, help="specific task directory")
     total_parser.add_argument("--engine_type", required=True, choices=["qiankunding", "bagualu"],
                             type=str, help="engine type")
-    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli"],
+    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli", "ie"],
                             type=str, help="task type for training")
     total_parser.add_argument("--input_path", required=True,
                             type=str, help="input path of data which will be inferenced")
