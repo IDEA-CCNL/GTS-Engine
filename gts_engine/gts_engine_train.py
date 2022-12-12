@@ -94,6 +94,8 @@ def main():
     # total_parser.add_argument('--unlabeled_data', default='unlabeled.json', type=str)   
     total_parser.add_argument('--save_path', default='output',
                             type=str, help="save path for trained model and other logs")
+    total_parser.add_argument("--gradient_checkpointing_gate", choices=["True", "False"], 
+                            type=str, default="True", help="Whether to enable gradient_checkpointing")
 
     # * Args for general setting
     total_parser.add_argument('--seed', default=1234,

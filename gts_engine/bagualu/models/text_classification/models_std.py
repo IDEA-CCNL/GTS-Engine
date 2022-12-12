@@ -21,10 +21,13 @@ from ...arguments.text_classification.arguments_std import TrainingArgumentsClfS
 
 class TrainingModelClfStd(nn.Module):
     
-    def __init__(self, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
+    def __init__(self, args, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
         super().__init__()
-        self._bert_encoder: BertForMaskedLM = BertForMaskedLM.from_pretrained(pretrained_model_dir) # type: ignore
         self._config = BertConfig.from_pretrained(pretrained_model_dir)
+        if args.gradient_checkpointing_gate=="True":
+            self._config.gradient_checkpointing=True
+            print("使用gradient_checkpointing！")
+        self._bert_encoder: BertForMaskedLM = BertForMaskedLM.from_pretrained(pretrained_model_dir, config=self._config) # type: ignore
         self._last_layers = last_layers
         self._multiply = 1 if last_layers == 4 else 3
         
@@ -132,26 +135,27 @@ class InferenceModelClfStd(nn.Module):
             input_seg = input_mask #句对模式，因此需修改句子的input_seg为1，此时等于input_mask
             input_mask = torch.cat((prompt_mask, input_mask.to(device)[:, 1:]), 1)[:, :self._max_length]
             input_seg = torch.cat((prompt_seg, input_seg.to(device)[:, 1:]), 1)[:, :self._max_length]
-        bert_output = self._bert_encoder.forward(
-            input_ids=input_ids.to(device),
-            attention_mask=input_mask.to(device),
-            token_type_ids=input_seg.to(device),
-            output_hidden_states=True
-        )
-        x_layer_cls = [bert_output.hidden_states[-x] for x in range(1, self._last_layers + 1)] # type: ignore
-        input_hidden_states: Tensor = torch.cat(x_layer_cls, dim=-1) # type: ignore
-        max_logits = self._max_logits.forward(input_hidden_states)
-        probs = self._softmax.forward(max_logits)
-        positions = torch.argmax(probs, dim=-1)
-
-        # 最后一层的平均作为句向量表征
-        embeds = bert_output.hidden_states[-1].mean(1)  # type: ignore
-        if self.datastore is not None:
-            # knn_inference 
-            knn_prob = inference_with_knn(self.datastore, probs, embeds, self.best_hyper)  # type: ignore
-            knn_prob = self._softmax.forward(knn_prob)
-            probs = knn_prob
+        with torch.no_grad():
+            bert_output = self._bert_encoder.forward(
+                input_ids=input_ids.to(device),
+                attention_mask=input_mask.to(device),
+                token_type_ids=input_seg.to(device),
+                output_hidden_states=True
+            )
+            x_layer_cls = [bert_output.hidden_states[-x] for x in range(1, self._last_layers + 1)] # type: ignore
+            input_hidden_states: Tensor = torch.cat(x_layer_cls, dim=-1) # type: ignore
+            max_logits = self._max_logits.forward(input_hidden_states)
+            probs = self._softmax.forward(max_logits)
             positions = torch.argmax(probs, dim=-1)
+
+            # 最后一层的平均作为句向量表征
+            embeds = bert_output.hidden_states[-1].mean(1)  # type: ignore
+            if self.datastore is not None:
+                # knn_inference 
+                knn_prob = inference_with_knn(self.datastore, probs, embeds, self.best_hyper)  # type: ignore
+                knn_prob = self._softmax.forward(knn_prob)
+                probs = knn_prob
+                positions = torch.argmax(probs, dim=-1)
             
         return InferenceModelOutput(
             positions=positions,

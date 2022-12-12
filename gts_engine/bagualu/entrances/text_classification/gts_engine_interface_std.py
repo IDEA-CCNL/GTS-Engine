@@ -28,6 +28,8 @@ class TypeCheckedTrainArgs(BaseModel):
     test_batchsize: int
     max_length: int
     learning_rate: float
+    precision: int
+    gradient_checkpointing_gate: str
     
 class TypeCheckedInfArgs(BaseModel):
     model_save_dir: DirectoryPath
@@ -58,7 +60,9 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
             valid_batchsize=args.valid_batchsize,
             test_batchsize=args.test_batchsize,
             max_length=args.max_len,
-            learning_rate=args.lr
+            learning_rate=args.lr,
+            precision=args.precision,
+            gradient_checkpointing_gate=args.gradient_checkpointing_gate,
         )
         args_parse_list: List[str] = []
         args_parse_list.extend(["--gts_input_path", str(type_checked_args.task_dir)])
@@ -84,6 +88,8 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
         except:
             raise Exception("you should pass label_data file in classification task")
         args_parse_list.extend(["--log_dir", str(type_checked_args.task_dir / "logs")])
+        args_parse_list.extend(["--precision", str(type_checked_args.precision)])
+        args_parse_list.extend(["--gradient_checkpointing_gate", str(type_checked_args.gradient_checkpointing_gate)])
         return args_parse_list
     
     def prepare_training(self, args: GtsEngineArgs) -> None:
