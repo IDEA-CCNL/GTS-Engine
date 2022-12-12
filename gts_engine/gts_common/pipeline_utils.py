@@ -11,7 +11,7 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
         print("model already exists.")
         return
-    cache_path = os.path.join(pretrained_model_dir, "cache")
+    cache_path = os.path.join(pretrained_model_dir, model_name, "cache")
     model = model_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
     tokenizer = tokenizer_class.from_pretrained("IDEA-CCNL/" + model_name, cache_dir=cache_path)
     model.save_pretrained(os.path.join(pretrained_model_dir, model_name))

@@ -131,9 +131,10 @@ dmypy.json
 test**.sh
 output/
 tasks/
-/test*
+/ig_*
 
 # others
 /*.tmp
 .vscode
 /*_output.json
+/pretrained
