@@ -22,8 +22,9 @@ from transformers import AutoModel, AutoTokenizer
 
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.pipeline_utils import load_args
+from gts_common.arguments import GtsEngineArgs
 
-from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE, GtsEngineArgs
+from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
 from bagualu.entrances.ie import GtsEngineInterfaceIEStd
 from bagualu.entrances.ie.inference_manager_std import InferenceManagerIEStd
 
