@@ -59,6 +59,16 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
         """ 最优checkpoint路径 """
         return os.path.join(self.model_save_dir, "best.ckpt")
 
+    @property
+    def last_ckpt_path(self) -> str:
+        """ 最后一个checkpoint路径 """
+        return os.path.join(self.ckpt_dirpath, "last.ckpt")
+
+    @property
+    def onnx_saved_path(self) -> str:
+        """ onnx 模型保存路径 """
+        return os.path.join(self.model_save_dir, "model.onnx")
+
     # 数据集相关参数
 
     _train_data_path: Optional[str]
@@ -128,7 +138,6 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
     ckpt_save_last: bool = True
     ckpt_filename: str = "model-{epoch:02d}-{val_f1:.4f}"
     ckpt_save_top_k: int = 3
-    ckpt_every_n_epochs: int = 100
     ckpt_every_n_train_steps: int = 100
     ckpt_save_weights_only: bool = True
 
@@ -138,7 +147,6 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
     relation_multi_label: bool
     threshold_ent: float
     threshold_rel: float
-    threshold_evt: float
     gpus: int
 
     def _add_args(self, parser: GeneralParser) -> None:
@@ -193,11 +201,6 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=float,
                             default=0.5,
                             help="[可选]关系阈值，默认0.5")
-        parser.add_argument("--threshold_event",
-                            dest="threshold_evt",
-                            type=float,
-                            default=0.5,
-                            help="[可选]事件阈值，默认0.5")
 
     def _after_parse(self) -> None:
         mk_inexist_dir(self.ft_output_dir)
@@ -225,7 +228,6 @@ class InferenceArgumentsIEStd(BaseArguments):
     relation_multi_label: bool = True
     threshold_ent: float = 0.5
     threshold_rel: float = 0.5
-    threshold_evt: float = 0.5
 
     @property
     def model_save_dir(self) -> str:

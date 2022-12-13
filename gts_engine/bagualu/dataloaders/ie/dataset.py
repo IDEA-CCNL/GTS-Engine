@@ -18,7 +18,6 @@ from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
 from .item_encoder import ItemEncoder
-from ...arguments.ie import TrainingArgumentsIEStd
 
 
 class UniEXDataset(Dataset):
@@ -28,17 +27,15 @@ class UniEXDataset(Dataset):
         data (List[dict]): data
         tokenizer (PreTrainedTokenizer): tokenizer
         args (TrainingArgumentsIEStd): arguments
-        used_mask (bool, optional): used_mask. Defaults to False.
     """
     def __init__(self,
                  data: List[dict],
                  tokenizer: PreTrainedTokenizer,
-                 args: TrainingArgumentsIEStd) -> None:
+                 max_length: int) -> None:
         super().__init__()
 
         self.data = data
-        self.encoder = ItemEncoder(tokenizer, args.max_length)
-        self.args = args
+        self.encoder = ItemEncoder(tokenizer, max_length)
 
     def __len__(self):
         return len(self.data)

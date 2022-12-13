@@ -43,9 +43,9 @@ class UniEXDataModel(pl.LightningDataModule):
 
         self.batch_size = args.batch_size
 
-        self.train_data = UniEXDataset(train_data if train_data else [], tokenizer, args)
-        self.valid_data = UniEXDataset(dev_data if dev_data else [], tokenizer, args)
-        self.test_data = UniEXDataset(test_data if test_data else [], tokenizer, args)
+        self.train_data = UniEXDataset(train_data if train_data else [], tokenizer, args.max_length)
+        self.valid_data = UniEXDataset(dev_data if dev_data else [], tokenizer, args.max_length)
+        self.test_data = UniEXDataset(test_data if test_data else [], tokenizer, args.max_length)
 
         if not args.distill_self:
             self.collate_fn = ItemEncoder.collate
