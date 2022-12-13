@@ -115,10 +115,6 @@ def main():
 
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
-    args.num_sanity_val_steps = 1000 
-    args.accumulate_grad_batches = 8 
-    args.val_check_interval = 0.5 
-    print('args', args)
     torch.set_num_threads(8)
     
     # main(args)

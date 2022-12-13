@@ -22,6 +22,10 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     print("model %s is downloaded from huggingface." % model_name)
 
 def generate_common_trainer(args: GtsEngineArgs, save_path):
+    args.num_sanity_val_steps = 1000 
+    args.accumulate_grad_batches = 8 
+    args.val_check_interval = 0.5 
+    print('args', args)
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
@@ -38,10 +42,13 @@ def generate_common_trainer(args: GtsEngineArgs, save_path):
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
     trainer = Trainer(
-        max_epochs=args.max_epochs,
-        min_epochs=args.min_epochs,
-        logger=logger,
-        callbacks=[checkpoint, early_stop]
+                        logger=logger,
+                        callbacks=[checkpoint, early_stop],
+                        min_epochs=args.min_epochs,
+                        max_epochs=args.max_epochs,
+                        num_sanity_val_steps=args.num_sanity_val_steps,
+                        accumulate_grad_batches=args.accumulate_grad_batches,
+                        val_check_interval=args.val_check_interval
     )
     return trainer, checkpoint
 
