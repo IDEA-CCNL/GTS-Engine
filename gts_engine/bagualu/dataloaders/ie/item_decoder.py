@@ -38,7 +38,6 @@ class ItemDecoder(object):
         self.max_length = args.max_length
         self.threshold_entity = args.threshold_ent
         self.threshold_rel = args.threshold_rel
-        self.threshold_event = args.threshold_evt
         self.entity_multi_label = args.entity_multi_label
         self.relation_multi_label = args.relation_multi_label
 
@@ -78,8 +77,7 @@ class ItemDecoder(object):
                        entity_type: str,
                        entity_score: float,
                        text_start_id: int,
-                       offset_mapping: List[List[int]],
-                       event_or_entity: str) -> dict:
+                       offset_mapping: List[List[int]]) -> dict:
         """ extract entity
 
         Args:
@@ -89,7 +87,6 @@ class ItemDecoder(object):
             entity_score (float): entity score
             text_start_id (int): text_start_id
             offset_mapping (List[List[int]]): offset mapping
-            event_or_entity: (str): event/entity
 
         Returns:
             dict: entity
@@ -107,22 +104,14 @@ class ItemDecoder(object):
 
         if not entity_text:
             return None
-        if event_or_entity == 'entity':
-            entity = {
-                "entity_text": entity_text,
-                "entity_type": entity_type,
-                "score": entity_score,
-                "entity_index": [start_idx, end_idx]
-            }
-        elif event_or_entity == 'event':
-            entity = {
-                "event_text": entity_text,
-                "event_type": entity_type,
-                "score": entity_score,
-                "event_index": [start_idx, end_idx]
-            }
-        else:
-            raise NotImplementedError
+
+        entity = {
+            "entity_text": entity_text,
+            "entity_type": entity_type,
+            "score": entity_score,
+            "entity_index": [start_idx, end_idx]
+        }
+
         return entity
 
     def decode_ner(self,
@@ -154,9 +143,7 @@ class ItemDecoder(object):
                                          choice[entity_type_idx],
                                          entity_score,
                                          text_start_id=1,
-                                         offset_mapping=offset_mapping,
-                                         event_or_entity='entity',
-                                        )
+                                         offset_mapping=offset_mapping)
 
             if entity is None:
                 continue
@@ -204,9 +191,7 @@ class ItemDecoder(object):
                                          entity_type,
                                          entity_score,
                                          text_start_id=1,
-                                         offset_mapping=offset_mapping,
-                                         event_or_entity='entity',
-                                        )
+                                         offset_mapping=offset_mapping)
 
             if entity is None:
                 continue
@@ -317,7 +302,6 @@ class ItemDecoder(object):
 
         spo_list = []
         entity_list = []
-        event_list = []
 
         if task in {"实体识别", "抽取任务"}:
             entity_list = self.decode_ner(text,
@@ -334,4 +318,4 @@ class ItemDecoder(object):
         else:
             raise NotImplementedError
 
-        return entity_list, spo_list, event_list
+        return entity_list, spo_list

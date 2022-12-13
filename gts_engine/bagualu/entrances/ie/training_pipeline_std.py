@@ -25,19 +25,25 @@ from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
-from ...dataloaders.ie import UniEXDataModel, check_data, data_segment, data_segment_restore, eval_entity_f1, eval_entity_relation_f1
-from ...models.ie import UniEXLitModel, UniEXExtractModel, UniEXOnnxConfig
-from ...lib.utils import LoggerManager
-from ...lib.utils.json import load_json_list, dump_json, dump_json_list
-from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
 from ...arguments.ie import TrainingArgumentsIEStd
+from ...models.ie import UniEXLitModel, UniEXExtractModel, UniEXOnnxConfig
+from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
+from ...lib.utils import LoggerManager
+from ...lib.utils.json import (load_json_list,
+                               dump_json,
+                               dump_json_list)
+from ...dataloaders.ie import (UniEXDataModel,
+                               check_data,
+                               data_segment,
+                               data_segment_restore,
+                               eval_entity_f1,
+                               eval_entity_relation_f1)
 
 
 class TrainingPipelineIEStd(BaseTrainingPipeline):
-    """ train pipeline """
+    """ training pipeline """
 
-    _args: TrainingArgumentsIEStd
-    _mode_name: str = "ft_ie"
+    _args: TrainingArgumentsIEStd # training所需参数
 
     def __init__(self, args_parse_list: Optional[List[str]] = None):
         super().__init__(args_parse_list)
@@ -71,7 +77,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
     def _set_logger(self) -> None:
         now_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-        task_name = f"{self._mode_name}_{self._args.dataset}_{now_date}"
+        task_name = f"{self._args.dataset}_{now_date}"
         log_file = os.path.join(self._args.log_dir, task_name + ".log")
         LoggerManager.set_logger(self._args.logger, log_file)
         self._logger = LoggerManager.get_logger(self._args.logger)
@@ -85,12 +91,37 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         return tokenizer
 
     def _get_data_module(self) -> UniEXDataModel:
-        train_data = list(load_json_list(self._args.train_data_path))
-        dev_data = list(load_json_list(self._args.dev_data_path))
-        test_data = list(load_json_list(self._args.test_data_path))
-        check_data(train_data)
-        check_data(dev_data)
-        check_data(test_data)
+        train_data_path = self._args.train_data_path
+        dev_data_path = self._args.dev_data_path
+        test_data_path = self._args.test_data_path
+
+        # train data
+        if train_data_path and os.path.exists(train_data_path):
+            train_data = list(load_json_list(train_data_path))
+            self._logger.info("load train data from %s", train_data_path)
+            check_data(train_data)
+        else:
+            train_data = None
+            self._logger.error("training data path [%s] is not valid", train_data_path)
+
+        # dev data
+        if dev_data_path and os.path.exists(dev_data_path):
+            dev_data = list(load_json_list(dev_data_path))
+            self._logger.info("load dev data from %s", dev_data_path)
+            check_data(dev_data)
+        else:
+            dev_data = None
+            self._logger.warning("dev data path [%s] is not valid", dev_data_path)
+
+        # test data
+        if test_data_path and os.path.exists(test_data_path):
+            test_data = list(load_json_list(test_data_path))
+            self._logger.info("load test data from %s", test_data_path)
+            check_data(test_data)
+        else:
+            test_data = None
+            self._logger.warning("test data path [%s] is not valid", test_data_path)
+
         return UniEXDataModel(self._tokenizer,
                               self._args,
                               train_data=train_data,
@@ -122,6 +153,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
         # trainer
         trainer = Trainer(logger=logger,
+                          precision=16,
                           callbacks=[checkpoint_callback, early_stop_callback],
                           accelerator=self._args.accelerator,
                           devices=self._args.gpus,
@@ -141,23 +173,26 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
     def _select_best_model_from_ckpts(self) -> str:
 
+        # try to get best checkpoint path from ModelCheckpoint callback
         self._logger.info("select model from checkpoints...")
         for callback in self._trainer.callbacks:
             if isinstance(callback, ModelCheckpoint):
                 best_model_path = callback.best_model_path
-                if os.path.exists(best_model_path):
+                if best_model_path and os.path.exists(best_model_path):
                     shutil.copy(best_model_path, self._args.best_ckpt_path)
-                self._logger.info("best model path %s, copied to %s",
-                                  best_model_path,
-                                  self._args.best_ckpt_path)
-                return self._args.best_ckpt_path
+                    self._logger.info("best model path %s, copied to %s",
+                                      best_model_path,
+                                      self._args.best_ckpt_path)
+                    return self._args.best_ckpt_path
 
-        self._logger.warning("no ModelCheckpoint available")
-        return ""
+        # if no best checkpoint found (e.g. no dev data), use the last checkpoint
+        self._logger.warning("no ModelCheckpoint available, use last checkpoint")
+        return self._args.last_ckpt_path
 
     def _get_inf_lightning(self, checkpoint_path) -> UniEXLitModel: # pylint: disable=arguments-differ
         if not checkpoint_path or not os.path.exists(checkpoint_path):
-            self._logger.info("checkpoint_path [%s] is not valid. use final model for inference.")
+            self._logger.info("checkpoint [%s] is not valid. use final checkpoint.",
+                              checkpoint_path)
             model = self._lit_model
         else:
             self._logger.info("generating inference model...")
@@ -169,6 +204,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
     def _generate_prediction_file(self):
 
+        # generate predictions from dev data
         if os.path.exists(self._args.dev_data_path):
             self._logger.info("predicting on dev data..")
             data = list(load_json_list(self._args.dev_data_path))
@@ -176,12 +212,15 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             data_seg = data_segment(data)
             pred_data = self._generate_prediction_results(data_seg)
             pred_data = data_segment_restore(pred_data)
-            dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir, "dev_prediction_results.json"))
+            dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir,
+                                                   "dev_prediction_results.json"))
             eval_results = self._generate_evaluation_results(data, pred_data)
             dump_json(eval_results,
-                      os.path.join(self._args.prediction_save_dir, "dev_evaluation_results.json"),
+                      os.path.join(self._args.prediction_save_dir,
+                                   "dev_evaluation_results.json"),
                       indent=4)
 
+        # generate predictions from test data
         if os.path.exists(self._args.test_data_path):
             self._logger.info("predicting on test data..")
             data = list(load_json_list(self._args.test_data_path))
@@ -189,10 +228,12 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             data_seg = data_segment(data)
             pred_data = self._generate_prediction_results(data_seg)
             pred_data = data_segment_restore(pred_data)
-            dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir, "test_prediction_results.json"))
+            dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir,
+                                                   "test_prediction_results.json"))
             eval_results = self._generate_evaluation_results(data, pred_data)
             dump_json(eval_results,
-                      os.path.join(self._args.prediction_save_dir, "test_evaluation_results.json"),
+                      os.path.join(self._args.prediction_save_dir,
+                                   "test_evaluation_results.json"),
                       indent=4)
 
     def _generate_prediction_results(self, data: List[dict]) -> List[dict]: # pylint: disable=arguments-differ
@@ -246,22 +287,23 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._tokenizer.save_pretrained(self._args.model_save_dir)
         self._logger.info("tokenizer saved to %s", self._args.model_save_dir)
 
+        # load model config
         model_config = UniEXOnnxConfig()
         bert_model = self._inf_lit_model._model.cpu() # pylint: disable=protected-access
         bert_model.eval()
 
+        # get dummy model input
         input_sample = next(iter(self._data_module.train_dataloader()))
         model_input = [input_sample[name] for name in model_config.input_names]
 
-        filepath = os.path.join(self._args.model_save_dir, "model.onnx")
         torch.onnx.export(
             bert_model,
             tuple(model_input),
-            f=filepath,
+            f=self._args.onnx_saved_path,
             input_names=model_config.input_names,
             output_names=model_config.output_names,
             dynamic_axes=model_config.dynamic_axes,
             do_constant_folding=True,
             opset_version=13
         )
-        self._logger.info("onnx model saved to %s", filepath)
+        self._logger.info("onnx model saved to %s", self._args.onnx_saved_path)

@@ -515,11 +515,9 @@ class ItemEncoder(object):
         atten_mask = full_atten_batch['attention_mask']
         b, _, _ = atten_mask.size()
         for i in range(b):
-            ent_ranges, rel_ranges, event_ranges = batch[i]['ent_ranges'], \
-                batch[i]['rel_ranges'], batch[i]['event_ranges']
+            ent_ranges, rel_ranges = batch[i]['ent_ranges'], batch[i]['rel_ranges']
             text_len = ent_ranges[0][0] # text长度
-            if event_ranges:
-                raise ValueError('not support event now!')
+
             if not rel_ranges:
                 assert len(ent_ranges) == 1, 'ent_ranges:%s' % ent_ranges
                 s, e = ent_ranges[0]

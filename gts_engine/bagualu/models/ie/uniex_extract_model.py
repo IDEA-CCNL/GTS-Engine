@@ -62,12 +62,11 @@ class UniEXExtractModel(object):
 
         for i, item in enumerate(batch_data):
 
-            entity_list, spo_list, event_list = self.decoder.decode(item,
-                                                                    span_logits[i],
-                                                                    label_mask[i])
+            entity_list, spo_list = self.decoder.decode(item,
+                                                        span_logits[i],
+                                                        label_mask[i])
 
             item["spo_list"] = spo_list
             item["entity_list"] = entity_list
-            item["event_list"] = event_list
 
         return batch_data
