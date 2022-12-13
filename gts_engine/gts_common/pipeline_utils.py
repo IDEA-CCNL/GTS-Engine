@@ -7,6 +7,8 @@ from pytorch_lightning import Trainer, seed_everything, loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from transformers import AutoModel, AutoTokenizer
 
+from .arguments import GtsEngineArgs
+
 def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
     if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
         print("model already exists.")
@@ -19,7 +21,7 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     shutil.rmtree(cache_path)
     print("model %s is downloaded from huggingface." % model_name)
 
-def generate_common_trainer(args, save_path):
+def generate_common_trainer(args: GtsEngineArgs, save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
@@ -35,9 +37,12 @@ def generate_common_trainer(args, save_path):
                                 ) 
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
-    trainer = Trainer.from_argparse_args(args, 
-                                            logger=logger,
-                                            callbacks=[checkpoint, early_stop])
+    trainer = Trainer(
+        max_epochs=args.max_epochs,
+        min_epochs=args.min_epochs,
+        logger=logger,
+        callbacks=[checkpoint, early_stop]
+    )
     return trainer, checkpoint
 
 class ObjDict(dict):
