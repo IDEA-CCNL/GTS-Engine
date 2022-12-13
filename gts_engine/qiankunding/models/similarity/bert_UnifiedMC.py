@@ -41,6 +41,8 @@ class taskModel(nn.Module):
                     print("使用gradient_checkpointing！")
                 elif globalvar.get_value("gpu_type") == "high_gpu":
                     self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
+                else:
+                    self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
         else:
             self.bert_encoder = AutoModelForMaskedLM.from_pretrained(pre_train_dir)
         self.bert_encoder.resize_token_embeddings(new_num_tokens=len(tokenizer))

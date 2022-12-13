@@ -40,9 +40,6 @@ def result_eval(y_true, y_pred, label_names):
     return eval_results
 
 class Evaluator(object):
-    # def __init__(self, args, model, data_model, save_path, mode, data_set):
-    #     super().__init__()
-    #     self.args, self.model, self.data_model, self.save_path, self.mode, self.data_set = args, model, data_model, save_path, mode, data_set
     
     def __init__(self, args, model, data_model, save_path):
         super().__init__()
@@ -98,7 +95,6 @@ class Evaluator(object):
                 y_true += list(labels)
                 y_pred += list(predicts)
 
-        
             for idx, (predict,prob,logit) in enumerate(zip(predicts,probs,logits)):
                 
                 pred = {
@@ -127,8 +123,8 @@ class Evaluator(object):
             test_loader = self.data_model.test_dataloader()
         elif data_set=="train":
             test_loader = self.data_model.train_dataloader()
-
-        results, y_true, y_pred = self.inference(test_loader=test_loader,data_set=data_set, threshold=threshold)
+            
+        results, y_true, y_pred = self.inference(test_loader=test_loader, data_set=data_set, threshold=threshold)
         self.save_to_file(data_set, results, y_true, y_pred)
         acc = None
         if len(y_true) > 0:
@@ -136,7 +132,7 @@ class Evaluator(object):
         return acc
 
 class SentencePairEvaluator(Evaluator):
-    def inference(self,test_loader,data_set):
+    def inference(self, test_loader, data_set, threshold):
         if self.task_type == "similarity":
             id2label = {0:0, 1:1}
         elif self.task_type == "nli":
@@ -153,10 +149,9 @@ class SentencePairEvaluator(Evaluator):
                 y_true += list(labels)
                 y_pred += list(predicts)
 
-        
             for idx, (predict,prob,logit) in enumerate(zip(predicts,probs,logits)):
                 pred = {
-                            "id": int(batch["id"][idx]),
+                            # "id": int(batch["id"][idx]),
                             'label': id2label[predict],
                             'sentence1': batch['texta'][idx],
                             'sentence2': batch['textb'][idx],
@@ -168,7 +163,7 @@ class SentencePairEvaluator(Evaluator):
                         }
                 
                 if data_set=="unlabeled":
-                    if prob[predict] > self.prob_threshold:
+                    if prob[predict] > threshold:
                         pred["unlabeled_set"] = batch['unlabeled_set'][idx]
                         results.append(pred)
                 else:
