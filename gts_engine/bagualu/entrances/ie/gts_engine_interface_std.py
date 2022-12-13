@@ -26,7 +26,7 @@ from .inference_manager_std import InferenceManagerIEStd
 
 
 class TypeCheckedTrainArgs(BaseModel):
-    """GTS-Engine相关参数进行runtime类型检查"""
+    """ GTS-Engine相关参数进行runtime类型检查 """
     task_dir: DirectoryPath
     pretrained_model_dir: DirectoryPath
     data_dir: DirectoryPath
@@ -40,7 +40,7 @@ class TypeCheckedTrainArgs(BaseModel):
 
 
 class TypeCheckedInferenceArgs(BaseModel):
-    """GTS-Engine相关参数进行runtime类型检查"""
+    """ GTS-Engine相关参数进行runtime类型检查 """
     task_dir: DirectoryPath
     pretrained_model_root: DirectoryPath
 
@@ -66,6 +66,8 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
             train_mode=TRAIN_MODE(args.train_mode),
             seed=args.seed
         )
+
+        # 用户参数转化为实际参数
         args_parse_list: List[str] = []
         args_parse_list.extend(["--gts_input_path", str(checked_args.task_dir)])
         args_parse_list.extend(["--gts_pretrained_model_path",
@@ -83,10 +85,13 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
         return InferenceManagerIEStd
 
     def _parse_inference_args(self, args: GtsEngineArgs) -> List[str]:
+        # args类型检查
         checked_args = TypeCheckedInferenceArgs(
             task_dir=Path(args.task_dir),
             pretrained_model_root=Path(args.pretrained_model_dir)
         )
+
+        # 用户参数转化为实际参数
         args_parse_list: List[str] = []
         args_parse_list.extend(["--task_dir", str(checked_args.task_dir)])
         args_parse_list.extend(["--pretrained_model_root", str(checked_args.pretrained_model_root)])

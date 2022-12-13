@@ -119,8 +119,9 @@ class UniEXLitModel(LightningModule):
         span_labels = batch["span_labels"]
         span_mask = batch["label_mask"]
 
-        # loss = self.criterion(span_logits.view(-1), span_labels.view(-1), span_mask.view(-1)) * self.args.loss_boost
-        loss = self.criterion(span_logits.reshape(-1), span_labels.reshape(-1), span_mask.reshape(-1)) * self.args.loss_boost
+        loss = self.criterion(span_logits.reshape(-1),
+                              span_labels.reshape(-1),
+                              span_mask.reshape(-1)) * self.args.loss_boost
 
         if self.distill_self:
             mask_atten_logits, full_atten_logits = torch.chunk(span_logits, 2, dim=0)
@@ -152,8 +153,8 @@ class UniEXLitModel(LightningModule):
         if self.global_rank == 0:
             if self.global_step % self.args.log_step == 0:
                 if not self.distill_self:
-                    self._logger.info("[TRAIN-%s] step:%s, epoch:%s, batch_idx:%s/%s, lr:%.2e, loss:%.6f, "
-                                      "f1/p/r=%.4f/%.4f/%.4f, corr/pred/true=%d/%d/%d",
+                    self._logger.info("[TRAIN-%s] step:%s, epoch:%s, batch_idx:%s/%s, lr:%.2e, "
+                                      "loss:%.6f, f1/p/r=%.4f/%.4f/%.4f, corr/pred/true=%d/%d/%d",
                                       self.global_rank,
                                       self.global_step,
                                       self.current_epoch,
@@ -168,8 +169,9 @@ class UniEXLitModel(LightningModule):
                                       sum_y_pred,
                                       sum_y_true)
                 else:
-                    self._logger.info("[TRAIN-%s] step:%s, epoch:%s, batch_idx:%s/%s, lr:%.2e, loss:%.6f, "
-                                      "mse loss:%.6f, f1/p/r=%.4f/%.4f/%.4f, corr/pred/true=%d/%d/%d",
+                    self._logger.info("[TRAIN-%s] step:%s, epoch:%s, batch_idx:%s/%s, lr:%.2e, "
+                                      "loss:%.6f, mse loss:%.6f, f1/p/r=%.4f/%.4f/%.4f, "
+                                      "corr/pred/true=%d/%d/%d",
                                       self.global_rank,
                                       self.global_step,
                                       self.current_epoch,
@@ -198,8 +200,9 @@ class UniEXLitModel(LightningModule):
         span_labels = batch["span_labels"]
         span_mask = batch["label_mask"]
 
-        # loss = self.criterion(span_logits.view(-1), span_labels.view(-1), span_mask.view(-1)) * self.args.loss_boost
-        loss = self.criterion(span_logits.reshape(-1), span_labels.reshape(-1), span_mask.reshape(-1)) * self.args.loss_boost
+        loss = self.criterion(span_logits.reshape(-1),
+                              span_labels.reshape(-1),
+                              span_mask.reshape(-1)) * self.args.loss_boost
 
         _, _, _, sum_corr, sum_y_true, sum_y_pred = self.compute_metrics(span_logits, span_labels, span_mask)
 

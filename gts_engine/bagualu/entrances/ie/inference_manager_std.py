@@ -26,11 +26,12 @@ from ...arguments.ie import InferenceArgumentsIEStd
 class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
     """ InferenceManagerIEStd """
 
-    _args: InferenceArgumentsIEStd
-    _inference_model: UniEXModel
-    _extract_model: UniEXExtractModel
+    _args: InferenceArgumentsIEStd # inference所需参数
+    _inference_model: UniEXModel # inference模型
+    _extract_model: UniEXExtractModel # 抽取模型
 
     def prepare_inference(self) -> None:
+        """ prepare inference """
         # load model
         self._inference_model = UniEXLitModel.load_from_checkpoint(self._args.best_ckpt_path, # pylint: disable=protected-access
                                                                    args=self._args,
@@ -43,11 +44,18 @@ class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
                                                   additional_special_tokens=added_token)
         self.info(f"loaded tokenzier from {self._args.model_save_dir}")
 
-        # extract model
+        # instantiate extract model
         self._extract_model = UniEXExtractModel(tokenizer, self._args)
 
-    def inference(self, sample: List[dict]):
-        """ inference """
+    def inference(self, sample: List[dict]) -> List[dict]:
+        """ inference
+
+        Args:
+            sample (List[dict]): input samples for inference
+
+        Returns:
+            List[dict]: inference results
+        """
         batch_size = self._args.batch_size
         result = []
         for i in range(0, len(sample), batch_size):
