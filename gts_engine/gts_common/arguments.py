@@ -32,6 +32,7 @@ class GtsEngineArgs(Namespace):
     val_check_interval: float
     max_epochs: Optional[int]
     min_epochs: Optional[int]
+    gradient_checkpointing_gate: str
     @property
     def train_data_path(self) -> Path:
         return Path(self.data_dir) / self.train_data
