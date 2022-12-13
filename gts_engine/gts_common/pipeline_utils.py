@@ -41,9 +41,14 @@ def generate_common_trainer(args: GtsEngineArgs, save_path):
                                 ) 
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
-    trainer = Trainer.from_argparse_args(args,
+    trainer = Trainer(
                         logger=logger,
-                        callbacks=[checkpoint, early_stop]
+                        callbacks=[checkpoint, early_stop],
+                        min_epochs=args.min_epochs,
+                        max_epochs=args.max_epochs,
+                        num_sanity_val_steps=args.num_sanity_val_steps,
+                        accumulate_grad_batches=args.accumulate_grad_batches,
+                        val_check_interval=args.val_check_interval
     )
     return trainer, checkpoint
 
