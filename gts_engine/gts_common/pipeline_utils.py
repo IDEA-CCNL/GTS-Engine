@@ -48,7 +48,8 @@ def generate_common_trainer(args: GtsEngineArgs, save_path):
                         max_epochs=args.max_epochs,
                         num_sanity_val_steps=args.num_sanity_val_steps,
                         accumulate_grad_batches=args.accumulate_grad_batches,
-                        val_check_interval=args.val_check_interval
+                        val_check_interval=args.val_check_interval,
+                        gpus=args.gpus
     )
     return trainer, checkpoint
 
