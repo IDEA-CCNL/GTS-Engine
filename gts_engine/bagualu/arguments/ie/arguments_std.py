@@ -201,6 +201,12 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=float,
                             default=0.5,
                             help="[可选]关系阈值，默认0.5")
+        parser.add_argument("--learning_rate",
+                            dest="learning_rate",
+                            type=float,
+                            default=1e-5,
+                            help="[可选]学习率，默认1e-5")
+
 
     def _after_parse(self) -> None:
         mk_inexist_dir(self.ft_output_dir)
