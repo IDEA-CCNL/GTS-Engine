@@ -24,7 +24,7 @@ class TrainingModelClfStd(nn.Module):
     def __init__(self, args, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
         super().__init__()
         self._config = BertConfig.from_pretrained(pretrained_model_dir)
-        if args.gradient_checkpointing_gate=="True":
+        if args.use_gradient_checkpointing=="True":
             self._config.gradient_checkpointing=True
             print("使用gradient_checkpointing！")
         self._bert_encoder: BertForMaskedLM = BertForMaskedLM.from_pretrained(pretrained_model_dir, config=self._config) # type: ignore

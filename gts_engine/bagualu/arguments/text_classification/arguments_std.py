@@ -37,8 +37,11 @@ class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
                             help="whether or not to use rdrop component")
         parser.add_argument("--rdrop_alpha", dest="rdrop_alpha",
                             type=int, default=5)
-        parser.add_argument("--gradient_checkpointing_gate", choices=["True", "False"], 
-                            type=str, default="False", help="Whether to enable gradient_checkpointing")
+        parser.add_argument("--use_gradient_checkpointing",type=str, 
+                            default="False",choices=["True", "False"], 
+                            help="Whether to use gradient checkpointing")
+        parser.add_argument("--precision", type=int, default=16, 
+                            choices=[16,32], help="bagualu training precision")
     aug_eda_gate: bool = True
     dev_resample_thres: int = 1000  # dev数据超过阈值进行重采样
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
