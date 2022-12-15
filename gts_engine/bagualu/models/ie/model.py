@@ -90,8 +90,8 @@ class MLPLayer(nn.Module):
         return x
 
 
-class UniEXModel(BertPreTrainedModel):
-    """ UniEXModel
+class BagualuIEModel(BertPreTrainedModel):
+    """ BagualuIEModel
 
     Args:
         config (BertConfig): config
