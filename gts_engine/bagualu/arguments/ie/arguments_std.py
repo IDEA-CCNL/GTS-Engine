@@ -226,6 +226,12 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=float,
                             default=0.5,
                             help="[可选]验证间隔，默认0.5")
+        parser.add_argument("--batch_size",
+                            dest="train batch_size",
+                            type=int,
+                            default=16,
+                            help="[可选]train batch大小，默认16")
+
 
 
     def _after_parse(self) -> None:
