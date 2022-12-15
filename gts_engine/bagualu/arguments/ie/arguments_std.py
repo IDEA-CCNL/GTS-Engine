@@ -206,6 +206,11 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=float,
                             default=1e-5,
                             help="[可选]学习率，默认1e-5")
+        parser.add_argument("--accumulate_grad_batches",
+                            dest="accumulate_grad_batches",
+                            type=int,
+                            default=1,
+                            help="[可选]梯度累积，默认1")
 
 
     def _after_parse(self) -> None:
