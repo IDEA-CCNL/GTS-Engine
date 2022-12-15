@@ -3,7 +3,7 @@ from pydantic import BaseModel, DirectoryPath, FilePath
 from pathlib import Path
 
 from ...lib.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
-from ...lib.utils.json import dump_json, load_json
+from ...lib.utils.json_processor import dump_json, load_json
 
 from .training_pipeline_std import TrainingPipelineClfStd
 from .inference_manager_std import InferenceManagerClfStd
@@ -28,7 +28,6 @@ class TypeCheckedTrainArgs(BaseModel):
     test_batchsize: int
     max_length: int
     learning_rate: float
-    use_gradient_checkpointing: str
     
 class TypeCheckedInfArgs(BaseModel):
     model_save_dir: DirectoryPath
@@ -62,7 +61,6 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
             test_batchsize=args.test_batchsize,
             max_length=args.max_len,
             learning_rate=args.lr,
-            use_gradient_checkpointing=args.use_gradient_checkpointing,
         )
         args_parse_list: List[str] = []
         args_parse_list.extend(
@@ -104,7 +102,6 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
                 "you should pass label_data file in classification task")
         args_parse_list.extend(
             ["--log_dir", str(type_checked_args.task_dir / "logs")])
-        args_parse_list.extend(["--use_gradient_checkpointing", str(type_checked_args.use_gradient_checkpointing)])
         return args_parse_list
 
     def prepare_training(self, args: GtsEngineArgs) -> None:

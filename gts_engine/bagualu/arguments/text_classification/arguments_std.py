@@ -8,6 +8,7 @@ from ...lib.components.lightning_callbacks.adaptive_val_intervals import (
 from ...lib.framework.classification_finetune import (
     BaseTrainingArgumentsClf,
     BaseInferenceArgumentsClf)
+from ...lib.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 
 
 class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
@@ -37,14 +38,16 @@ class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
                             help="whether or not to use rdrop component")
         parser.add_argument("--rdrop_alpha", dest="rdrop_alpha",
                             type=int, default=5)
-        parser.add_argument("--use_gradient_checkpointing",type=str, 
-                            default="False",choices=["True", "False"], 
-                            help="Whether to use gradient checkpointing")
-        parser.add_argument("--precision", type=int, default=16, 
-                            choices=[16,32], help="bagualu training precision")
     aug_eda_gate: bool = True
     dev_resample_thres: int = 1000  # dev数据超过阈值进行重采样
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
+
+    # 基于显卡显存大小，设定显存优化的参数
+    gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
+    gpu_type = decide_gpu(gpu_memory)
+    precision = 16 if "low" in gpu_type else 32 
+    use_gradient_checkpointing = "True" if gpu_type == "lower_gpu" else "False"
+    print("基于当前显卡显存大小 {}M, 设置training precision为{}, 设置use_gradient_checkpointing为{}".format(gpu_memory, precision, use_gradient_checkpointing))
 
 
 class InferenceArgumentsClfStd(BaseInferenceArgumentsClf):

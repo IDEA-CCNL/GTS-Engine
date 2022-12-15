@@ -18,7 +18,7 @@ from ...components import TokenizerGenerator
 from .prompt import StdPrompt
 from ..base_training_pipeline import BaseTrainingPipeline
 from ..consts import TRAINING_STAGE
-from ...utils.json import dump_json_list, load_json_list, dump_json, load_json
+from ...utils.json_processor import dump_json_list, load_json_list, dump_json, load_json
 from ...utils.path import get_file_size
 from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
 from ...utils.statistics import interval_mean, acc

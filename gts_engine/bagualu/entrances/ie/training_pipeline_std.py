@@ -29,7 +29,7 @@ from ...arguments.ie import TrainingArgumentsIEStd
 from ...models.ie import UniEXLitModel, UniEXExtractModel, UniEXOnnxConfig
 from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
 from ...lib.utils import LoggerManager
-from ...lib.utils.json import (load_json_list,
+from ...lib.utils.json_processor import (load_json_list,
                                dump_json,
                                dump_json_list)
 from ...dataloaders.ie import (UniEXDataModel,

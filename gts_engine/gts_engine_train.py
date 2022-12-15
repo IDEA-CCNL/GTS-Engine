@@ -109,10 +109,6 @@ def main():
                             type=int, help="upper limit of training epochs")
     total_parser.add_argument('--min_epochs', default=None,
                             type=int, help="lower limit of training epochs")
-    
-    # * Args for bagualu
-    total_parser.add_argument("--gradient_checkpointing_gate", choices=["True", "False"], 
-                            type=str, default="False", help="Whether to enable gradient_checkpointing")
 
     print("total_parser:",total_parser)
     # * Args for data preprocessing
