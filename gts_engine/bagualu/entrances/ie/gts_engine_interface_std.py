@@ -38,6 +38,7 @@ class TypeCheckedTrainArgs(BaseModel):
     train_mode: TRAIN_MODE
     seed: int
     lr: float
+    accumulate_grad_batches: int
 
 
 class TypeCheckedInferenceArgs(BaseModel):
@@ -67,6 +68,7 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
             train_mode=TRAIN_MODE(args.train_mode),
             seed=args.seed,
             lr=args.lr,
+            accumulate_grad_batches=args.accumulate_grad_batches,
         )
 
         # 用户参数转化为实际参数
@@ -81,6 +83,7 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
         args_parse_list.extend(["--dev_data_path", str(checked_args.valid_data_path)])
         args_parse_list.extend(["--test_data_path", str(checked_args.test_data_path)])
         args_parse_list.extend(["--learning_rate",str(checked_args.lr)])
+        args_parse_list.extend(["--accumulate_grad_batches", str(checked_args.accumulate_grad_batches)])
         return args_parse_list
 
     @property
