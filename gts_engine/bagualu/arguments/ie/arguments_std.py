@@ -211,6 +211,11 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=int,
                             default=1,
                             help="[可选]梯度累积，默认1")
+        parser.add_argument("--num_workers",
+                            dest="num_workers",
+                            type=int,
+                            default=8,
+                            help="[可选]工作数，默认8")
 
 
     def _after_parse(self) -> None:
