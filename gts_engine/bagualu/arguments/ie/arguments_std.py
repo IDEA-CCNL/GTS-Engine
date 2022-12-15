@@ -221,6 +221,11 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=int,
                             default=512,
                             help="[可选]最大长度，默认512")
+        parser.add_argument("--val_check_interval",
+                            dest="val_check_interval",
+                            type=float,
+                            default=0.5,
+                            help="[可选]验证间隔，默认0.5")
 
 
     def _after_parse(self) -> None:
