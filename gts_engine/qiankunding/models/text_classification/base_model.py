@@ -157,7 +157,7 @@ class BaseModel(pl.LightningModule):
             'token_type_ids': batch['token_type_ids']
         }
         # print("batch长度：",inputs["input_ids"].shape)
-        return inputs 
+        return inputs
 
     def training_step(self, batch, batch_idx):
         inputs = self.train_inputs(batch)
