@@ -216,6 +216,11 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=int,
                             default=8,
                             help="[可选]工作数，默认8")
+        parser.add_argument("--max_length",
+                            dest="max_length",
+                            type=int,
+                            default=512,
+                            help="[可选]最大长度，默认512")
 
 
     def _after_parse(self) -> None:
