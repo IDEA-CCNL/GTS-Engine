@@ -40,6 +40,9 @@ class TypeCheckedTrainArgs(BaseModel):
     lr: float
     accumulate_grad_batches: int
     num_workers: int
+    max_len:int
+    val_check_interval:float
+    train_batchsize:int
 
 
 class TypeCheckedInferenceArgs(BaseModel):
@@ -71,6 +74,9 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
             lr=args.lr,
             accumulate_grad_batches=args.accumulate_grad_batches,
             num_workers=args.num_workers,
+            max_len=args.max_len,
+            val_check_interval=args.val_check_interval,
+            train_batchsize=args.train_batchsize,
         )
 
         # 用户参数转化为实际参数
@@ -87,6 +93,9 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
         args_parse_list.extend(["--learning_rate",str(checked_args.lr)])
         args_parse_list.extend(["--accumulate_grad_batches", str(checked_args.accumulate_grad_batches)])
         args_parse_list.extend(["--num_workers", str(checked_args.num_workers)])
+        args_parse_list.extend(["--max_length",str(checked_args.max_len)])
+        args_parse_list.extend(["--val_check_interval",str(checked_args.val_check_interval)])
+        args_parse_list.extend(["--batch_size",str(checked_args.train_batchsize)])
         return args_parse_list
 
     @property
