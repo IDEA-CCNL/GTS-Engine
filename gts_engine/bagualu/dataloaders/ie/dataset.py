@@ -20,8 +20,8 @@ from transformers import PreTrainedTokenizer
 from .item_encoder import ItemEncoder
 
 
-class UniEXDataset(Dataset):
-    """ UniEXDataset
+class BagualuIEDataset(Dataset):
+    """ BagualuIEDataset
 
     Args:
         data (List[dict]): data

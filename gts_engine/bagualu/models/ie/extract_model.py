@@ -21,11 +21,11 @@ from transformers import PreTrainedTokenizer
 from ...dataloaders.ie.item_encoder import ItemEncoder
 from ...dataloaders.ie.item_decoder import ItemDecoder
 from ...arguments.ie import TrainingArgumentsIEStd
-from .uniex_model import UniEXModel
+from .model import BagualuIEModel
 
 
-class UniEXExtractModel(object):
-    """ UniEXExtractModel
+class BagualuIEExtractModel(object):
+    """ BagualuIEExtractModel
 
     Args:
         tokenizer (PreTrainedTokenizer): tokenizer
@@ -37,12 +37,12 @@ class UniEXExtractModel(object):
         self.encoder = ItemEncoder(tokenizer, args.max_length)
         self.decoder = ItemDecoder(tokenizer, args)
 
-    def extract(self, batch_data: List[dict], model: UniEXModel) -> List[dict]:
+    def extract(self, batch_data: List[dict], model: BagualuIEModel) -> List[dict]:
         """ extract
 
         Args:
             batch_data (List[dict]): batch of data
-            model (UniEXModel): model
+            model (BagualuIEModel): model
 
         Returns:
             List[dict]: batch of data

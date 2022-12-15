@@ -19,7 +19,7 @@ from transformers import AutoTokenizer
 
 from ...lib.framework import BaseInferenceManager
 from ...lib.framework.mixin import OptionalLoggerMixin
-from ...models.ie import UniEXModel, UniEXLitModel, UniEXExtractModel
+from ...models.ie import BagualuIEModel, BagualuIELitModel, BagualuIEExtractModel
 from ...arguments.ie import InferenceArgumentsIEStd
 
 
@@ -27,13 +27,13 @@ class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
     """ InferenceManagerIEStd """
 
     _args: InferenceArgumentsIEStd # inference所需参数
-    _inference_model: UniEXModel # inference模型
-    _extract_model: UniEXExtractModel # 抽取模型
+    _inference_model: BagualuIEModel # inference模型
+    _extract_model: BagualuIEExtractModel # 抽取模型
 
     def prepare_inference(self) -> None:
         """ prepare inference """
         # load model
-        self._inference_model = UniEXLitModel.load_from_checkpoint(self._args.best_ckpt_path, # pylint: disable=protected-access
+        self._inference_model = BagualuIELitModel.load_from_checkpoint(self._args.best_ckpt_path, # pylint: disable=protected-access
                                                                    args=self._args,
                                                                    logger=None)._model
         self.info(f"loaded model from {self._args.best_ckpt_path}")
@@ -45,7 +45,7 @@ class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
         self.info(f"loaded tokenzier from {self._args.model_save_dir}")
 
         # instantiate extract model
-        self._extract_model = UniEXExtractModel(tokenizer, self._args)
+        self._extract_model = BagualuIEExtractModel(tokenizer, self._args)
 
     def inference(self, sample: List[dict]) -> List[dict]:
         """ inference
