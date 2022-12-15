@@ -102,10 +102,13 @@ def main():
                             type=int, help="random seed for training")
     total_parser.add_argument('--lr', default=2e-5,
                             type=float, help="learning rate")
+    
+    # * Args for Trainer
+    total_parser.add_argument('--max_epochs', default=None,
+                            type=int, help="upper limit of training epochs")
+    total_parser.add_argument('--min_epochs', default=None,
+                            type=int, help="lower limit of training epochs")
 
-
-
-    total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
     # * Args for data preprocessing
     args = total_parser.parse_args(namespace=GtsEngineArgs())
