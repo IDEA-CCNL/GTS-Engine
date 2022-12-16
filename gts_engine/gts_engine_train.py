@@ -101,10 +101,6 @@ def main():
                               type=int, help="lower limit of training epochs")
     total_parser.add_argument('--val_check_interval', default=0.5,
                               type=float, help="perform a validation loop every after every `N` training epochs")
-    total_parser.add_argument('--accumulate_grad_batches', default=8,
-                              type=int, help="accumulates grads every k batches or as set up in the dict")
-    total_parser.add_argument('--num_sanity_val_steps', default=1000,
-                              type=int, help="sanity check runs n validation batches before starting the training routine")
 
     print("total_parser:",total_parser)
     args = total_parser.parse_args()
