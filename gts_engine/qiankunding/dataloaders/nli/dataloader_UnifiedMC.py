@@ -9,6 +9,10 @@ import pytorch_lightning as pl
 import sklearn
 from torch.utils.data import Dataset, DataLoader
 
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+logger.propagate = False
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
@@ -53,8 +57,8 @@ def get_att_mask(attention_mask,label_idx,question_len):
     for i in range(len(label_idx)-1):
         label_token_length=label_idx[i+1]-label_idx[i]
         if label_token_length<=0:
-            print('label_idx',label_idx)
-            print('question_len',question_len)
+            logger.info("label_idx {}".format(label_idx))
+            logger.info("question_len {}".format(question_len))
             continue
         ones=np.ones(shape=(label_token_length,label_token_length))
         attention_mask[label_idx[i]:label_idx[i+1],label_idx[i]:label_idx[i+1]]=ones
@@ -187,14 +191,14 @@ class TaskDatasetUnifiedMCForNLI(Dataset):
         token_type_ids=[0]*question_len+[1]*(label_idx[-1]-label_idx[0]+1)+[0]*zero_len
 
         if self.args.use_label_attention_mask=='True':
-            # print("label_idx",label_idx) 
+
             attention_mask=get_att_mask(attention_mask,label_idx,question_len)
 
         if self.args.use_align_position=='True':
             try:
                 position_ids=get_position_ids(label_idx,encoded_len,question_len)
             except:
-                print(item)
+                logger.info(item)
         else:
             position_ids=np.arange(self.max_length)
         
@@ -292,7 +296,7 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False)
         self.test_data = TaskDatasetUnifiedMCForNLI(os.path.join(
             args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False)
-        print("len(valid_data):",len(self.valid_data))
+        logger.info("len(valid_data): {}".format(len(self.valid_data)))
        
     def train_dataloader(self):
         return DataLoader(self.train_data, shuffle=True, collate_fn=self.collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
@@ -383,7 +387,7 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
             "use_mask": batch_data["use_mask"],
         }
 
-        # print(batch)
+        # logger.info(batch)
 
         return batch_data
 
@@ -408,5 +412,5 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
             for i,item in enumerate(list(label_model.classes_)):
                 label_classes[item] = i
 
-        print("label_classes:",label_classes)
+        logger.info("label_classes: {}".format(label_classes))
         return label_classes

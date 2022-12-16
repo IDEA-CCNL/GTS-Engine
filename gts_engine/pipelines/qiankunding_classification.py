@@ -20,6 +20,10 @@ from qiankunding.models.text_classification.tcbert import TCBert
 from qiankunding.utils.evaluation import Evaluator
 from qiankunding.utils.knn_utils import knn_inference
 from qiankunding.utils.utils import json2list, list2json
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+logger.propagate = False
 
 def train_classification(args):
     if args.train_mode == "standard":
@@ -70,7 +74,7 @@ def train_classification(args):
                 os.makedirs(output_save_path)
 
             # Evaluation
-            print("Load checkpoint from {}".format(checkpoint_path))
+            logger.info("Load checkpoint from {}".format(checkpoint_path))
             model = BertUnifiedMC.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
             model.cuda()
             model.eval() 
@@ -85,7 +89,7 @@ def train_classification(args):
                     json.dump(task_info, f, indent=4)
 
     elif args.train_mode == "advanced":
-        print("Load checkpoint from {}".format(checkpoint_path))
+        logger.info("Load checkpoint from {}".format(checkpoint_path))
         model = TCBert.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval()
@@ -101,7 +105,7 @@ def train_pipeline(args):
     # save args
     args = save_args(args)
     if args.train_mode == "advanced":
-        print("******start advanced train******")
+        logger.info("******start advanced train******")
         train_classification(args)
         # shutil.rmtree(os.path.join(args.save_path, "best_model.ckpt"))
         os.remove(os.path.join(args.save_path, "best_model.ckpt"))
@@ -111,7 +115,7 @@ def train_pipeline(args):
         list2json(train_add_pseudo, os.path.join(args.data_dir, "train_add_pseudo.json"), use_key=["content", "label"] )
         args.train_data = "train_add_pseudo.json"
         args.train_mode = "standard"
-    print("******start standard train******")
+    logger.info("******start standard train******")
     train_classification(args)
 
 
@@ -126,7 +130,7 @@ def prepare_inference(save_path):
     inference_choice = line['labels']
 
     # load tokenizer
-    print("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
+    logger.info("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
     inference_tokenizer = BertTokenizer.from_pretrained(save_path)
 
     # load model

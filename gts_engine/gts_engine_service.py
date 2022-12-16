@@ -21,7 +21,10 @@ sys.path.append(os.path.dirname(__file__))
 from gts_common import service_utils
 from gts_engine_inference import preprare_inference, inference_samples
 import gc
+from gts_common.logs_utils import Logger
 
+logger = Logger().get_log()
+logger.propagate = False
 app = FastAPI()
 
 ## 全局参数
@@ -116,14 +119,14 @@ async def upload_files(files:List[UploadFile]=File(...), task_id: str = Form()):
     data_dir = os.path.join(specific_task_dir, "data")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
-    print('file will save to', data_dir)
+    logger.info("file will save to {}".format(data_dir))
 
     for file_ in files:
         contents = await file_.read()
         file_name = file_.filename
         
         file_path = os.path.join(data_dir, file_name)
-        print('file_path', file_path)
+        logger.info("file_path {}".format( file_path))
         with open(file_path, 'wb') as f:
             f.write(contents)
 
@@ -205,7 +208,7 @@ def start_train(train_input: TrainInput):
     val_batch_size = 4
     val_check_interval = 0.5
 
-    print('start training...')
+    logger.info("start training...")
     args = [
         "--task_dir=%s" % specific_task_dir,
         "--engine_type=%s" % task_info["engine_type"],
@@ -262,7 +265,7 @@ def stop_train(stop_train_input: StopTrainInput):
 
     proc = psutil.Process(task_info["train_pid"])
     proc.kill()
-    print("train process %d is killed" % task_info["train_pid"])
+    logger.info("train process %d is killed" % task_info["train_pid"])
 
     task_info["status"] = "Train Stopped"
     task_info["status_code"] = 4

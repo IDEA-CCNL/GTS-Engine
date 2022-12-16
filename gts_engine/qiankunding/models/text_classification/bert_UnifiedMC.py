@@ -9,13 +9,14 @@ from transformers import AutoConfig, AutoModelForMaskedLM, MegatronBertForMasked
 from transformers.optimization import get_linear_schedule_with_warmup
 from transformers import AdamW,Adafactor
 from .base_model import BaseModel, Pooler
-
-
 import numpy as np
 
 from ...utils.detect_gpu_memory import detect_gpu_memory
 from ...utils import globalvar as globalvar
+from gts_common.logs_utils import Logger
 
+logger = Logger().get_log()
+logger.propagate = False
 
 class taskModel(nn.Module):
     def __init__(self, pre_train_dir: str, tokenizer):
@@ -25,15 +26,15 @@ class taskModel(nn.Module):
         self.config = AutoConfig.from_pretrained(pre_train_dir)
         if "1.3B" in pre_train_dir:
             # v100
-            print(globalvar.get_value("gpu_type"))
+            logger.info(globalvar.get_value("gpu_type"))
             if globalvar.get_value("gpu_type") == "low_gpu":
                 self.config.gradient_checkpointing = True
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                print("使用gradient_checkpointing！")
+                logger.info("使用gradient_checkpointing！")
             elif globalvar.get_value("gpu_type") == "mid_gpu":
                 self.config.gradient_checkpointing = True
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir, config=self.config)
-                print("使用gradient_checkpointing！")
+                logger.info("使用gradient_checkpointing！")
             elif globalvar.get_value("gpu_type") == "high_gpu":
                 self.bert_encoder = MegatronBertForMaskedLM.from_pretrained(pre_train_dir)
             else:
@@ -112,7 +113,7 @@ class BertUnifiedMC(BaseModel):
             "clslabels_mask": batch['clslabels_mask'],
             "mlmlabels_mask": batch['mlmlabels_mask'],
         }
-        # print("batch长度：",inputs["input_ids"].shape)
+        # logger.info("batch长度：",inputs["input_ids"].shape)
         return inputs 
 
 
@@ -134,7 +135,7 @@ class BertUnifiedMC(BaseModel):
             ct=str(self.count)
             # save_path=self.save_hf_model_file.replace('.bin','-'+ct+'.bin')
             # torch.save(self.model.bert_encoder.state_dict(), f=save_path)
-            print('save the best model')
+            logger.info('save the best model')
             self.count+=1
     
     def validation_step(self, batch, batch_idx):
@@ -163,8 +164,8 @@ class BertUnifiedMC(BaseModel):
 
         self.log('valid_acc_epoch', ncorrect / ntotal, on_epoch=True, prog_bar=True)
 
-        print("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
-        print(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
+        logger.info("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
+        logger.info(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
 
 
     def predict_inputs(self, batch):
@@ -220,7 +221,7 @@ class BertUnifiedMC(BaseModel):
             batch_size = input_ids.shape[0]
             sample_embeds = []
             for i in range(batch_size):
-                # print("input_ids", input_ids[i])
+                # logger.info("input_ids", input_ids[i])
                 sep_token_indexes = np.where(input_ids[i] == self.sep_token)[0]
                 sep_token_indexes = sep_token_indexes[-2:]
                 if sep_token_indexes[0]+1 < sep_token_indexes[1]:
@@ -248,7 +249,7 @@ class BertUnifiedMC(BaseModel):
         }]
         if globalvar.get_value("gpu_type") == "low_gpu":
             optimizer = Adafactor(paras, lr=self.hparams.lr,relative_step=False, warmup_init=False)
-            print("使用Adafactor!")
+            logger.info("使用Adafactor!")
         else:
             optimizer = torch.optim.AdamW(paras, lr=self.hparams.lr)
         scheduler = get_linear_schedule_with_warmup(
@@ -281,7 +282,7 @@ class BertUnifiedMC(BaseModel):
             ones = torch.ones_like(labels)
             zero = torch.zeros_like(labels)
             labels = torch.where(labels < 3400, ones, zero)
-            # print('labels',labels[0])
+            # logger.info('labels',labels[0])
         else:
             logits = torch.argmax(logits, dim=-1)
             labels = labels

@@ -7,7 +7,10 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import pairwise_distances, accuracy_score
 from .evaluation import result_eval
+from gts_common.logs_utils import Logger
 
+logger = Logger().get_log()
+logger.propagate = False
 class PrototypeEnhancer(object):
     def __init__(self):
         pass
@@ -26,7 +29,7 @@ class PrototypeEnhancer(object):
                 c_embeds = np.vstack(c_embeds)
                 label_enhanced_embeds_dict[label].append(np.mean(c_embeds, axis=0))
                 enhance_num += 1
-        print("enhance num:", enhance_num)
+        logger.info("enhance num: {}".format(enhance_num))
         return label_enhanced_embeds_dict
 
 class WhiteningTransformer(object):
@@ -132,7 +135,7 @@ class BasicDatastore(object):
             "embed_transformer": self.embed_transformer,
         }
 
-        print("datastore[%s] embed size:" % dataset_name, embeds.shape)
+        logger.info("datastore{} embed size: {}".format(dataset_name, embeds.shape))
         return datastore_dict
 
 def get_datastores(dataset_names, model, data_model):
@@ -166,8 +169,8 @@ def get_classify_info(model, data_loader):
     sample_embeds = np.vstack(sample_embeds)
     y_pred = list(np.argmax(classify_probs, axis=1))
 
-    print("model classify prob shape:", classify_probs.shape)
-    print("sample embed original shape:", sample_embeds.shape)
+    logger.info("model classify prob shape: {}".format(classify_probs.shape))
+    logger.info("sample embed original shape: {}".format(sample_embeds.shape))
 
     return y_true, y_pred, classify_probs, sample_embeds
 
@@ -234,7 +237,7 @@ def grid_search_for_hyper(model, data_model, datastores):
     for hyper_tuple in itertools.product(*lambda_search_list, *k_search_list):
         lambda_values = list(map(lambda x: round(x, 2), hyper_tuple[:len(lambda_search_list)]))
         k_values = list(hyper_tuple[len(lambda_search_list):])
-        # print("start for search", lambda_values, k_values)
+        # logger.info("start for search", lambda_values, k_values)
         y_pred = []
         if sum(lambda_values) > 1:
             continue
@@ -252,12 +255,12 @@ def grid_search_for_hyper(model, data_model, datastores):
             final_prob = final_prob + lambda_values[index] * knn_probs
         y_pred = list(np.argmax(final_prob, axis=1))
         current_acc = accuracy_score(y_true, y_pred)
-        # print("current_acc", current_acc)
+        # logger.info("current_acc", current_acc)
         if current_acc > best_acc:
             best_acc = current_acc
             best_y_pred = y_pred
             best_hyper = {"lambda_values": lambda_values, "k_values": k_values}
-            print("best acc:", round(best_acc * 100, 2), "\tbest hyper:", best_hyper)
+            logger.info("best acc: {}  best hyper: {}".format(round(best_acc * 100, 2), best_hyper))
     return best_hyper, y_true, best_y_pred
 
 def knn_augmentation(model, data_model, output_dir):
@@ -282,7 +285,7 @@ def knn_inference(sample_embeds, knn_datastores, knn_best_hyper):
             continue
         remove_self = True if datastore.get_dataset_name() == "unlabeled" else False # 检索时是否移除自身
         if remove_self:
-            print("remove itself, leave one out.")
+            logger.info("remove itself, leave one out.")
             k = k + 1
         query_embeds = datastore.transform_embed(sample_embeds)
         datastore_embeds = datastore.get_datastore_embed()
