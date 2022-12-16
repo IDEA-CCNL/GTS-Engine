@@ -1,5 +1,3 @@
-# Time:2022 2022/3/2 10:21
-# Author: Jasmay
 # -*- coding: utf-8 -*-
 import logging
 
