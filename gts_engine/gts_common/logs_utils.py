@@ -39,10 +39,11 @@ class Logger():
         return console_fmt,file_fmt
 
     def get_log(self):
-        # 日志器中添加控制台处理器
-        self.logger.addHandler(self.console_handler())
-        # 日志器中添加文件处理器
-        self.logger.addHandler(self.file_handler())
+        if not self.logger.handlers:
+            # 日志器中添加控制台处理器
+            self.logger.addHandler(self.console_handler())
+            # 日志器中添加文件处理器
+            self.logger.addHandler(self.file_handler())
 
         # 返回日志实例对象
         return self.logger
