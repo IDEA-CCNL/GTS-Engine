@@ -44,15 +44,6 @@ def train(args):
         os.makedirs(save_path)
     args.output_dir = save_path
 
-    # Save args
-    with open(os.path.join(save_path, 'args.json'), 'w') as f:
-        json.dump(vars(args), f, indent=4)
-
-    print('-' * 30 + 'Args' + '-' * 30)
-    for k, v in vars(args).items():
-        print(k, ":", v, end=',\t')
-    print('\n' + '-' * 64)
-
     train_pipeline_module = "pipelines." + args.engine_type + "_" + args.task_type
     train_pipeline = PIPELINE_REGISTRY.get(name="train_pipeline", suffix=train_pipeline_module)
     train_pipeline(args)
@@ -104,21 +95,17 @@ def main():
     total_parser.add_argument('--lr', default=2e-5,
                             type=float, help="learning rate")
     
-    # * Args for qiankunding Trainer
-    total_parser.add_argument('--max_epochs', default=None,
-                            type=int, help="upper limit of training epochs")
-    total_parser.add_argument('--min_epochs', default=None,
-                            type=int, help="lower limit of training epochs")
-
+    # * Args for Trainer
+    total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
-    # * Args for data preprocessing
-    args = total_parser.parse_args(namespace=GtsEngineArgs())
+    args = total_parser.parse_args()
 
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
+    print('args', args)
     torch.set_num_threads(8)
     
-    # main(args)
+
     task_info_path = os.path.join(args.task_dir, "task_info.json")
     if os.path.exists(task_info_path):
         task_info = json.load(open(task_info_path))
