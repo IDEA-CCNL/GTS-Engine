@@ -27,8 +27,6 @@ class GtsEngineArgs(Namespace):
     seed: int
     lr: float
     gpus: int
-    num_sanity_val_steps: int
-    accumulate_grad_batches: int
     val_check_interval: float
     max_epochs: Optional[int]
     min_epochs: Optional[int]
