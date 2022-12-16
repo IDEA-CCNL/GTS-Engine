@@ -104,7 +104,7 @@ def main():
                               type=float, help="perform a validation loop every after every `N` training epochs")
 
     print("total_parser:",total_parser)
-    args = total_parser.parse_args()
+    args = total_parser.parse_args(namespace=GtsEngineArgs())
 
     print("pretrained_model_dir", args.pretrained_model_dir)
     args.gpus = 1
