@@ -6,6 +6,7 @@ import shutil
 import pickle
 import argparse
 import traceback
+import logging
 import torch.multiprocessing
 torch.multiprocessing.set_sharing_strategy('file_system')
 from transformers import AutoModel, AutoTokenizer, BertTokenizer, MegatronBertForMaskedLM
