@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer, MegatronBertForMaskedLM
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args
+from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args, save_args
 from qiankunding.utils.tokenization import get_train_tokenizer
 from qiankunding.utils import knn_utils
 from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC, TaskDataModelUnifiedMC, unifiedmc_collate_fn
@@ -98,6 +98,8 @@ def train_classification(args):
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args):
+    # save args
+    args = save_args(args)
     if args.train_mode == "advanced":
         print("******start advanced train******")
         train_classification(args)

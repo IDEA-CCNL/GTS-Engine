@@ -21,7 +21,8 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     shutil.rmtree(cache_path)
     print("model %s is downloaded from huggingface." % model_name)
 
-def generate_common_trainer(args: GtsEngineArgs, save_path):
+# def generate_common_trainer(args: GtsEngineArgs, save_path):
+def generate_common_trainer(args, save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
                                     save_top_k=1,
@@ -37,9 +38,14 @@ def generate_common_trainer(args: GtsEngineArgs, save_path):
                                 ) 
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
-    trainer = Trainer(
-        max_epochs=args.max_epochs,
-        min_epochs=args.min_epochs,
+    # trainer = Trainer(
+    #     max_epochs=args.max_epochs,
+    #     min_epochs=args.min_epochs,
+    #     logger=logger,
+    #     callbacks=[checkpoint, early_stop]
+    # )
+    trainer = Trainer.from_argparse_args(
+        args,
         logger=logger,
         callbacks=[checkpoint, early_stop]
     )
@@ -56,6 +62,20 @@ class ObjDict(dict):
             raise AttributeError(name)
     def __setattr__(self,name,value):
         self[name]=value
+
+def save_args(args):
+    args.num_sanity_val_steps = 1000 
+    args.accumulate_grad_batches = 8 
+    args.val_check_interval = 0.5 
+    args_path = os.path.join(args.save_path, "args.json")
+    with open(args_path, 'w') as f:
+        json.dump(vars(args), f, indent=4)
+    print("Save args to {}".format(args_path))
+    print('-' * 30 + 'Args' + '-' * 30)
+    for k, v in vars(args).items():
+        print(k, ":", v, end=',\t')
+    print('\n' + '-' * 64)
+    return args
 
 
 def load_args(save_path):

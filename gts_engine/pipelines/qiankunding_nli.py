@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer, MegatronBertForMaskedLM
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args
+from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args, save_args
 from qiankunding.utils.tokenization import get_train_tokenizer
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI, TaskDatasetUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
@@ -14,6 +14,9 @@ from qiankunding.utils.evaluation import SentencePairEvaluator
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args):
+    # save args
+    args = save_args(args)
+    
     """ write a traininig pipeline and return the checkpoint path of the best model """
     model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
     # download pretrained model if not exists
