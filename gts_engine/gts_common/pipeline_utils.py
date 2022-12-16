@@ -21,7 +21,6 @@ def download_model_from_huggingface(pretrained_model_dir, model_name, model_clas
     shutil.rmtree(cache_path)
     print("model %s is downloaded from huggingface." % model_name)
 
-# def generate_common_trainer(args: GtsEngineArgs, save_path):
 def generate_common_trainer(args, save_path):
     # Prepare Trainer
     checkpoint = ModelCheckpoint(dirpath=save_path,
@@ -38,12 +37,7 @@ def generate_common_trainer(args, save_path):
                                 ) 
 
     logger = loggers.TensorBoardLogger(save_dir=os.path.join(save_path, 'logs/'))
-    # trainer = Trainer(
-    #     max_epochs=args.max_epochs,
-    #     min_epochs=args.min_epochs,
-    #     logger=logger,
-    #     callbacks=[checkpoint, early_stop]
-    # )
+
     trainer = Trainer.from_argparse_args(
         args,
         logger=logger,
