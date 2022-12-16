@@ -9,6 +9,8 @@ from transformers import AutoModel, AutoTokenizer
 
 from .arguments import GtsEngineArgs
 
+from .arguments import GtsEngineArgs
+
 def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
     if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
         print("model already exists.")
@@ -56,6 +58,20 @@ class ObjDict(dict):
             raise AttributeError(name)
     def __setattr__(self,name,value):
         self[name]=value
+
+def save_args(args):
+    args.num_sanity_val_steps = 1000 
+    args.accumulate_grad_batches = 8 
+    args.val_check_interval = 0.5 
+    args_path = os.path.join(args.save_path, "args.json")
+    with open(args_path, 'w') as f:
+        json.dump(vars(args), f, indent=4)
+    print("Save args to {}".format(args_path))
+    print('-' * 30 + 'Args' + '-' * 30)
+    for k, v in vars(args).items():
+        print(k, ":", v, end=',\t')
+    print('\n' + '-' * 64)
+    return args
 
 
 def load_args(save_path):

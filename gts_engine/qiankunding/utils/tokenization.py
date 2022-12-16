@@ -19,15 +19,14 @@ def get_train_tokenizer(args):
     tokenizer = BertTokenizer.from_pretrained(args.pretrained_model)
     tokenizer = get_unused_tokenizer(args.pretrained_model)
 
-
     return tokenizer
 
 
 def get_unused_tokenizer(pretrained_model_path):
     """添加特殊中文字符和未使用的token【unused1】"""
-    if 'ernie' not in pretrained_model_path:
+    if "1.3B" in pretrained_model_path:
         added_token = ['[unused'+str(i+1)+']' for i in range(200)]
-        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_path,
+        tokenizer = BertTokenizer.from_pretrained(pretrained_model_path,
                                         additional_special_tokens=added_token)
     else:
         added_token = ['[unused'+str(i+1)+']' for i in range(200)]
