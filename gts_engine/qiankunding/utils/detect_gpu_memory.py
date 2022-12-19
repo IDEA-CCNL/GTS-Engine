@@ -2,7 +2,7 @@ from pynvml import *
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def print_gpu_utilization():
     nvmlInit()

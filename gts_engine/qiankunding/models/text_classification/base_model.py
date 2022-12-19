@@ -19,7 +19,7 @@ import os
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 class Pooler(pl.LightningModule):
     """
@@ -160,7 +160,7 @@ class BaseModel(pl.LightningModule):
             'attention_mask': batch['attention_mask'],
             'token_type_ids': batch['token_type_ids']
         }
-        # logger.info("batch长度：",inputs["input_ids"].shape)
+        
         return inputs
 
     def training_step(self, batch, batch_idx):
@@ -175,8 +175,8 @@ class BaseModel(pl.LightningModule):
             adv_loss = self.adv_forward(logits=logits, train_inputs=inputs)
 
         ntotal = logits.size(0)
-        # logger.info("label:",batch['labels'])
-        # logger.info("predict:",logits.argmax(dim=-1))
+        
+        
         ncorrect = (logits.argmax(dim=-1) == batch['labels']).long().sum()
         acc = ncorrect / ntotal
 
@@ -199,8 +199,8 @@ class BaseModel(pl.LightningModule):
             loss = self.loss_fn(logits, labels.view(-1))
 
         ntotal = logits.size(0)
-        # logger.info("label:",batch['labels'])
-        # logger.info("predict:",logits.argmax(dim=-1))
+        
+        
         ncorrect = int((logits.argmax(dim=-1) == batch['labels']).long().sum())
         acc = ncorrect / ntotal
 

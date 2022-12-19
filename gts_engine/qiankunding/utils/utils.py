@@ -5,7 +5,7 @@ import numpy as np
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def truncate_sequences(maxlen, indices, *sequences):
     """
@@ -37,7 +37,7 @@ def load_json_by_line(file):
     with open(file, "r", encoding="utf8") as f:
         reader = f.readlines()
         for line in reader:
-            # logger.info(line)
+            
             sample = json.loads(line.strip())
             data.append(sample)
     return data
@@ -57,7 +57,7 @@ def write2json(data_list, data_path, data_name):
 def write2json_by_line(data_list, data_path, data_name=""):
     with open(data_path, "w", encoding="utf-8") as fout:
         for result in data_list:
-            # logger.info(result["id"])
+            
             result = json.dumps(result,ensure_ascii=False)
             fout.write(result+"\n")
         logger.info("{}({}) saved into {}".format(data_name, len(data_list), data_path))
@@ -78,7 +78,7 @@ def json2list(data_path, use_key):
 def list2json(data_list, data_path, use_key):
     with open(data_path, "w", encoding="utf-8") as fout:
         for idx, result in enumerate(data_list):
-            # logger.info(result["id"])
+            
             sample_dict = {}
             result["id"] = idx
             for key in use_key:

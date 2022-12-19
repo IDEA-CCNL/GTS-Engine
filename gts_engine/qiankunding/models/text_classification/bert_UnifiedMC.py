@@ -16,7 +16,7 @@ from ...utils import globalvar as globalvar
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 class taskModel(nn.Module):
     def __init__(self, pre_train_dir: str, tokenizer):
@@ -113,7 +113,7 @@ class BertUnifiedMC(BaseModel):
             "clslabels_mask": batch['clslabels_mask'],
             "mlmlabels_mask": batch['mlmlabels_mask'],
         }
-        # logger.info("batch长度：",inputs["input_ids"].shape)
+        
         return inputs 
 
 
@@ -221,7 +221,7 @@ class BertUnifiedMC(BaseModel):
             batch_size = input_ids.shape[0]
             sample_embeds = []
             for i in range(batch_size):
-                # logger.info("input_ids", input_ids[i])
+                
                 sep_token_indexes = np.where(input_ids[i] == self.sep_token)[0]
                 sep_token_indexes = sep_token_indexes[-2:]
                 if sep_token_indexes[0]+1 < sep_token_indexes[1]:
@@ -282,7 +282,7 @@ class BertUnifiedMC(BaseModel):
             ones = torch.ones_like(labels)
             zero = torch.zeros_like(labels)
             labels = torch.where(labels < 3400, ones, zero)
-            # logger.info('labels',labels[0])
+            
         else:
             logits = torch.argmax(logits, dim=-1)
             labels = labels

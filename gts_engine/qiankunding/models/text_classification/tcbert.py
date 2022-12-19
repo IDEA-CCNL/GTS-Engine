@@ -18,7 +18,7 @@ from ...utils import globalvar as globalvar
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 class taskModel(nn.Module):
     def __init__(self, pre_train_dir: str, tokenizer, nlabels, config):
@@ -67,7 +67,7 @@ class taskModel(nn.Module):
 
         logits = self.linear_classifier(cls_logits)
 
-        # logger.info('logits', logits, logits.size())
+        
         return outputs.loss, logits, mlm_logits, hidden_states
 
 
@@ -143,7 +143,7 @@ class TCBert(BaseModel):
 
     def validation_step(self, batch, batch_idx):
         inputs = self.train_inputs(batch)
-        # logger.info("validation_step_inputs",inputs)
+        
         labels = batch['labels']
         _, logits, mlm_logits, _ = self.model(**inputs)
 

@@ -24,7 +24,7 @@ import gc
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 app = FastAPI()
 
 ## 全局参数

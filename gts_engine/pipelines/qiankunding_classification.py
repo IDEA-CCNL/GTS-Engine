@@ -23,7 +23,7 @@ from qiankunding.utils.utils import json2list, list2json
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def train_classification(args):
     if args.train_mode == "standard":

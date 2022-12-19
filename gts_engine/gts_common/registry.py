@@ -2,7 +2,7 @@
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 class Registry():
     """

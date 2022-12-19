@@ -10,7 +10,7 @@ from .evaluation import result_eval
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 class PrototypeEnhancer(object):
     def __init__(self):
         pass
@@ -237,7 +237,7 @@ def grid_search_for_hyper(model, data_model, datastores):
     for hyper_tuple in itertools.product(*lambda_search_list, *k_search_list):
         lambda_values = list(map(lambda x: round(x, 2), hyper_tuple[:len(lambda_search_list)]))
         k_values = list(hyper_tuple[len(lambda_search_list):])
-        # logger.info("start for search", lambda_values, k_values)
+        
         y_pred = []
         if sum(lambda_values) > 1:
             continue
@@ -255,7 +255,7 @@ def grid_search_for_hyper(model, data_model, datastores):
             final_prob = final_prob + lambda_values[index] * knn_probs
         y_pred = list(np.argmax(final_prob, axis=1))
         current_acc = accuracy_score(y_true, y_pred)
-        # logger.info("current_acc", current_acc)
+        
         if current_acc > best_acc:
             best_acc = current_acc
             best_y_pred = y_pred

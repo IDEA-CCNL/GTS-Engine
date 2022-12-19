@@ -5,7 +5,7 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 def result_eval(y_true, y_pred, label_names):
     label_ids = [i for i in range(len(label_names))]
 
@@ -71,8 +71,8 @@ class Evaluator(object):
                     f.write(result+"\n")
 
             eval_results = result_eval(y_true, y_pred, label_names=self.label_classes)
-            # logger.info(y_true, y_pred)
-            # logger.info(eval_results)
+            
+            
             with open(self.save_path+f"{data_set}_set_confusion_matrix.json", "w") as f:
                 json.dump(eval_results, f, indent=4, ensure_ascii=False)
 
@@ -93,7 +93,7 @@ class Evaluator(object):
         for batch in tqdm(test_loader):
 
             logits, probs, predicts, labels, _ = self.model.predict(batch)
-            # logger.info(predicts,labels)
+            
             if data_set in ["val","test"]:
                 y_true += list(labels)
                 y_pred += list(predicts)
@@ -147,7 +147,7 @@ class SentencePairEvaluator(Evaluator):
         for batch in tqdm(test_loader):
 
             logits, probs, predicts, labels, _ = self.model.predict(batch)
-            # logger.info(predicts,labels)
+            
             if data_set in ["val","test"]:
                 y_true += list(labels)
                 y_pred += list(predicts)
@@ -178,7 +178,7 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
     data_model.setup(mode)
     tokenizer = data_model.tokenizer
     label_classes = data_model.label_classes
-    # logger.info("model.label_classes:",model.label_classes)
+    
     logger.info(label_classes)
     label_classes_reverse = {v:k for k,v in label_classes.items()}
     logger.info(label_classes_reverse)
@@ -197,7 +197,7 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
     for batch in tqdm(test_loader):
 
         logits, probs, predicts, labels, _ = model.predict(batch)
-        # logger.info(predicts,labels)
+        
         if data_set=="test":
             y_true += list(labels)
             y_pred += list(predicts)
@@ -213,7 +213,7 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
                 "probs": prob.tolist(),
             }
 
-                # logger.info({'content': batch['sentence'][idx],'label': label_classes[predict]})
+                
 
             results.append(pred)
 
@@ -227,8 +227,8 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
 
         
             eval_results = result_eval(y_true, y_pred, label_names=label_classes)
-            # logger.info(y_true, y_pred)
-            # logger.info(eval_results)
+            
+            
             with open(save_path+"test_set_confusion_matrix.json", "w") as f:
                 json.dump(eval_results, f, indent=4, ensure_ascii=False)
 

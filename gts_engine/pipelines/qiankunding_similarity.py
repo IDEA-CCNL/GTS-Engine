@@ -16,7 +16,7 @@ from qiankunding.utils.evaluation import SentencePairEvaluator
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args):

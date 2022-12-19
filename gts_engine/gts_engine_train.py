@@ -32,7 +32,7 @@ from qiankunding.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
 globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
 globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)

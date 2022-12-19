@@ -12,7 +12,7 @@ from torch.utils.data import Dataset, DataLoader
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
@@ -387,7 +387,7 @@ class TaskDataModelUnifiedMCForNLI(pl.LightningDataModule):
             "use_mask": batch_data["use_mask"],
         }
 
-        # logger.info(batch)
+        
 
         return batch_data
 

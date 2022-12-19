@@ -23,7 +23,7 @@ import json
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def list_task(task_dir):
     if not os.path.exists(task_dir):

@@ -14,7 +14,7 @@ from transformers.models.bart.tokenization_bart import BartTokenizer
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def get_train_tokenizer(args):
    

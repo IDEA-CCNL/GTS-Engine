@@ -10,7 +10,7 @@ from .arguments import GtsEngineArgs
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
     if os.path.exists(os.path.join(pretrained_model_dir, model_name)):

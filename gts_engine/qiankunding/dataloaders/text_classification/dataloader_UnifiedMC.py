@@ -14,7 +14,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-logger.propagate = False
+
 
 def random_masking(token_ids, maks_rate, mask_start_idx, max_length, mask_id, tokenizer):
     """对输入进行随机mask
