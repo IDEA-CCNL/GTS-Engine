@@ -102,9 +102,9 @@ class WeaviateClient(SearchClient):
     @property
     def _server_url(self) -> str:
         if self._args.run_mode == RUN_MODE.OFFLINE:
-            return "http://192.168.190.63:9090"
+            return ""  # 开源暂时隐藏
         elif self._args.run_mode == RUN_MODE.ONLINE:
-            return "http://172.19.0.224:8080"
+            return ""  # 开源暂时隐藏
         else:
             raise Exception("mode is not supported")
     
@@ -156,8 +156,8 @@ class WentianClient(SearchClient):
         self.info('endpoint : {}'.format(self._args.es_search_args.endpoint))
         
     def initializer(self) -> None:
-        endpoint = "ha-cn-zvp2qr1sk01.public.ha.aliyuncs.com" \
-                if self._args.run_mode == RUN_MODE.OFFLINE else "ha-cn-zvp2qr1sk01.ha.aliyuncs.com"
+        endpoint = "" \
+                if self._args.run_mode == RUN_MODE.OFFLINE else ""  # 开源暂时隐藏
         wentian_config = models.Config(
             endpoint=endpoint,
             instance_id="ha-cn-zvp2qr1sk01",
