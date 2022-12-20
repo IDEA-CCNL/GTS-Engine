@@ -99,11 +99,6 @@ def main():
                             type=float, help="learning rate")
     
     # * Args for Trainer
-<<<<<<< HEAD
-    total_parser = Trainer.add_argparse_args(total_parser)
-    logger.info("total_parser:{}".format(total_parser))
-    args = total_parser.parse_args()
-=======
     total_parser.add_argument('--max_epochs', default=None,
                               type=int, help="upper limit of training epochs")
     total_parser.add_argument('--min_epochs', default=None,
@@ -113,7 +108,6 @@ def main():
 
     print("total_parser:",total_parser)
     args = total_parser.parse_args(namespace=GtsEngineArgs())
->>>>>>> 9b51e17a77058acc0e13ccf6dc0a3afc12d02129
 
     logger.info("pretrained_model_dir {}".format(args.pretrained_model_dir))
     args.gpus = 1

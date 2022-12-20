@@ -6,16 +6,9 @@ import shutil
 from pytorch_lightning import Trainer, seed_everything, loggers
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from transformers import AutoModel, AutoTokenizer
-<<<<<<< HEAD
-from .arguments import GtsEngineArgs
-from gts_common.logs_utils import Logger
-
-logger = Logger().get_log()
-
-=======
-
 from gts_common.arguments import GtsEngineArgs
->>>>>>> 9b51e17a77058acc0e13ccf6dc0a3afc12d02129
+from gts_common.logs_utils import Logger
+logger = Logger().get_log()
 
 def download_model_from_huggingface(pretrained_model_dir, model_name, model_class=AutoModel, tokenizer_class=AutoTokenizer):
     if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
