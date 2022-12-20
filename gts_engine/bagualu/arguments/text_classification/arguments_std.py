@@ -14,12 +14,23 @@ from ...lib.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
 
     _aug_eda_path: Optional[FilePath]
+    precision: int=32
+    use_gradient_checkpointing: str="False"
 
     @property
     def aug_eda_path(self) -> FilePath:
         """eda缓存文件"""
         return self.input_dir / "eda_augment.json" if (
             self._aug_eda_path is None) else self._aug_eda_path
+
+    @property
+    def memory_optimization_setting(self) -> None:
+        # 基于显卡显存大小，设定显存优化的参数
+        gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
+        gpu_type = decide_gpu(gpu_memory)
+        self.precision = 16 if "low" in gpu_type else 32 
+        self.use_gradient_checkpointing = "True" if gpu_type == "lower_gpu" else "False"
+        print("基于当前显卡的显存大小 {}M, 设置training precision为{}, 设置use_gradient_checkpointing为{}".format(gpu_memory, self.precision, self.use_gradient_checkpointing))
 
     def _add_args(self, parser: GeneralParser) -> None:
         super()._add_args(parser)
@@ -41,14 +52,6 @@ class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
     aug_eda_gate: bool = True
     dev_resample_thres: int = 1000  # dev数据超过阈值进行重采样
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
-
-    # 基于显卡显存大小，设定显存优化的参数
-    gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
-    gpu_type = decide_gpu(gpu_memory)
-    precision = 16 if "low" in gpu_type else 32 
-    use_gradient_checkpointing = "True" if gpu_type == "lower_gpu" else "False"
-    print("基于当前显卡显存大小 {}M, 设置training precision为{}, 设置use_gradient_checkpointing为{}".format(gpu_memory, precision, use_gradient_checkpointing))
-
 
 class InferenceArgumentsClfStd(BaseInferenceArgumentsClf):
     ...

@@ -5,6 +5,7 @@ from logging import Logger
 import re
 import os
 import shutil
+from transformers import AutoModel, AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger, TensorBoardLogger
@@ -129,7 +130,15 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
-            raise Exception("pretrained model path does not exist")
+            pretrained_model_dir, model_name = os.path.split(self._args.pretrained_model_dir)
+            huggingface_model_name = "hfl/chinese-macbert-base" if model_name=="macbert_base"  else "IDEA-CCNL/"+model_name
+            cache_path = os.path.join(pretrained_model_dir, model_name, "cache")
+            model = AutoModel.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            tokenizer = AutoTokenizer.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+            tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+            shutil.rmtree(cache_path)
+            self._logger.info("local pretrained model path does not exist, model %s is downloaded from huggingface." % huggingface_model_name)
         return TokenizerGenerator.generate_tokenizer(self._args.pretrained_model_dir)
     
     def _load_prompt(self):

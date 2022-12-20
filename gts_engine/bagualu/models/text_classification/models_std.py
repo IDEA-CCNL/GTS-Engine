@@ -24,6 +24,7 @@ class TrainingModelClfStd(nn.Module):
     def __init__(self, args, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
         super().__init__()
         self._config = BertConfig.from_pretrained(pretrained_model_dir)
+        args.memory_optimization_setting
         if args.use_gradient_checkpointing=="True":
             self._config.gradient_checkpointing=True
             print("使用gradient_checkpointing！")
