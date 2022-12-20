@@ -4,6 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
 
 
 class FocalLoss(nn.Module):
@@ -70,4 +73,4 @@ if __name__ == "__main__":
 
     loss1 = loss_1(a, b)
     loss2 = loss_2(a, b)
-    print(loss1, loss2)
+    logger.info(loss1, loss2)

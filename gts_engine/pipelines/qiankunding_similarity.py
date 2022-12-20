@@ -13,6 +13,11 @@ from qiankunding.dataloaders.similarity.dataloader_UnifiedMC import TaskDataMode
 from qiankunding.models.similarity.bert_UnifiedMC import BertUnifiedMCForMatch
 from qiankunding.utils.evaluation import SentencePairEvaluator
 
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
+
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args):
     # save args
@@ -43,7 +48,7 @@ def train_pipeline(args):
             os.makedirs(output_save_path)
 
         # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
+        logger.info("Load checkpoint from {}".format(checkpoint_path))
         model = BertUnifiedMCForMatch.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval() 
@@ -63,7 +68,7 @@ def prepare_inference(save_path):
     args = load_args(save_path)
 
     # load tokenizer
-    print("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
+    logger.info("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
     inference_tokenizer = BertTokenizer.from_pretrained(save_path)
 
     # load model

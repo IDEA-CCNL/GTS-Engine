@@ -7,6 +7,9 @@ from tqdm import tqdm
 import pytorch_lightning as pl
 from typing import Optional
 from torch.utils.data import Dataset, DataLoader
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -117,7 +120,7 @@ class TaskDataModelTCBert(pl.LightningDataModule):
             args.data_dir, args.valid_data), args, tokenizer=tokenizer, unlabeled=False, label_classes=self.label_classes)     
         self.unlabeled_data = TaskDatasetTCBert(os.path.join(
             args.data_dir, args.unlabeled_data), args, tokenizer=tokenizer, unlabeled=True, label_classes=self.label_classes)
-        print("unlabeled_data_len:",len(self.unlabeled_data))
+        logger.info("unlabeled_data_len: {}".format(len(self.unlabeled_data)))
 
     def train_dataloader(self):
         return DataLoader(self.train_data, shuffle=True, collate_fn=tcbert_collate_fn, batch_size=self.train_batchsize, pin_memory=False, num_workers=self.num_workers)
@@ -137,8 +140,8 @@ class TaskDataModelTCBert(pl.LightningDataModule):
         for i, item in enumerate(choice):
             label_classes[item] = i
 
-        print("label_classes:",label_classes)
-        print("choice:",choice)
+        logger.info("label_classes: {}".format(label_classes))
+        logger.info("choice: {}".format(choice))
         return choice, label_classes
 
 def tcbert_collate_fn(batch):

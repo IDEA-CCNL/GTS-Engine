@@ -11,8 +11,10 @@ from typing import List, Union, Dict, Set, Tuple, Optional
 from .utils import truncate_sequences
 from transformers import AutoTokenizer, BertTokenizer, T5Tokenizer
 from transformers.models.bart.tokenization_bart import BartTokenizer
+from gts_common.logs_utils import Logger
 
-logger = logging.getLogger(__name__)
+logger = Logger().get_log()
+
 
 def get_train_tokenizer(args):
    
@@ -414,12 +416,12 @@ if __name__ == "__main__":
     chineses_string = "最近，笔者也是花了几个晚上的时间，把656篇长文过了一边，并将其进行了详细的归类划分，主要包括：36篇QA系统（阅读理解、问答、检索）、17篇情感分析（方面级情感分析、篇章集情感分析、情绪分析）、42篇对话系统、45篇信息抽取（关键词抽取、术语抽取、实体抽取、实体分类、关系抽取、事件抽取、观点抽取）、6篇事件检测、68篇预训练语言模型应用（Transformer优化、语言模型下游应用、语言模型探索、分析等）、37篇数据集、任务及评估、45篇机器翻译、37篇多模态、19篇摘要（对话摘要、多文档摘要、代码摘要）、51篇文本生成（段落生成、对话生成、复述、问题生成）、7篇文本风格改写、13篇推理（因果推断、多跳推理、知识推理、常识推理）、21篇模型鲁棒性及对抗、10篇模型压缩（模型优化、剪枝、蒸馏）、19篇小样本（元学习、零样本、低资源）、26篇知识表征、6篇多语言、12篇社会道德伦理偏见、2篇虚假新闻检测、14篇指代、链指、消歧及对齐、3篇ASR、8篇数据增强、2篇纠错、22篇图相关、15篇文本分类、13篇NLP基础（分词、词性、语义理解、句法分析）、60篇其他。"
 
     basic_token = btokenizer.tokenize(string)
-    print("Basic tokens: ", basic_token)
+    logger.info("Basic tokens: {}".format(basic_token))
     wordpiece_token = tokenizer(string)
-    print("Word piece tokens: ", wordpiece_token)
-    print("Chinese Word piece tokens: ", c_tokenizer(chineses_string))
+    logger.info("Word piece tokens: {}".format(wordpiece_token))
+    logger.info("Chinese Word piece tokens: {}".format(c_tokenizer(chineses_string)))
     encoded = tokenizer.encode(first_text=string, second_text=string2, max_len=100)
-    print("encoded: ", encoded)
-    print(len(encoded[0]))
-    print(tokenizer.convert_ids_to_tokens(encoded[0]))
+    logger.info("encoded: {}".format(encoded))
+    logger.info(len(encoded[0]))
+    logger.info(tokenizer.convert_ids_to_tokens(encoded[0]))
 
