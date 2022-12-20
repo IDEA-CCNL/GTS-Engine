@@ -60,17 +60,30 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
     def _after_training(self) -> None:
         self._logger.info("select model from checkpoints...")
         best_ckpt = self._select_best_model_from_ckpts()
-        if os.path.exists(self._args.test_data_path) and self._args.debug:
-            self._logger.info("implement test...")
-            self._implement_test(best_ckpt)
+        if self._args.debug:
+            if self._args.test_data_path is None:
+                self._logger.info(
+                    "test_data_path is not passed, skip testing...")
+            elif not self._args.test_data_path.exists():
+                self._logger.info(f"test_data_path {self._args.test_data_path}"
+                                  f" does not exist, skip testing...")
+            else:
+                self._logger.info("implement test on training model...")
+                self._implement_test(best_ckpt)
         self._logger.info("generating inference model...")
         state_dict = self._load_ckpt(best_ckpt).get_model_state_dict()
         self._inference_lightning = self._get_inf_lightning()
-        self._inference_lightning.load_model_from_state_dict(state_dict)
+        self._inference_lightning.load_model_from_state_dict(state_dict) 
         self._inference_lightning.model.eval()
         self._logger.info("generate prediction file...")
         self._generate_prediction_file()
-        if os.path.exists(self._args.test_data_path):
+        if self._args.test_data_path is None:
+            self._logger.info(
+                "test_data_path is not passed, skip testing...")
+        elif not self._args.test_data_path.exists():
+            self._logger.info(f"test_data_path {self._args.test_data_path}"
+                              f" does not exist, skip testing...")
+        else:
             self._log_test_acc_on_inf_model()
         self._logger.info("save model files...")
         torch.save(state_dict, os.path.join(self._output_dir, "finetune_pytorch.bin"))
@@ -218,7 +231,13 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             enable_progress_bar=False,
             auto_select_gpus=True
         )
-        if os.path.exists(self._args.dev_data_path):
+        if self._args.dev_data_path is None:
+            self._logger.info(
+                "dev_data_path is not passed, skip predicting on dev data...")
+        elif not self._args.dev_data_path.exists():
+            self._logger.info(f"dev_data_path {self._args.dev_data_path} does "
+                              f"not exist, skip predicting on dev data...")
+        else:
             self._logger.info("predicting on dev data..")
             dev_prediction_output = prediction_trainer.predict(
                 model=self._inference_lightning,
@@ -226,7 +245,13 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             )
             dev_results = self._generate_prediction_results(dev_prediction_output, self._data_module.dev_sample_list) # type: ignore
             dump_json_list(dev_results, os.path.join(self._output_dir, "test_prediction_results.json"))
-        if os.path.exists(self._args.test_data_path):
+        if self._args.test_data_path is None:
+            self._logger.info(
+                "test_data_path is not passed, skip predicting on test data...")
+        elif not self._args.test_data_path.exists():
+            self._logger.info(f"test_data_path {self._args.test_data_path} does "
+                              f"not exist, skip predicting on test data...")
+        else:
             self._logger.info("predicting on test data..")
             test_prediction_output = prediction_trainer.predict(
                 model=self._inference_lightning,
@@ -234,7 +259,13 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             )
             test_results = self._generate_prediction_results(test_prediction_output, self._data_module.test_sample_list) # type: ignore
             dump_json_list(test_results, os.path.join(self._output_dir, "offline_test_prediction_results.json"))
-        if os.path.exists(self._args.online_test_data_path):
+        if self._args.online_test_data_path is None:
+            self._logger.info(
+                "online_test_data_path is not passed, skip predicting on online test data...")
+        elif not self._args.online_test_data_path.exists():
+            self._logger.info(f"online_test_data_path {self._args.online_test_data_path} does "
+                              f"not exist, skip predicting on online test data...")
+        else:
             self._logger.info("predicting on online test data..")
             online_test_prediction_output = prediction_trainer.predict(
                 model=self._inference_lightning,

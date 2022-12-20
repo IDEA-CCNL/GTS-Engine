@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-class UniEXOnnxConfig(object):
+class BagualuIEOnnxConfig(object):
     """ config """
     def __init__(self) -> None:
         self.input_names = [

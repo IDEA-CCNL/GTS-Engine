@@ -19,11 +19,11 @@ import pytorch_lightning as pl
 from transformers import PreTrainedTokenizer
 
 from .item_encoder import ItemEncoder
-from .dataset import UniEXDataset
+from .dataset import BagualuIEDataset
 from ...arguments.ie import TrainingArgumentsIEStd
 
 
-class UniEXDataModel(pl.LightningDataModule):
+class BagualuIEDataModel(pl.LightningDataModule):
     """ uniEXDataModel
 
     Args:
@@ -43,9 +43,9 @@ class UniEXDataModel(pl.LightningDataModule):
 
         self.batch_size = args.batch_size
 
-        self.train_data = UniEXDataset(train_data if train_data else [], tokenizer, args.max_length)
-        self.valid_data = UniEXDataset(dev_data if dev_data else [], tokenizer, args.max_length)
-        self.test_data = UniEXDataset(test_data if test_data else [], tokenizer, args.max_length)
+        self.train_data = BagualuIEDataset(train_data if train_data else [], tokenizer, args.max_length)
+        self.valid_data = BagualuIEDataset(dev_data if dev_data else [], tokenizer, args.max_length)
+        self.test_data = BagualuIEDataset(test_data if test_data else [], tokenizer, args.max_length)
 
         if not args.distill_self:
             self.collate_fn = ItemEncoder.collate

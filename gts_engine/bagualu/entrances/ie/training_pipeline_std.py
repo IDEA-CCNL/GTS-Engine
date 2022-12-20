@@ -26,13 +26,13 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from ...arguments.ie import TrainingArgumentsIEStd
-from ...models.ie import UniEXLitModel, UniEXExtractModel, UniEXOnnxConfig
+from ...models.ie import BagualuIELitModel, BagualuIEExtractModel, BagualuIEOnnxConfig
 from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
 from ...lib.utils import LoggerManager
 from ...lib.utils.json_processor import (load_json_list,
                                dump_json,
                                dump_json_list)
-from ...dataloaders.ie import (UniEXDataModel,
+from ...dataloaders.ie import (BagualuIEDataModel,
                                check_data,
                                data_segment,
                                data_segment_restore,
@@ -50,10 +50,10 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
         self._logger: Logger
         self._tokenizer: PreTrainedTokenizer
-        self._data_module: UniEXDataModel
-        self._lit_model: UniEXLitModel
+        self._data_module: BagualuIEDataModel
+        self._lit_model: BagualuIELitModel
         self._trainer: Trainer
-        self._inf_lit_model: UniEXLitModel
+        self._inf_lit_model: BagualuIELitModel
 
     def _before_training(self) -> None:
         self._set_logger()
@@ -90,7 +90,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
                                                   additional_special_tokens=added_token)
         return tokenizer
 
-    def _get_data_module(self) -> UniEXDataModel:
+    def _get_data_module(self) -> BagualuIEDataModel:
         train_data_path = self._args.train_data_path
         dev_data_path = self._args.dev_data_path
         test_data_path = self._args.test_data_path
@@ -122,14 +122,14 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             test_data = None
             self._logger.warning("test data path [%s] is not valid", test_data_path)
 
-        return UniEXDataModel(self._tokenizer,
+        return BagualuIEDataModel(self._tokenizer,
                               self._args,
                               train_data=train_data,
                               dev_data=dev_data,
                               test_data=test_data)
 
-    def _get_training_lightning(self) -> UniEXLitModel:
-        model = UniEXLitModel(self._args, logger=self._logger)
+    def _get_training_lightning(self) -> BagualuIELitModel:
+        model = BagualuIELitModel(self._args, logger=self._logger)
         return model
 
     def _get_trainer(self) -> Trainer:
@@ -189,14 +189,14 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._logger.warning("no ModelCheckpoint available, use last checkpoint")
         return self._args.last_ckpt_path
 
-    def _get_inf_lightning(self, checkpoint_path) -> UniEXLitModel: # pylint: disable=arguments-differ
+    def _get_inf_lightning(self, checkpoint_path) -> BagualuIELitModel: # pylint: disable=arguments-differ
         if not checkpoint_path or not os.path.exists(checkpoint_path):
             self._logger.info("checkpoint [%s] is not valid. use final checkpoint.",
                               checkpoint_path)
             model = self._lit_model
         else:
             self._logger.info("generating inference model...")
-            model: UniEXLitModel = UniEXLitModel.load_from_checkpoint(checkpoint_path,
+            model: BagualuIELitModel = BagualuIELitModel.load_from_checkpoint(checkpoint_path,
                                                                       logger=self._logger,
                                                                       args=self._args)
         model.eval()
@@ -238,7 +238,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
     def _generate_prediction_results(self, data: List[dict]) -> List[dict]: # pylint: disable=arguments-differ
         batch_size = self._args.batch_size
-        extract_model = UniEXExtractModel(self._tokenizer, self._args)
+        extract_model = BagualuIEExtractModel(self._tokenizer, self._args)
 
         result = []
         for i in range(0, len(data), batch_size):
@@ -288,7 +288,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._logger.info("tokenizer saved to %s", self._args.model_save_dir)
 
         # load model config
-        model_config = UniEXOnnxConfig()
+        model_config = BagualuIEOnnxConfig()
         bert_model = self._inf_lit_model._model.cpu() # pylint: disable=protected-access
         bert_model.eval()
 

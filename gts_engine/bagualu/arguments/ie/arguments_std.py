@@ -201,6 +201,38 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             type=float,
                             default=0.5,
                             help="[可选]关系阈值，默认0.5")
+        parser.add_argument("--learning_rate",
+                            dest="learning_rate",
+                            type=float,
+                            default=1e-5,
+                            help="[可选]学习率，默认1e-5")
+        parser.add_argument("--accumulate_grad_batches",
+                            dest="accumulate_grad_batches",
+                            type=int,
+                            default=1,
+                            help="[可选]梯度累积，默认1")
+        parser.add_argument("--num_workers",
+                            dest="num_workers",
+                            type=int,
+                            default=8,
+                            help="[可选]工作数，默认8")
+        parser.add_argument("--max_length",
+                            dest="max_length",
+                            type=int,
+                            default=512,
+                            help="[可选]最大长度，默认512")
+        parser.add_argument("--val_check_interval",
+                            dest="val_check_interval",
+                            type=float,
+                            default=0.5,
+                            help="[可选]验证间隔，默认0.5")
+        parser.add_argument("--batch_size",
+                            dest="train batch_size",
+                            type=int,
+                            default=16,
+                            help="[可选]train batch大小，默认16")
+
+
 
     def _after_parse(self) -> None:
         mk_inexist_dir(self.ft_output_dir)

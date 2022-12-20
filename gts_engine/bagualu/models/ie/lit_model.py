@@ -24,20 +24,20 @@ from torch import Tensor
 from transformers.optimization import get_linear_schedule_with_warmup, get_constant_schedule
 from pytorch_lightning import LightningModule
 
-from .uniex_model import UniEXModel
+from .model import BagualuIEModel
 from ...arguments.ie import TrainingArgumentsIEStd
 from ...lib.components.losses import NegativeSampleLoss, DiceLoss, DistillSelfLoss, DecoupledBCEloss
 
 
-class UniEXLitModel(LightningModule):
-    """ UniEXLitModel
+class BagualuIELitModel(LightningModule):
+    """ BagualuIELitModel
 
     Args:
         args (TrainingArgumentsIEStd): arguments
         num_data (int, optional): num of input data. Defaults to 1.
     """
 
-    _model: UniEXModel
+    _model: BagualuIEModel
     _logger: Logger
 
     def __init__(self, args: TrainingArgumentsIEStd, logger: Logger, num_data: int = 1) -> None:
@@ -46,7 +46,7 @@ class UniEXLitModel(LightningModule):
         self.args = args
         self.num_data = num_data
 
-        self._model = UniEXModel.from_pretrained(args.pretrained_model_root)
+        self._model = BagualuIEModel.from_pretrained(args.pretrained_model_root)
         self._logger = logger
         if args.loss == "dc":
             self.criterion = DiceLoss(smooth=args.dc_smooth,

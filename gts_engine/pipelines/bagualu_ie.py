@@ -13,13 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import shutil
 from typing import List, Dict, Any
 
-from transformers import AutoModel, AutoTokenizer
-
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import load_args
+from gts_common.pipeline_utils import load_args, download_model_from_huggingface
 from gts_common.arguments import GtsEngineArgs
 
 from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
@@ -31,30 +28,6 @@ mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
 }
 
 
-def download_model_from_huggingface(pretrained_model_dir: str,
-                                    model_name: str,
-                                    model_class: type = AutoModel,
-                                    tokenizer_class: type = AutoTokenizer) -> None:
-    """ download model from HuggingFace
-
-    Args:
-        pretrained_model_dir (str): path to save pretrained models.
-        model_name (str): model name from HuggingFace official website.
-        model_class (type, optional): model class. Defaults to AutoModel.
-        tokenizer_class (type, optional): tokenizer class. Defaults to AutoTokenizer.
-    """
-    if os.path.exists(os.path.join(pretrained_model_dir, model_name)):
-        print("model already exists.")
-        return
-    cache_path = os.path.join(pretrained_model_dir, "cache")
-    model = model_class.from_pretrained(model_name, cache_dir=cache_path)
-    tokenizer = tokenizer_class.from_pretrained(model_name, cache_dir=cache_path)
-    model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
-    tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
-    shutil.rmtree(cache_path)
-    print(f"model {model_name} is downloaded from huggingface.")
-
-
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args: GtsEngineArgs) -> None:
     """ Bagualu IE training pipeline
@@ -62,7 +35,7 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     Args:
         args (GtsEngineArgs): user arguments
     """
-    model_name = "hfl/chinese-macbert-base"
+    model_name = "Bagualu-IE-V6-120M-Chinese"
     download_model_from_huggingface(args.pretrained_model_dir, model_name)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
     train_mode = TRAIN_MODE(args.train_mode)
@@ -81,7 +54,7 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
     Returns:
         InferenceManagerIEStd: inference manager.
     """
-    model_name = "hfl/chinese-macbert-base"
+    model_name = "Bagualu-IE-V6-120M-Chinese"
     args: GtsEngineArgs = load_args(save_path)
     download_model_from_huggingface(args.pretrained_model_dir, model_name)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
@@ -91,7 +64,8 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
 
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
-def inference(samples: List[Dict[str, Any]], inference_manager: InferenceManagerIEStd) -> List[dict]:
+def inference(samples: List[Dict[str, Any]],
+              inference_manager: InferenceManagerIEStd) -> List[dict]:
     """ inference
 
     Args:
