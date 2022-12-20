@@ -31,49 +31,29 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     max_length: int
     seed: int
     learning_rate: float
-    
-    _train_data_path: Optional[FilePath]
-    @property
-    def train_data_path(self) -> FilePath:
-        """训练数据集"""
-        return self.input_dir / "labeled_sample.json" if self._train_data_path is None else self._train_data_path
-    
-    _dev_data_path: Optional[FilePath]
-    @property
-    def dev_data_path(self) -> FilePath:
-        """验证数据集"""
-        return self.input_dir / "test.json" if self._dev_data_path is None else self._dev_data_path
-    
-    _test_data_path: Optional[FilePath]
-    @property
-    def test_data_path(self) -> FilePath:
-        """离线测试数据集"""
-        return self.input_dir / "test_public.json"  if self._test_data_path is None else self._test_data_path
-    
-    _online_test_data_path: Optional[FilePath]
-    @property
-    def online_test_data_path(self) -> FilePath:
-        """无标注推理数据集"""
-        return self.input_dir / "test_online.json" if self._online_test_data_path is None else self._online_test_data_path
-    
-    _label2id_path: Optional[FilePath]
-    @property
-    def label2id_path(self) -> FilePath:
-        """label2id文件"""
-        return self.input_dir / "label2id.json" if self._label2id_path is None else self._label2id_path
-    
+    train_data_path: FilePath
+    """训练数据集"""
+    dev_data_path: Optional[FilePath]
+    """验证数据集"""
+    test_data_path: Optional[FilePath]
+    """离线测试数据集"""
+    online_test_data_path: Optional[FilePath]
+    """无标注推理数据集"""
+    label2id_path: FilePath
+    """label2id文件"""
     _log_dir: Optional[DirectoryPath]
+
     @property
     def log_dir(self) -> DirectoryPath:
         return self.log_dir if self._log_dir is None else self._log_dir
-    
+
     def _add_args(self, parser: GeneralParser) -> None:
-        parser.add_argument("--train_data_path", dest="_train_data_path", type=Path, default=None, help="[可选]指定训练数据集路径")
-        parser.add_argument("--dev_data_path", dest="_dev_data_path", type=Path, default=None, help="[可选]指定验证数据集路径")
-        parser.add_argument("--test_data_path", dest="_test_data_path", type=Path, default=None, help="[可选]指定离线测试数据集路径")
-        parser.add_argument("--online_test_data_path", dest="_online_test_data_path", type=Path, default=None, help="[可选]指定在线测试数据集路径")
+        parser.add_argument("--train_data_path", dest="train_data_path", type=Path, help="指定训练数据集路径", required=True)
+        parser.add_argument("--dev_data_path", dest="dev_data_path", type=Path, default=None, help="[可选]指定验证数据集路径")
+        parser.add_argument("--test_data_path", dest="test_data_path", type=Path, default=None, help="[可选]指定离线测试数据集路径")
+        parser.add_argument("--online_test_data_path", dest="online_test_data_path", type=Path, default=None, help="[可选]指定在线测试数据集路径")
         parser.add_argument("--dataset", dest="dataset", type=str, help="数据集名称/路径名", default="default")
-        parser.add_argument("--label2id_path", dest="_label2id_path", type=Path, default=None, help="[可选]指定label2id文件路径")
+        parser.add_argument("--label2id_path", dest="label2id_path", type=Path, help="指定label2id文件路径", required=True)
         parser.add_argument("--log_dir", dest="_log_dir", type=Path, default=None, help="[可选]指定日志文件保存路径")
         parser.add_argument("--run_mode", dest="run_mode", type=RUN_MODE, 
                             choices=RUN_MODE, default=RUN_MODE.ONLINE, 

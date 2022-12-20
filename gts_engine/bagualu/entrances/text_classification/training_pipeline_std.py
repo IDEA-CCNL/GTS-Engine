@@ -116,10 +116,16 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
         self._logger.info("select model from checkpoints...")
         best_ckpt = self._select_best_model_from_ckpts()
         # The best ckpt model to make predictions on test_public, and outputs the accuracy
-        if os.path.exists(self._args.test_data_path):
-            self._logger.info("implement test...")
-            self._implement_test(best_ckpt)
-
+        if self._args.debug:
+            if self._args.test_data_path is None:
+                self._logger.info(
+                    "test_data_path is not passed, skip testing...")
+            elif not self._args.test_data_path.exists():
+                self._logger.info(f"test_data_path {self._args.test_data_path}"
+                                  f" does not exist, skip testing...")
+            else:
+                self._logger.info("implement test on training model...")
+                self._implement_test(best_ckpt)
         # generating inference model, test predicting, and save onnx model
         self._logger.info("generating inference model...")
         state_dict = self._load_ckpt(best_ckpt).get_model_state_dict()
