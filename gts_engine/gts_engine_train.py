@@ -22,7 +22,6 @@ from qiankunding.utils import knn_utils
 
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
-from bagualu.lib.framework.base_gts_engine_interface import GtsEngineArgs
 
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.arguments import GtsEngineArgs
