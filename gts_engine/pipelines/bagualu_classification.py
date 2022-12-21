@@ -3,7 +3,7 @@ from argparse import Namespace
 from enum import Enum
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import load_args
+from gts_common.pipeline_utils import load_args, save_args
 
 from bagualu.lib.framework.base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface, TRAIN_MODE
 from bagualu.lib.framework.classification_finetune.consts import InferenceManagerInputSample
@@ -17,6 +17,8 @@ mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
 
 @PIPELINE_REGISTRY.register(suffix=__name__) # type: ignore
 def train_pipeline(args: GtsEngineArgs):
+    # save args
+    args = save_args(args)
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory = mode_to_interface[train_mode]
     module_factory.prepare_training(args)

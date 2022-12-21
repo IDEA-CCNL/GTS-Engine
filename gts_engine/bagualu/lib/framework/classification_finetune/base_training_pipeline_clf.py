@@ -136,7 +136,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                     if interval_mean(sentence_len_list) < 100:
                         model = "macbert_base"
                     else:
-                        model = "meta_ernie_base"
+                        model = "ernie_base"
                 pretrained_model_dir = os.path.join(self._args.pretrained_model_root, model)
                 self._logger.info(f"using auto selected pretrained model: {pretrained_model_dir}")
         self._args.pretrained_model_dir = Path(pretrained_model_dir)
@@ -144,10 +144,15 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
             pretrained_model_dir, model_name = os.path.split(self._args.pretrained_model_dir)
-            huggingface_model_name = "hfl/chinese-macbert-base" if model_name=="macbert_base"  else "IDEA-CCNL/"+model_name
+            if model_name=="macbert_base":
+                huggingface_model_name = "hfl/chinese-macbert-base"
+            elif model_name=="ernie_base":
+                huggingface_model_name = "freedomking/ernie-1.0"
+            else:
+                huggingface_model_name = "IDEA-CCNL/Erlangshen-MacBERT-110M-BinaryClasssification-Chinese"
             cache_path = os.path.join(pretrained_model_dir, model_name, "cache")
-            model = AutoModel.from_pretrained(huggingface_model_name, cache_dir=cache_path)
             tokenizer = AutoTokenizer.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            model = AutoModel.from_pretrained(huggingface_model_name, cache_dir=cache_path)
             model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
             tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
             shutil.rmtree(cache_path)
