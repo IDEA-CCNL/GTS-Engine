@@ -24,6 +24,10 @@ from typing import List, Tuple, Optional, Union
 
 from pydantic import BaseModel, conint, constr, conlist
 
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 
 def list_task(task_dir):
     if not os.path.exists(task_dir):
@@ -37,7 +41,7 @@ def is_task_valid(task_dir, task_id):
     return (task_id in tasks)
 
 def is_data_format_valid(data_path, data_type):
-    print(data_path)
+    logger.info(format(data_path))
     if not os.path.exists(data_path):
         return False
     valid = True
@@ -173,7 +177,7 @@ class DataFormatChecker(object):
             except Exception as e:
                 return False, f"样本【{item}】格式错误：\n{e}"
 
-            if data_type in {"train", "val", "dev"}:
-                pass
+            # if data_type in {"train", "val", "dev"}:
+            #     pass
 
         return True, "OK"
