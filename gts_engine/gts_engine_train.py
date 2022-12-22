@@ -22,7 +22,6 @@ from qiankunding.utils import knn_utils
 
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
-from bagualu.lib.framework.base_gts_engine_interface import GtsEngineArgs
 
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.arguments import GtsEngineArgs
@@ -30,6 +29,10 @@ from gts_common.arguments import GtsEngineArgs
 import qiankunding.utils.globalvar as globalvar
 globalvar._init()
 from qiankunding.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
 globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
 globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
@@ -43,15 +46,6 @@ def train(args):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     args.output_dir = save_path
-
-    # Save args
-    with open(os.path.join(save_path, 'args.json'), 'w') as f:
-        json.dump(vars(args), f, indent=4)
-
-    print('-' * 30 + 'Args' + '-' * 30)
-    for k, v in vars(args).items():
-        print(k, ":", v, end=',\t')
-    print('\n' + '-' * 64)
 
     train_pipeline_module = "pipelines." + args.engine_type + "_" + args.task_type
     train_pipeline = PIPELINE_REGISTRY.get(name="train_pipeline", suffix=train_pipeline_module)
@@ -103,23 +97,24 @@ def main():
                             type=int, help="random seed for training")
     total_parser.add_argument('--lr', default=2e-5,
                             type=float, help="learning rate")
+    
+    # * Args for Trainer
+    total_parser.add_argument('--max_epochs', default=None,
+                              type=int, help="upper limit of training epochs")
+    total_parser.add_argument('--min_epochs', default=None,
+                              type=int, help="lower limit of training epochs")
+    total_parser.add_argument('--val_check_interval', default=0.5,
+                              type=float, help="perform a validation loop every after every `N` training epochs")
 
-
-
-    total_parser = Trainer.add_argparse_args(total_parser)
     print("total_parser:",total_parser)
-    # * Args for data preprocessing
     args = total_parser.parse_args(namespace=GtsEngineArgs())
 
-    print("pretrained_model_dir", args.pretrained_model_dir)
+    logger.info("pretrained_model_dir {}".format(args.pretrained_model_dir))
     args.gpus = 1
-    args.num_sanity_val_steps = 1000 
-    args.accumulate_grad_batches = 8 
-    args.val_check_interval = 0.5 
-    print('args', args)
+    logger.info("args {}".format(args))
     torch.set_num_threads(8)
     
-    # main(args)
+
     task_info_path = os.path.join(args.task_dir, "task_info.json")
     if os.path.exists(task_info_path):
         task_info = json.load(open(task_info_path))

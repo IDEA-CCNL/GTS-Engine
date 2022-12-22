@@ -30,7 +30,7 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
     ):
         super().__init__()
         self._args = args
-        self._model: TrainingModelClfStd = TrainingModelClfStd(
+        self._model: TrainingModelClfStd = TrainingModelClfStd(self._args,
             self._args.pretrained_model_dir,
             class_num
         )

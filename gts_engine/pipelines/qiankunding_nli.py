@@ -6,14 +6,21 @@ from torch.utils.data import DataLoader
 from transformers import BertTokenizer, MegatronBertForMaskedLM
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args
+from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args, save_args
 from qiankunding.utils.tokenization import get_train_tokenizer
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI, TaskDatasetUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
 from qiankunding.utils.evaluation import SentencePairEvaluator
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args):
+    # save args
+    args = save_args(args)
+    
     """ write a traininig pipeline and return the checkpoint path of the best model """
     model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
     # download pretrained model if not exists
@@ -41,7 +48,7 @@ def train_pipeline(args):
             os.makedirs(output_save_path)
 
         # Evaluation
-        print("Load checkpoint from {}".format(checkpoint_path))
+        logger.info("Load checkpoint from {}".format(checkpoint_path))
         model = BertUnifiedMCForNLI.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer)
         model.cuda()
         model.eval() 
@@ -60,7 +67,7 @@ def prepare_inference(save_path):
     args = load_args(save_path)
 
     # load tokenizer
-    print("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
+    logger.info("Load tokenizer from {}".format(os.path.join(save_path, "vocab.txt")))
     inference_tokenizer = BertTokenizer.from_pretrained(save_path)
 
     # load model
