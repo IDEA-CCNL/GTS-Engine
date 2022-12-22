@@ -1,0 +1,97 @@
+INFO--->2022-12-21 17:45:23,680--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:45:23,682--->file_path tasks/text_classification_server/data/tnews_train.json
+INFO--->2022-12-21 17:45:23,708--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:45:23,709--->file_path tasks/text_classification_server/data/tnews_val.json
+INFO--->2022-12-21 17:45:23,725--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:45:23,729--->file_path tasks/text_classification_server/data/tnews_test.json
+INFO--->2022-12-21 17:45:23,745--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:45:23,746--->file_path tasks/text_classification_server/data/tnews_label.json
+INFO--->2022-12-21 17:46:44,072--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:46:44,072--->file_path tasks/text_classification_server/data/tnews_train.json
+INFO--->2022-12-21 17:46:44,086--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:46:44,087--->file_path tasks/text_classification_server/data/tnews_val.json
+INFO--->2022-12-21 17:46:44,097--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:46:44,097--->file_path tasks/text_classification_server/data/tnews_test.json
+INFO--->2022-12-21 17:46:44,108--->file will save to tasks/text_classification_server/data
+INFO--->2022-12-21 17:46:44,109--->file_path tasks/text_classification_server/data/tnews_label.json
+INFO--->2022-12-21 17:46:44,148--->start training...
+INFO--->2022-12-21 17:46:47,977--->total_parser:ArgumentParser(prog='gts_engine_train.py', usage=None, description=None, formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+INFO--->2022-12-21 17:46:47,984--->pretrained_model_dir pretrained
+INFO--->2022-12-21 17:46:47,985--->args Namespace(accelerator=None, accumulate_grad_batches=None, amp_backend='native', amp_level=None, auto_lr_find=False, auto_scale_batch_size=False, auto_select_gpus=False, benchmark=None, check_val_every_n_epoch=1, data_dir='tasks/text_classification_server/data', default_root_dir=None, detect_anomaly=False, deterministic=None, devices=None, enable_checkpointing=True, enable_model_summary=True, enable_progress_bar=True, engine_type='qiankunding', fast_dev_run=False, gpus=1, gradient_clip_algorithm=None, gradient_clip_val=None, ipus=None, label_data='tnews_label.json', limit_predict_batches=None, limit_test_batches=None, limit_train_batches=None, limit_val_batches=None, log_every_n_steps=50, logger=True, lr=2e-05, max_epochs=1, max_len=512, max_steps=-1, max_time=None, min_epochs=1, min_steps=None, move_metrics_to_cpu=False, multiple_trainloader_mode='max_size_cycle', num_nodes=1, num_processes=None, num_sanity_val_steps=2, num_workers=8, overfit_batches=0.0, plugins=None, precision=32, pretrained_model_dir='pretrained', profiler=None, reload_dataloaders_every_n_epochs=0, replace_sampler_ddp=True, resume_from_checkpoint=None, save_path='tasks/text_classification_server/outputs', seed=42, strategy=None, sync_batchnorm=False, task_dir='tasks/text_classification_server', task_type='classification', test_batchsize=4, test_data='tnews_test.json', threshold=0.8, tpu_cores=None, track_grad_norm=-1, train_batchsize=1, train_data='tnews_train.json', train_mode='standard', unlabeled_data='', val_check_interval=0.5, valid_batchsize=4, valid_data='tnews_val.json', weights_save_path=None)
+INFO--->2022-12-21 17:46:48,048--->Name train_pipeline is not found, use name: train_pipeline_pipelines.qiankunding_classification!
+INFO--->2022-12-21 17:46:48,069--->Save args to tasks/text_classification_server/outputs/args.json
+INFO--->2022-12-21 17:46:48,070--->engine_type : qiankunding    
+INFO--->2022-12-21 17:46:48,070--->train_mode : standard    
+INFO--->2022-12-21 17:46:48,071--->task_dir : tasks/text_classification_server    
+INFO--->2022-12-21 17:46:48,071--->task_type : classification    
+INFO--->2022-12-21 17:46:48,072--->num_workers : 8    
+INFO--->2022-12-21 17:46:48,073--->train_batchsize : 1    
+INFO--->2022-12-21 17:46:48,073--->valid_batchsize : 4    
+INFO--->2022-12-21 17:46:48,074--->test_batchsize : 4    
+INFO--->2022-12-21 17:46:48,074--->max_len : 512    
+INFO--->2022-12-21 17:46:48,075--->pretrained_model_dir : pretrained    
+INFO--->2022-12-21 17:46:48,075--->data_dir : tasks/text_classification_server/data    
+INFO--->2022-12-21 17:46:48,076--->train_data : tnews_train.json    
+INFO--->2022-12-21 17:46:48,077--->valid_data : tnews_val.json    
+INFO--->2022-12-21 17:46:48,078--->test_data : tnews_test.json    
+INFO--->2022-12-21 17:46:48,078--->label_data : tnews_label.json    
+INFO--->2022-12-21 17:46:48,079--->unlabeled_data :     
+INFO--->2022-12-21 17:46:48,080--->save_path : tasks/text_classification_server/outputs    
+INFO--->2022-12-21 17:46:48,081--->threshold : 0.8    
+INFO--->2022-12-21 17:46:48,082--->seed : 42    
+INFO--->2022-12-21 17:46:48,083--->lr : 2e-05    
+INFO--->2022-12-21 17:46:48,083--->logger : True    
+INFO--->2022-12-21 17:46:48,084--->enable_checkpointing : True    
+INFO--->2022-12-21 17:46:48,085--->default_root_dir : None    
+INFO--->2022-12-21 17:46:48,086--->gradient_clip_val : None    
+INFO--->2022-12-21 17:46:48,086--->gradient_clip_algorithm : None    
+INFO--->2022-12-21 17:46:48,087--->num_nodes : 1    
+INFO--->2022-12-21 17:46:48,088--->num_processes : None    
+INFO--->2022-12-21 17:46:48,089--->devices : None    
+INFO--->2022-12-21 17:46:48,090--->gpus : 1    
+INFO--->2022-12-21 17:46:48,091--->auto_select_gpus : False    
+INFO--->2022-12-21 17:46:48,091--->tpu_cores : None    
+INFO--->2022-12-21 17:46:48,092--->ipus : None    
+INFO--->2022-12-21 17:46:48,093--->enable_progress_bar : True    
+INFO--->2022-12-21 17:46:48,095--->overfit_batches : 0.0    
+INFO--->2022-12-21 17:46:48,095--->track_grad_norm : -1    
+INFO--->2022-12-21 17:46:48,096--->check_val_every_n_epoch : 1    
+INFO--->2022-12-21 17:46:48,097--->fast_dev_run : False    
+INFO--->2022-12-21 17:46:48,101--->accumulate_grad_batches : 8    
+INFO--->2022-12-21 17:46:48,102--->max_epochs : 1    
+INFO--->2022-12-21 17:46:48,103--->min_epochs : 1    
+INFO--->2022-12-21 17:46:48,103--->max_steps : -1    
+INFO--->2022-12-21 17:46:48,104--->min_steps : None    
+INFO--->2022-12-21 17:46:48,105--->max_time : None    
+INFO--->2022-12-21 17:46:48,106--->limit_train_batches : None    
+INFO--->2022-12-21 17:46:48,106--->limit_val_batches : None    
+INFO--->2022-12-21 17:46:48,107--->limit_test_batches : None    
+INFO--->2022-12-21 17:46:48,108--->limit_predict_batches : None    
+INFO--->2022-12-21 17:46:48,109--->val_check_interval : 0.5    
+INFO--->2022-12-21 17:46:48,110--->log_every_n_steps : 50    
+INFO--->2022-12-21 17:46:48,110--->accelerator : None    
+INFO--->2022-12-21 17:46:48,114--->strategy : None    
+INFO--->2022-12-21 17:46:48,115--->sync_batchnorm : False    
+INFO--->2022-12-21 17:46:48,116--->precision : 32    
+INFO--->2022-12-21 17:46:48,117--->enable_model_summary : True    
+INFO--->2022-12-21 17:46:48,118--->weights_save_path : None    
+INFO--->2022-12-21 17:46:48,119--->num_sanity_val_steps : 1000    
+INFO--->2022-12-21 17:46:48,120--->resume_from_checkpoint : None    
+INFO--->2022-12-21 17:46:48,121--->profiler : None    
+INFO--->2022-12-21 17:46:48,122--->benchmark : None    
+INFO--->2022-12-21 17:46:48,123--->deterministic : None    
+INFO--->2022-12-21 17:46:48,123--->reload_dataloaders_every_n_epochs : 0    
+INFO--->2022-12-21 17:46:48,124--->auto_lr_find : False    
+INFO--->2022-12-21 17:46:48,125--->replace_sampler_ddp : True    
+INFO--->2022-12-21 17:46:48,126--->detect_anomaly : False    
+INFO--->2022-12-21 17:46:48,127--->auto_scale_batch_size : False    
+INFO--->2022-12-21 17:46:48,127--->plugins : None    
+INFO--->2022-12-21 17:46:48,131--->amp_backend : native    
+INFO--->2022-12-21 17:46:48,132--->amp_level : None    
+INFO--->2022-12-21 17:46:48,133--->move_metrics_to_cpu : False    
+INFO--->2022-12-21 17:46:48,134--->multiple_trainloader_mode : max_size_cycle    
+INFO--->2022-12-21 17:46:48,134--->output_dir : tasks/text_classification_server/outputs    
+INFO--->2022-12-21 17:46:48,135--->
+----------------------------------------------------------------
+INFO--->2022-12-21 17:46:48,135--->******start standard train******
+INFO--->2022-12-21 17:49:06,906--->train process 1498672 is killed
