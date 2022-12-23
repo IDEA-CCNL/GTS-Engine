@@ -11,7 +11,7 @@ PRETRAINED_DIR=$WORK_DIR/pretrained
 TASK_DIR=$WORK_DIR/tasks/text_classification_example
 mkdir -p $TASK_DIR
 
-export CUDA_VISIBLE_DEVICES=3 
+export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_train.py \
     --engine_type=qiankunding \
     --train_mode=standard \

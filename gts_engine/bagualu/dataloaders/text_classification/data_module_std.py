@@ -99,9 +99,6 @@ class DataModuleClfStd(BaseDataModuleClf):
         if self._args.use_knn:
             return DataLoader(dataset=lg_dataset,
                             batch_sampler=sampler(lg_dataset),  # type: ignore
-                            num_workers=6 * self._args.device_num,
-                            prefetch_factor=8,
-                            persistent_workers=True,
-                            pin_memory=True)
+                            num_workers=6 * self._args.device_num)
         else:
             return DataLoader(dataset=lg_dataset, batch_size=self._args.train_batch_size, num_workers=6 * self._args.device_num, shuffle=True)

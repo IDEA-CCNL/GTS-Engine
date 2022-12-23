@@ -6,7 +6,7 @@ from types import MethodType
 from pydantic import DirectoryPath
 
 from ..framework.consts import RUN_MODE
-from ..utils.json import load_json
+from ..utils.json_processor import load_json
 
 
 class TokenizerGenerator:

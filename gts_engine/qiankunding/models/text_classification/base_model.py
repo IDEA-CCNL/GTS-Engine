@@ -16,6 +16,10 @@ from tqdm import tqdm
 import sklearn
 import json
 import os
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 
 class Pooler(pl.LightningModule):
     """
@@ -147,7 +151,7 @@ class BaseModel(pl.LightningModule):
 
             self.total_step = int(self.trainer.max_epochs * n_train_step / \
                 (max(1, num_gpus) * self.trainer.accumulate_grad_batches))
-            print('Total training step:', self.total_step)
+            logger.info("Total training step: {}".format(self.total_step))
 
     def train_inputs(self, batch):
         #  Filter reduntant information(for example: 'sentence') that will be passed to model.forward()
@@ -156,8 +160,8 @@ class BaseModel(pl.LightningModule):
             'attention_mask': batch['attention_mask'],
             'token_type_ids': batch['token_type_ids']
         }
-        # print("batch长度：",inputs["input_ids"].shape)
-        return inputs 
+        
+        return inputs
 
     def training_step(self, batch, batch_idx):
         inputs = self.train_inputs(batch)
@@ -171,8 +175,8 @@ class BaseModel(pl.LightningModule):
             adv_loss = self.adv_forward(logits=logits, train_inputs=inputs)
 
         ntotal = logits.size(0)
-        # print("label:",batch['labels'])
-        # print("predict:",logits.argmax(dim=-1))
+        
+        
         ncorrect = (logits.argmax(dim=-1) == batch['labels']).long().sum()
         acc = ncorrect / ntotal
 
@@ -195,8 +199,8 @@ class BaseModel(pl.LightningModule):
             loss = self.loss_fn(logits, labels.view(-1))
 
         ntotal = logits.size(0)
-        # print("label:",batch['labels'])
-        # print("predict:",logits.argmax(dim=-1))
+        
+        
         ncorrect = int((logits.argmax(dim=-1) == batch['labels']).long().sum())
         acc = ncorrect / ntotal
 
@@ -218,8 +222,8 @@ class BaseModel(pl.LightningModule):
 
         self.log('valid_acc_epoch', ncorrect / ntotal, on_epoch=True, prog_bar=True)
 
-        print("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
-        print(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
+        logger.info("ncorrect = {}, ntotal = {}".format(ncorrect, ntotal))
+        logger.info(f"Validation Accuracy: {round(ncorrect / ntotal, 4)}")
 
     def configure_optimizers(self):
         no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']

@@ -39,7 +39,8 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             enable_progress_bar=False,
             auto_select_gpus=True,
             strategy="dp",
-            logger=self._get_lightning_loggers()
+            logger=self._get_lightning_loggers(),
+            precision=self._args.precision,
         )
         
     def _fit(self) -> None:

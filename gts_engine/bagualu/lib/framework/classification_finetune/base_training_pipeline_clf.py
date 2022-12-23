@@ -5,6 +5,7 @@ from logging import Logger
 import re
 import os
 import shutil
+from transformers import AutoModel, AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger, TensorBoardLogger
@@ -18,7 +19,7 @@ from ...components import TokenizerGenerator
 from .prompt import StdPrompt
 from ..base_training_pipeline import BaseTrainingPipeline
 from ..consts import TRAINING_STAGE
-from ...utils.json import dump_json_list, load_json_list, dump_json, load_json
+from ...utils.json_processor import dump_json_list, load_json_list, dump_json, load_json
 from ...utils.path import get_file_size
 from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
 from ...utils.statistics import interval_mean, acc
@@ -135,14 +136,27 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                     if interval_mean(sentence_len_list) < 100:
                         model = "macbert_base"
                     else:
-                        model = "meta_ernie_base"
+                        model = "ernie_base"
                 pretrained_model_dir = os.path.join(self._args.pretrained_model_root, model)
                 self._logger.info(f"using auto selected pretrained model: {pretrained_model_dir}")
         self._args.pretrained_model_dir = Path(pretrained_model_dir)
         
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
-            raise Exception("pretrained model path does not exist")
+            pretrained_model_dir, model_name = os.path.split(self._args.pretrained_model_dir)
+            if model_name=="macbert_base":
+                huggingface_model_name = "hfl/chinese-macbert-base"
+            elif model_name=="ernie_base":
+                huggingface_model_name = "freedomking/ernie-1.0"
+            else:
+                huggingface_model_name = "IDEA-CCNL/Erlangshen-MacBERT-110M-BinaryClasssification-Chinese"
+            cache_path = os.path.join(pretrained_model_dir, model_name, "cache")
+            tokenizer = AutoTokenizer.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            model = AutoModel.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+            tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
+            shutil.rmtree(cache_path)
+            self._logger.info("local pretrained model path does not exist, model %s is downloaded from huggingface." % huggingface_model_name)
         return TokenizerGenerator.generate_tokenizer(self._args.pretrained_model_dir)
     
     def _load_prompt(self):

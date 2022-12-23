@@ -113,7 +113,6 @@ class TaskDataModel(pl.LightningDataModule):
             'labels': labels,
         }
 
-        # print(batch)
 
         return batch_data
 

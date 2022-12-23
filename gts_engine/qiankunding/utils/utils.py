@@ -2,6 +2,10 @@
 import json
 import numpy as np
 
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 
 def truncate_sequences(maxlen, indices, *sequences):
     """
@@ -33,7 +37,7 @@ def load_json_by_line(file):
     with open(file, "r", encoding="utf8") as f:
         reader = f.readlines()
         for line in reader:
-            # print(line)
+            
             sample = json.loads(line.strip())
             data.append(sample)
     return data
@@ -42,21 +46,21 @@ def load_json_by_line(file):
 def load_json(json_file):
     with open(json_file, "r", encoding="utf8") as fin:
         data = json.load(fin)
-    print("load {} from {}".format(len(data), json_file))
+    logger.info("load {} from {}".format(len(data), json_file))
     return data
 
 def write2json(data_list, data_path, data_name):
     with open(data_path, "w", encoding="utf-8") as fout:
         fout.write(json.dumps(data_list, ensure_ascii=False, indent=2))
-        print("{}({}) saved into {}".format(data_name, len(data_list), data_path))
+        logger.info("{}({}) saved into {}".format(data_name, len(data_list), data_path))
 
 def write2json_by_line(data_list, data_path, data_name=""):
     with open(data_path, "w", encoding="utf-8") as fout:
         for result in data_list:
-            # print(result["id"])
+            
             result = json.dumps(result,ensure_ascii=False)
             fout.write(result+"\n")
-        print("{}({}) saved into {}".format(data_name, len(data_list), data_path))
+        logger.info("{}({}) saved into {}".format(data_name, len(data_list), data_path))
 
 def json2list(data_path, use_key):
     data_list = []
@@ -74,7 +78,7 @@ def json2list(data_path, use_key):
 def list2json(data_list, data_path, use_key):
     with open(data_path, "w", encoding="utf-8") as fout:
         for idx, result in enumerate(data_list):
-            # print(result["id"])
+            
             sample_dict = {}
             result["id"] = idx
             for key in use_key:

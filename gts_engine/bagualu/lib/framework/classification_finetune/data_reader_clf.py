@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union, Iterable
 
-from ...utils.json import load_json_list, load_json
+from ...utils.json_processor import load_json_list, load_json
 from .consts import (
     Label2Token, 
     LabeledSample, 
