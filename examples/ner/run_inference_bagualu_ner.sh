@@ -18,4 +18,5 @@ python gts_engine/gts_engine_inference.py \
     --engine_type=bagualu \
     --task_type=ie \
     --input_path=examples/ner/weibo_test.json \
-    --output_path=$TASK_DIR/output.json
+    --output_path=$TASK_DIR/output.json \
+    --max_epochs=50

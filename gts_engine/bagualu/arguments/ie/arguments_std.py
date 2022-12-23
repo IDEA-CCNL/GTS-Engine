@@ -125,6 +125,8 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
     # trainer参数
     max_steps: int = -1
     max_epochs: int = 50
+    min_epochs: int = 1
+    precision: int = 16
     check_val_every_n_epoch: int = 1
     gradient_clip_val: float = 1.0
     val_check_interval: float = 0.5
@@ -227,12 +229,20 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
                             default=0.5,
                             help="[可选]验证间隔，默认0.5")
         parser.add_argument("--batch_size",
-                            dest="train batch_size",
+                            dest="batch_size",
                             type=int,
                             default=16,
                             help="[可选]train batch大小，默认16")
-
-
+        parser.add_argument("--max_epochs",
+                            dest="max_epochs",
+                            type=int,
+                            default=None,
+                            help="[可选]训练最大epoch数")
+        parser.add_argument("--min_epochs",
+                            dest="min_epochs",
+                            type=int,
+                            default=None,
+                            help="[可选]训练最小epoch数")
 
     def _after_parse(self) -> None:
         mk_inexist_dir(self.ft_output_dir)

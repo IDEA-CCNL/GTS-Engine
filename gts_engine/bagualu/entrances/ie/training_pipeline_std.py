@@ -30,8 +30,8 @@ from ...models.ie import BagualuIELitModel, BagualuIEExtractModel, BagualuIEOnnx
 from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
 from ...lib.utils import LoggerManager
 from ...lib.utils.json_processor import (load_json_list,
-                               dump_json,
-                               dump_json_list)
+                                         dump_json,
+                                         dump_json_list)
 from ...dataloaders.ie import (BagualuIEDataModel,
                                check_data,
                                data_segment,
@@ -153,12 +153,13 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
         # trainer
         trainer = Trainer(logger=logger,
-                          precision=16,
+                          precision=self._args.precision,
                           callbacks=[checkpoint_callback, early_stop_callback],
                           accelerator=self._args.accelerator,
                           devices=self._args.gpus,
                           max_steps=self._args.max_steps,
                           max_epochs=self._args.max_epochs,
+                          min_epochs=self._args.min_epochs,
                           check_val_every_n_epoch=self._args.check_val_every_n_epoch,
                           gradient_clip_val=self._args.gradient_clip_val,
                           val_check_interval=self._args.val_check_interval,
@@ -186,8 +187,13 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
                     return self._args.best_ckpt_path
 
         # if no best checkpoint found (e.g. no dev data), use the last checkpoint
-        self._logger.warning("no ModelCheckpoint available, use last checkpoint")
-        return self._args.last_ckpt_path
+        if self._args.last_ckpt_path and os.path.exists(self._args.last_ckpt_path):
+            shutil.copy(self._args.last_ckpt_path, self._args.best_ckpt_path)
+            self._logger.warning("no ModelCheckpoint available, use last checkpoint")
+            return self._args.best_ckpt_path
+
+        self._logger.error("Unexpected error: No checkpoint available")
+        return self._args.best_ckpt_path
 
     def _get_inf_lightning(self, checkpoint_path) -> BagualuIELitModel: # pylint: disable=arguments-differ
         if not checkpoint_path or not os.path.exists(checkpoint_path):
