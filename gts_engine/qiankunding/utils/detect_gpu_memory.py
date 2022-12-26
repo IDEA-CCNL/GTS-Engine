@@ -1,16 +1,19 @@
 from pynvml import *
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
 
 
 def print_gpu_utilization():
     nvmlInit()
     handle = nvmlDeviceGetHandleByIndex(0)
     info = nvmlDeviceGetMemoryInfo(handle)
-    print(f"GPU memory occupied: {info.used//1024**2} MB.")
+    logger.info(f"GPU memory occupied: {info.used//1024**2} MB.")
 
 
 def print_summary(result):
-    print(f"Time: {result.metrics['train_runtime']:.2f}")
-    print(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
+    logger.info(f"Time: {result.metrics['train_runtime']:.2f}")
+    logger.info(f"Samples/second: {result.metrics['train_samples_per_second']:.2f}")
     print_gpu_utilization()
 
 
@@ -18,7 +21,6 @@ def detect_gpu_memory():
     nvmlInit()
     handle = nvmlDeviceGetHandleByIndex(0)
     info = nvmlDeviceGetMemoryInfo(handle)
-    # print(info)
 
     return info.total//1024**2, info.used//1024**2
 
@@ -37,4 +39,4 @@ def decide_gpu(gpu_memory):
 if __name__=="__main__":
     print_gpu_utilization()
     gpu_memory, gpu_used_memory = detect_gpu_memory()
-    print(gpu_memory, gpu_used_memory)
+    logger.info(gpu_memory, gpu_used_memory)

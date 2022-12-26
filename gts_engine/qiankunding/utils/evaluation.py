@@ -2,6 +2,9 @@ import json
 from time import clock_settime
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
 
 def result_eval(y_true, y_pred, label_names):
     label_ids = [i for i in range(len(label_names))]
@@ -35,7 +38,7 @@ def result_eval(y_true, y_pred, label_names):
     eval_results['label_result'] = eval_report
     eval_results['confusion_matrix'] = cm_dict
 
-    print("global_acc:", global_acc)
+    logger.info("global_acc: {}".format(global_acc))
 
     return eval_results
 
@@ -47,12 +50,12 @@ class Evaluator(object):
 
         self.task_type = args.task_type
         self.label_classes = self.data_model.label_classes
-        print("label_classes",self.label_classes)
+        logger.info("label_classes",self.label_classes)
         with open(self.save_path+"label_classes.json", 'w') as f:
                 result = json.dumps(self.label_classes,ensure_ascii=False)
                 f.write(result+"\n")
         self.label_classes_reverse = {v:k for k,v in self.label_classes.items()}
-        print("label_classes_reverse",self.label_classes_reverse)
+        logger.info("label_classes_reverse",self.label_classes_reverse)
 
 
     def save_to_file(self, data_set, results, y_true, y_pred):
@@ -68,8 +71,8 @@ class Evaluator(object):
                     f.write(result+"\n")
 
             eval_results = result_eval(y_true, y_pred, label_names=self.label_classes)
-            # print(y_true, y_pred)
-            # print(eval_results)
+            
+            
             with open(self.save_path+f"{data_set}_set_confusion_matrix.json", "w") as f:
                 json.dump(eval_results, f, indent=4, ensure_ascii=False)
 
@@ -80,7 +83,7 @@ class Evaluator(object):
                     f.write(result+"\n")
 
 
-        print("Evaluation file saved at {}".format(self.save_path))
+        logger.info("Evaluation file saved at {}".format(self.save_path))
 
     def inference(self, test_loader, data_set, threshold):
         results = []
@@ -90,7 +93,7 @@ class Evaluator(object):
         for batch in tqdm(test_loader):
 
             logits, probs, predicts, labels, _ = self.model.predict(batch)
-            # print(predicts,labels)
+            
             if data_set in ["val","test"]:
                 y_true += list(labels)
                 y_pred += list(predicts)
@@ -144,7 +147,7 @@ class SentencePairEvaluator(Evaluator):
         for batch in tqdm(test_loader):
 
             logits, probs, predicts, labels, _ = self.model.predict(batch)
-            # print(predicts,labels)
+            
             if data_set in ["val","test"]:
                 y_true += list(labels)
                 y_pred += list(predicts)
@@ -175,10 +178,10 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
     data_model.setup(mode)
     tokenizer = data_model.tokenizer
     label_classes = data_model.label_classes
-    # print("model.label_classes:",model.label_classes)
-    print(label_classes)
+    
+    logger.info(label_classes)
     label_classes_reverse = {v:k for k,v in label_classes.items()}
-    print(label_classes_reverse)
+    logger.info(label_classes_reverse)
     if data_set=="test":
         test_loader = data_model.test_dataloader()
     
@@ -194,7 +197,7 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
     for batch in tqdm(test_loader):
 
         logits, probs, predicts, labels, _ = model.predict(batch)
-        # print(predicts,labels)
+        
         if data_set=="test":
             y_true += list(labels)
             y_pred += list(predicts)
@@ -210,7 +213,7 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
                 "probs": prob.tolist(),
             }
 
-                # print({'content': batch['sentence'][idx],'label': label_classes[predict]})
+                
 
             results.append(pred)
 
@@ -224,8 +227,8 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
 
         
             eval_results = result_eval(y_true, y_pred, label_names=label_classes)
-            # print(y_true, y_pred)
-            # print(eval_results)
+            
+            
             with open(save_path+"test_set_confusion_matrix.json", "w") as f:
                 json.dump(eval_results, f, indent=4, ensure_ascii=False)
 
@@ -235,4 +238,4 @@ def evaluation(args, model, data_model, save_path, mode, data_set):
             result = json.dumps(label_classes,ensure_ascii=False)
             f.write(result+"\n")
 
-    print("Evaluation file saved at {}".format(save_path))
+    logger.info("Evaluation file saved at {}".format(save_path))

@@ -29,6 +29,10 @@ from gts_common.arguments import GtsEngineArgs
 import qiankunding.utils.globalvar as globalvar
 globalvar._init()
 from qiankunding.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
 globalvar.set_value("gpu_type", decide_gpu(gpu_memory))
 globalvar.set_value('gpu_max_used_memory', gpu_cur_used_memory)
@@ -96,12 +100,12 @@ def main():
     
     # * Args for Trainer
     total_parser = Trainer.add_argparse_args(total_parser)
-    print("total_parser:",total_parser)
+    logger.info("total_parser:{}".format(total_parser))
     args = total_parser.parse_args()
 
-    print("pretrained_model_dir", args.pretrained_model_dir)
+    logger.info("pretrained_model_dir {}".format(args.pretrained_model_dir))
     args.gpus = 1
-    print('args', args)
+    logger.info("args {}".format(args))
     torch.set_num_threads(8)
     
 

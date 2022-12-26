@@ -11,6 +11,10 @@ from torch.utils.data import Dataset, DataLoader
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+from gts_common.logs_utils import Logger
+
+logger = Logger().get_log()
+
 
 def random_masking(token_ids, maks_rate, mask_start_idx, max_length, mask_id, tokenizer):
     """对输入进行随机mask
@@ -53,8 +57,8 @@ def get_att_mask(attention_mask,label_idx,question_len):
     for i in range(len(label_idx)-1):
         label_token_length=label_idx[i+1]-label_idx[i]
         if label_token_length<=0:
-            print('label_idx',label_idx)
-            print('question_len',question_len)
+            logger.info("label_idx {}".format(label_idx))
+            logger.info("question_len {}".format(question_len))
             continue
         ones=np.ones(shape=(label_token_length,label_token_length))
         attention_mask[label_idx[i]:label_idx[i+1],label_idx[i]:label_idx[i+1]]=ones
@@ -174,7 +178,7 @@ class TaskDatasetUnifiedMC(Dataset):
             try:
                 position_ids=get_position_ids(label_idx,encoded_len,question_len)
             except:
-                print(item)
+                logger.info(item)
         else:
             position_ids=np.arange(self.max_length)
         
@@ -272,10 +276,9 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
             args.data_dir, args.valid_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
         self.test_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.test_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
-        # print("len(valid_data:",len(self.valid_data))
         self.knn_datastore_data = TaskDatasetUnifiedMC(os.path.join(
             args.data_dir, args.train_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=False, choice=self.choice)
-        print("len(valid_data:",len(self.valid_data))
+        logger.info("len(valid_data: {}".format(len(self.valid_data)))
         # if args.pseudo_labeling:
         #     self.unlabeled_data = TaskDatasetUnifiedMC(os.path.join(
         #         args.data_dir, args.unlabeled_data), args, used_mask=False, tokenizer=tokenizer, is_test=True, unlabeled=True)
@@ -304,8 +307,8 @@ class TaskDataModelUnifiedMC(pl.LightningDataModule):
         for i, item in enumerate(choice):
             label_classes[item] = i
 
-        print("label_classes:",label_classes)
-        print("choice:",choice)
+        logger.info("label_classes: {}".format(label_classes))
+        logger.info("choice: {}".format(choice))
         return choice, label_classes
 
 def unifiedmc_collate_fn(batch):
