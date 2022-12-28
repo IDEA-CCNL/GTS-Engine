@@ -94,11 +94,13 @@ class GtsEngineInterfaceIEStd(BaseGtsEngineInterface):
         args_parse_list.extend(["--test_data_path", str(checked_args.test_data_path)])
         args_parse_list.extend(["--learning_rate",str(checked_args.lr)])
         args_parse_list.extend(["--num_workers", str(checked_args.num_workers)])
-        args_parse_list.extend(["--max_length",str(checked_args.max_len)])
-        args_parse_list.extend(["--val_check_interval",str(checked_args.val_check_interval)])
-        args_parse_list.extend(["--batch_size",str(checked_args.train_batchsize)])
-        args_parse_list.extend(["--max_epochs",str(checked_args.max_epochs)])
-        args_parse_list.extend(["--min_epochs",str(checked_args.min_epochs)])
+        args_parse_list.extend(["--max_length", str(checked_args.max_len)])
+        args_parse_list.extend(["--val_check_interval", str(checked_args.val_check_interval)])
+        args_parse_list.extend(["--batch_size", str(checked_args.train_batchsize)])
+        args_parse_list.extend(["--max_epochs", str(checked_args.max_epochs)])
+        args_parse_list.extend(["--min_epochs", str(checked_args.min_epochs)])
+        args_parse_list.extend(["--entity_multi_label"])
+        args_parse_list.extend(["--relation_multi_label"])
         return args_parse_list
 
     @property

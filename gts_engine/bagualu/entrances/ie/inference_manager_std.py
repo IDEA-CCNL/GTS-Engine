@@ -21,6 +21,7 @@ from ...lib.framework import BaseInferenceManager
 from ...lib.framework.mixin import OptionalLoggerMixin
 from ...models.ie import BagualuIEModel, BagualuIELitModel, BagualuIEExtractModel
 from ...arguments.ie import InferenceArgumentsIEStd
+from ...dataloaders.ie import data_segment, data_segment_restore
 
 
 class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
@@ -34,8 +35,8 @@ class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
         """ prepare inference """
         # load model
         self._inference_model = BagualuIELitModel.load_from_checkpoint(self._args.best_ckpt_path, # pylint: disable=protected-access
-                                                                   args=self._args,
-                                                                   logger=None)._model
+                                                                       args=self._args,
+                                                                       logger=None)._model
         self.info(f"loaded model from {self._args.best_ckpt_path}")
 
         # load tokenizer
@@ -56,10 +57,12 @@ class InferenceManagerIEStd(BaseInferenceManager, OptionalLoggerMixin):
         Returns:
             List[dict]: inference results
         """
+        sample = data_segment(sample)
         batch_size = self._args.batch_size
         result = []
         for i in range(0, len(sample), batch_size):
             batch_data = sample[i: i + batch_size]
             batch_result = self._extract_model.extract(batch_data, self._inference_model)
             result.extend(batch_result)
+        result = data_segment_restore(result)
         return result
