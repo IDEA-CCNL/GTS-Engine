@@ -16,7 +16,7 @@ import os
 from typing import List, Dict, Any
 
 from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import load_args, download_model_from_huggingface
+from gts_common.pipeline_utils import load_args, save_args, download_model_from_huggingface
 from gts_common.arguments import GtsEngineArgs
 
 from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
@@ -35,6 +35,8 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     Args:
         args (GtsEngineArgs): user arguments
     """
+    # save args
+    args = save_args(args)
     model_name = "Bagualu-IE-V6-120M-Chinese"
     download_model_from_huggingface(args.pretrained_model_dir, model_name)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
