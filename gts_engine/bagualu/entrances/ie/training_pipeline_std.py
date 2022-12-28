@@ -53,24 +53,25 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._data_module: BagualuIEDataModel
         self._lit_model: BagualuIELitModel
         self._trainer: Trainer
-        self._inf_lit_model: BagualuIELitModel
+        self._extract_model: BagualuIEExtractModel
 
     def _before_training(self) -> None:
         self._set_logger()
         self._logger.info("use saving path: %s", self._args.ft_output_dir)
-        self._tokenizer = self._generate_tokenizer()
+        self._generate_tokenizer()
         self._logger.info("phase before_training finished")
 
     def _train(self) -> None:
-        self._data_module = self._get_data_module()
-        self._lit_model = self._get_training_lightning()
-        self._trainer = self._get_trainer()
+        self._get_data_module()
+        self._get_training_lightning()
+        self._get_trainer()
         self._fit()
         self._logger.info("phase train finished")
 
     def _after_training(self) -> None:
         best_ckpt = self._select_best_model_from_ckpts()
-        self._inf_lit_model = self._get_inf_lightning(best_ckpt)
+        self._get_inf_model(best_ckpt)
+        self._extract_model = BagualuIEExtractModel(self._tokenizer, self._args)
         self._generate_prediction_file()
         self._export_onnx()
         self._logger.info("phase after_training finished")
@@ -83,14 +84,14 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._logger = LoggerManager.get_logger(self._args.logger)
         self._logger.info("log_file: %s", log_file)
 
-    def _generate_tokenizer(self) -> PreTrainedTokenizer:
+    def _generate_tokenizer(self):
         self._logger.info("generate tokenizer...")
         added_token = [f"[unused{i + 1}]" for i in range(99)]
         tokenizer = AutoTokenizer.from_pretrained(self._args.pretrained_model_root,
                                                   additional_special_tokens=added_token)
-        return tokenizer
+        self._tokenizer = tokenizer
 
-    def _get_data_module(self) -> BagualuIEDataModel:
+    def _get_data_module(self):
         train_data_path = self._args.train_data_path
         dev_data_path = self._args.dev_data_path
         test_data_path = self._args.test_data_path
@@ -100,6 +101,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             train_data = list(load_json_list(train_data_path))
             self._logger.info("load train data from %s", train_data_path)
             check_data(train_data)
+            train_data = data_segment(train_data)
         else:
             train_data = None
             self._logger.error("training data path [%s] is not valid", train_data_path)
@@ -109,6 +111,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             dev_data = list(load_json_list(dev_data_path))
             self._logger.info("load dev data from %s", dev_data_path)
             check_data(dev_data)
+            dev_data = data_segment(dev_data)
         else:
             dev_data = None
             self._logger.warning("dev data path [%s] is not valid", dev_data_path)
@@ -118,21 +121,21 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
             test_data = list(load_json_list(test_data_path))
             self._logger.info("load test data from %s", test_data_path)
             check_data(test_data)
+            test_data = data_segment(test_data)
         else:
             test_data = None
             self._logger.warning("test data path [%s] is not valid", test_data_path)
 
-        return BagualuIEDataModel(self._tokenizer,
-                              self._args,
-                              train_data=train_data,
-                              dev_data=dev_data,
-                              test_data=test_data)
+        self._data_module =  BagualuIEDataModel(self._tokenizer,
+                                                self._args,
+                                                train_data=train_data,
+                                                dev_data=dev_data,
+                                                test_data=test_data)
 
-    def _get_training_lightning(self) -> BagualuIELitModel:
-        model = BagualuIELitModel(self._args, logger=self._logger)
-        return model
+    def _get_training_lightning(self):
+        self._lit_model = BagualuIELitModel(self._args, logger=self._logger)
 
-    def _get_trainer(self) -> Trainer:
+    def _get_trainer(self):
         # add checkpoint callback
         checkpoint_callback = ModelCheckpoint(monitor=self._args.ckpt_monitor,
                                               save_top_k=self._args.ckpt_save_top_k,
@@ -166,7 +169,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
                           enable_progress_bar=self._args.enable_progress_bar,
                           accumulate_grad_batches=self._args.accumulate_grad_batches,)
 
-        return trainer
+        self._trainer = trainer
 
     def _fit(self) -> None:
         self._lit_model.num_data = len(self._data_module.train_data)
@@ -195,45 +198,37 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
         self._logger.error("Unexpected error: No checkpoint available")
         return self._args.best_ckpt_path
 
-    def _get_inf_lightning(self, checkpoint_path) -> BagualuIELitModel: # pylint: disable=arguments-differ
+    def _get_inf_model(self, checkpoint_path: str):
         if not checkpoint_path or not os.path.exists(checkpoint_path):
             self._logger.info("checkpoint [%s] is not valid. use final checkpoint.",
                               checkpoint_path)
-            model = self._lit_model
         else:
-            self._logger.info("generating inference model...")
-            model: BagualuIELitModel = BagualuIELitModel.load_from_checkpoint(checkpoint_path,
-                                                                      logger=self._logger,
-                                                                      args=self._args)
-        model.eval()
-        return model
+            self._logger.info("generating inference model from %s...", checkpoint_path)
+            self._lit_model = BagualuIELitModel.load_from_checkpoint(checkpoint_path,
+                                                                     args=self._args,
+                                                                     logger=None)
+        self._lit_model.eval()
 
     def _generate_prediction_file(self):
 
         # generate predictions from dev data
-        if os.path.exists(self._args.dev_data_path):
-            self._logger.info("predicting on dev data..")
-            data = list(load_json_list(self._args.dev_data_path))
-            check_data(data)
-            data_seg = data_segment(data)
-            pred_data = self._generate_prediction_results(data_seg)
-            pred_data = data_segment_restore(pred_data)
-            dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir,
-                                                   "dev_prediction_results.json"))
-            eval_results = self._generate_evaluation_results(data, pred_data)
-            dump_json(eval_results,
-                      os.path.join(self._args.prediction_save_dir,
-                                   "dev_evaluation_results.json"),
-                      indent=4)
+        # if os.path.exists(self._args.dev_data_path):
+        #     self._logger.info("predicting on dev data..")
+        #     data = list(load_json_list(self._args.dev_data_path))
+        #     pred_data = self._generate_prediction_results(data)
+        #     dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir,
+        #                                            "dev_prediction_results.json"))
+        #     eval_results = self._generate_evaluation_results(data, pred_data)
+        #     dump_json(eval_results,
+        #               os.path.join(self._args.prediction_save_dir,
+        #                            "dev_evaluation_results.json"),
+        #               indent=4)
 
         # generate predictions from test data
         if os.path.exists(self._args.test_data_path):
             self._logger.info("predicting on test data..")
             data = list(load_json_list(self._args.test_data_path))
-            check_data(data)
-            data_seg = data_segment(data)
-            pred_data = self._generate_prediction_results(data_seg)
-            pred_data = data_segment_restore(pred_data)
+            pred_data = self._generate_prediction_results(data)
             dump_json_list(pred_data, os.path.join(self._args.prediction_save_dir,
                                                    "test_prediction_results.json"))
             eval_results = self._generate_evaluation_results(data, pred_data)
@@ -242,15 +237,19 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
                                    "test_evaluation_results.json"),
                       indent=4)
 
-    def _generate_prediction_results(self, data: List[dict]) -> List[dict]: # pylint: disable=arguments-differ
+    def _generate_prediction_results(self, data: List[dict]) -> List[dict]:
+        check_data(data)
+        data = data_segment(data)
+
         batch_size = self._args.batch_size
-        extract_model = BagualuIEExtractModel(self._tokenizer, self._args)
 
         result = []
         for i in range(0, len(data), batch_size):
             batch_data = data[i: i + batch_size]
-            batch_result = extract_model.extract(batch_data, self._inf_lit_model._model) # pylint: disable=protected-access
+            batch_result = self._extract_model.extract(batch_data, self._lit_model._model) # pylint: disable=protected-access
             result.extend(batch_result)
+
+        result = data_segment_restore(result)
 
         return result
 
@@ -295,7 +294,7 @@ class TrainingPipelineIEStd(BaseTrainingPipeline):
 
         # load model config
         model_config = BagualuIEOnnxConfig()
-        bert_model = self._inf_lit_model._model.cpu() # pylint: disable=protected-access
+        bert_model = self._lit_model._model.cpu() # pylint: disable=protected-access
         bert_model.eval()
 
         # get dummy model input
