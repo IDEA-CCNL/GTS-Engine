@@ -5,7 +5,7 @@ from logging import Logger
 import re
 import os
 import shutil
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForMaskedLM
 from transformers.tokenization_utils import PreTrainedTokenizer
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger, TensorBoardLogger
@@ -129,14 +129,14 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             else:
                 label2id = DataReaderClf.read_label2id(self._args.label2id_path)
                 if len(label2id) == 2:
-                    model = "macbert_base_binary"
+                    model = "Erlangshen-MacBERT-110M-BinaryClassification-Chinese"
                 else:
                     sample_list = list(DataReaderClf.read_unlabeled_sample(self._args.train_data_path))
                     sentence_len_list = [len(sample.text) for sample in sample_list]
                     if interval_mean(sentence_len_list) < 100:
-                        model = "macbert_base"
+                        model = "chinese-macbert-base"
                     else:
-                        model = "ernie_base"
+                        model = "ernie-1.0-base-zh"
                 pretrained_model_dir = os.path.join(self._args.pretrained_model_root, model)
                 self._logger.info(f"using auto selected pretrained model: {pretrained_model_dir}")
         self._args.pretrained_model_dir = Path(pretrained_model_dir)
@@ -144,15 +144,15 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
             pretrained_model_dir, model_name = os.path.split(self._args.pretrained_model_dir)
-            if model_name=="macbert_base":
+            if model_name=="chinese-macbert-base":
                 huggingface_model_name = "hfl/chinese-macbert-base"
-            elif model_name=="ernie_base":
-                huggingface_model_name = "freedomking/ernie-1.0"
+            elif model_name=="ernie-1.0-base-zh":
+                huggingface_model_name = "xiaoqin/ernie-1.0-base-zh"
             else:
-                huggingface_model_name = "IDEA-CCNL/Erlangshen-MacBERT-110M-BinaryClasssification-Chinese"
+                huggingface_model_name = "IDEA-CCNL/Erlangshen-MacBERT-110M-BinaryClassification-Chinese"
             cache_path = os.path.join(pretrained_model_dir, model_name, "cache")
             tokenizer = AutoTokenizer.from_pretrained(huggingface_model_name, cache_dir=cache_path)
-            model = AutoModel.from_pretrained(huggingface_model_name, cache_dir=cache_path)
+            model = AutoModelForMaskedLM.from_pretrained(huggingface_model_name, cache_dir=cache_path)
             model.save_pretrained(os.path.join(pretrained_model_dir, model_name))
             tokenizer.save_pretrained(os.path.join(pretrained_model_dir, model_name))
             shutil.rmtree(cache_path)
