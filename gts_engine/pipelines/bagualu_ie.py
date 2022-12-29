@@ -37,7 +37,7 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     """
     # save args
     args = save_args(args)
-    model_name = "Bagualu-IE-V6-120M-Chinese"
+    model_name = "Erlangshen-BERT-120M-IE-Chinese"
     download_model_from_huggingface(args.pretrained_model_dir, model_name)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
     train_mode = TRAIN_MODE(args.train_mode)
@@ -56,7 +56,7 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
     Returns:
         InferenceManagerIEStd: inference manager.
     """
-    model_name = "Bagualu-IE-V6-120M-Chinese"
+    model_name = "Erlangshen-BERT-120M-IE-Chinese"
     args: GtsEngineArgs = load_args(save_path)
     download_model_from_huggingface(args.pretrained_model_dir, model_name)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
