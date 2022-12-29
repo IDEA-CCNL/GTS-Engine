@@ -24,6 +24,7 @@ import gc
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
+format_checker = service_utils.DataFormatChecker()
 
 app = FastAPI()
 
@@ -182,17 +183,29 @@ def start_train(train_input: TrainInput):
         return {"ret_code": -102, "message": "任务信息文件不存在"}
     task_info = json.load(open(task_info_path))
 
-    if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.train_data), "train"):
-        return {"ret_code": -101, "message":"训练数据不存在或者数据格式不合法"}
+    valid, msg = format_checker.check_from_path(task_type=task_info["task_type"],
+                                                data_type="train",
+                                                data_path=os.path.join(task_data_dir, train_input.train_data))
+    if not valid:
+        return {"ret_code": -101, "message": f"训练数据不存在或者数据格式不合法: \n{msg}"}
 
-    if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.val_data), "dev"):
-        return {"ret_code": -101, "message":"验证数据不存在或者数据格式不合法"}
+    valid, msg = format_checker.check_from_path(task_type=task_info["task_type"],
+                                                data_type="dev",
+                                                data_path=os.path.join(task_data_dir, train_input.val_data))
+    if not valid:
+        return {"ret_code": -101, "message": f"验证数据不存在或者数据格式不合法: \n{msg}"}
 
-    if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.test_data), "test"):
-        return {"ret_code": -101, "message":"测试数据不存在或者数据格式不合法"}
+    valid, msg = format_checker.check_from_path(task_type=task_info["task_type"],
+                                                data_type="test",
+                                                data_path=os.path.join(task_data_dir, train_input.test_data))
+    if not valid:
+        return {"ret_code": -101, "message": f"测试数据不存在或者数据格式不合法: \n{msg}"}
 
-    if not service_utils.is_data_format_valid(os.path.join(task_data_dir, train_input.label_data), "label"):
-        return {"ret_code": -101, "message":"标签数据不存在或者数据格式不合法"}
+    valid, msg = format_checker.check_from_path(task_type=task_info["task_type"],
+                                                data_type="label",
+                                                data_path=os.path.join(task_data_dir, train_input.label_data))
+    if not valid:
+        return {"ret_code": -101, "message": f"标签数据不存在或者数据格式不合法: \n{msg}"}
 
     # 创建日志目录和模型存储目录
     task_log_dir = os.path.join(specific_task_dir, "logs")
@@ -325,12 +338,11 @@ def predict(inputs: PredictInput):
     task_type = task_info["task_type"]
     engine_type = task_info["engine_type"]
 
-    for sentence in sentences:
-        if not isinstance(sentence, dict):
-            return {"ret_code": -101, "message": "每条样本必须是字典形式"}
-        else:
-            if "content" not in sentence:
-                return {"ret_code": -101, "message": "每条样本里必须包含content字段"}
+    valid, msg = format_checker.check_data(task_type=task_type,
+                                           data_type="unlabeled",
+                                           data=sentences)
+    if not valid:
+        return {"ret_code": -101, "message": msg}
 
     result = inference_samples(engine_type, task_type, sentences, inference_suite)
 
