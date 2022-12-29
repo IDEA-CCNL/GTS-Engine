@@ -221,7 +221,7 @@ client.start_train(
   val_data="tnews_val.json",
   test_data="tnews_test.json",
   label_data="tnews_label.json",
-  train_mode="standard"，
+  train_mode="standard",
   max_num_epoch=1,
   min_num_epoch=1, 
   seed=42, 
