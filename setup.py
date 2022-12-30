@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="gts_engine",
-    version="0.1.2",
+    version="0.1.3",
     description="git_engine development suite: a powerful NLU training system",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -24,7 +24,7 @@ setup(
         "psutil==5.8.0",
         "pydantic==1.10.2",
         "pynvml==11.0.0",
-        "pytorch_lightning==1.6.2",
+        "pytorch_lightning==1.7.6",
         "scikit_learn==1.1.3",
         "setuptools==58.0.4",
         "starlette==0.20.4",
@@ -33,6 +33,9 @@ setup(
         "transformers==4.18.0",
         "uvicorn==0.19.0",
         "python-multipart==0.0.5",
+        "sentence-transformers==2.2.2",
+        "LAC==2.1.2",
+        "textda==0.1.0.6",
     ],
 
     scripts=[],
