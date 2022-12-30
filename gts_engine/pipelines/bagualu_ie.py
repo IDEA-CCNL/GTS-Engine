@@ -22,6 +22,7 @@ from gts_common.arguments import GtsEngineArgs
 from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
 from bagualu.entrances.ie import GtsEngineInterfaceIEStd
 from bagualu.entrances.ie.inference_manager_std import InferenceManagerIEStd
+from bagualu.models.ie import BagualuIEModel
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
     TRAIN_MODE.STD: GtsEngineInterfaceIEStd()
@@ -38,7 +39,9 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     # save args
     args = save_args(args)
     model_name = "Erlangshen-BERT-120M-IE-Chinese"
-    download_model_from_huggingface(args.pretrained_model_dir, model_name)
+    download_model_from_huggingface(args.pretrained_model_dir,
+                                    model_name,
+                                    model_class=BagualuIEModel)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory: GtsEngineInterfaceIEStd = mode_to_interface[train_mode]
@@ -58,7 +61,9 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
     """
     model_name = "Erlangshen-BERT-120M-IE-Chinese"
     args: GtsEngineArgs = load_args(save_path)
-    download_model_from_huggingface(args.pretrained_model_dir, model_name)
+    download_model_from_huggingface(args.pretrained_model_dir,
+                                    model_name,
+                                    model_class=BagualuIEModel)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory: GtsEngineInterfaceIEStd = mode_to_interface[train_mode]
