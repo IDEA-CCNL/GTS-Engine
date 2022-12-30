@@ -23,6 +23,46 @@ def get_train_tokenizer(args):
 
     return tokenizer
 
+def get_t5_tokenizer(args):
+   
+    tokenizer = t5_tokenizer(args.pretrained_model)
+
+    return tokenizer
+
+
+def t5_tokenizer(pretrained_model_path):
+    special_tokens = ["<extra_id_{}>".format(i) for i in range(100)]
+    special_tokens += [f"[choice{i+1}]" for i in range(200)]
+    # special_tokens += [f"{i+1}" for i in range(200)]
+    
+    print("pretrained_model_path", pretrained_model_path)
+    tokenizer_ = T5Tokenizer.from_pretrained(
+        pretrained_model_path,
+        do_lower_case=True,
+        max_length=1024,
+        truncation=True,
+        additional_special_tokens=special_tokens,
+    )
+
+
+    for i in range(200):
+        item = str(i+1)
+        item_ = tokenizer_.tokenize(item)
+        if len(item_)>=2: 
+            special_tokens.append(item)
+    
+    
+    tokenizer = T5Tokenizer.from_pretrained(
+            pretrained_model_path,
+            do_lower_case=True,
+            max_length=1024,
+            truncation=True,
+            additional_special_tokens=special_tokens,
+        )
+
+    return tokenizer
+
+
 
 def get_unused_tokenizer(pretrained_model_path):
     """添加特殊中文字符和未使用的token【unused1】"""
