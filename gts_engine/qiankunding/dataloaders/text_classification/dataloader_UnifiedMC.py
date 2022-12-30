@@ -135,10 +135,7 @@ class TaskDatasetUnifiedMC(Dataset):
                 for line in tqdm(lines):
                     item = json.loads(line)
                     samples.append(item)
-                    # choices_len = len('[MASK]'.join(item['choice']))
-                    # # 如果choice拼起来太长就不要了
-                    # if choices_len < 512:
-                    #     samples.append(item)
+                    
         return samples
 
     def encode(self, item, used_mask, is_test, unlabeled):

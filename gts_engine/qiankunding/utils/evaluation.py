@@ -174,68 +174,89 @@ class SentencePairEvaluator(Evaluator):
 
         return results, y_true, y_pred
 
-def evaluation(args, model, data_model, save_path, mode, data_set):
-    data_model.setup(mode)
-    tokenizer = data_model.tokenizer
-    label_classes = data_model.label_classes
-    
-    logger.info(label_classes)
-    label_classes_reverse = {v:k for k,v in label_classes.items()}
-    logger.info(label_classes_reverse)
-    if data_set=="test":
-        test_loader = data_model.test_dataloader()
-    
-    results = []
 
-
-    y_true = []
-    y_pred = []
-
-    # special_tuning_methods = ["fine_tuning","pet","pet_joint_finetune","mlm_tuning","label_guided_tuning_cls","label_guided_tuning","UnifiedMC","UGC_tuning","T5_tuning","cocolm_pet"]
-    # special_tuning_methods += ["text_match","token_classification"]
-
-    for batch in tqdm(test_loader):
-
-        logits, probs, predicts, labels, _ = model.predict(batch)
+class TextGenerateEvaluator(object):
+    def __init__(self, args, model, data_model, save_path):
+        super().__init__()
+        self.args, self.model, self.data_model, self.save_path = args, model, data_model, save_path
+        self.task_type = args.task_type
         
-        if data_set=="test":
-            y_true += list(labels)
-            y_pred += list(predicts)
+
+    def save_to_file(self, data_set, results, y_true, y_pred):
         
-    
-        for idx, (predict,prob,logit) in enumerate(zip(predicts,probs,logits)):
+        if data_set in ["val","test"]:
+            with open(self.save_path+f"{data_set}_set_predictions.json", 'w') as f:
+                for result in results:
+                    result = json.dumps(result,ensure_ascii=False)
+                    f.write(result+"\n")
+
+        elif data_set=="train":
+            with open(self.save_path+"labeled_set_predictions.json", 'w') as f:
+                for result in results:
+                    result = json.dumps(result,ensure_ascii=False)
+                    f.write(result+"\n")
+
+        logger.info("Evaluation file saved at {}".format(self.save_path))
+
+
+    def evaluation(self, mode, data_set):
+        self.data_model.setup(mode)
+        
+        if data_set=="val":
+            test_loader = self.data_model.val_dataloader()
+        elif data_set=="test":
+            test_loader = self.data_model.test_dataloader()
+        elif data_set=="train":
+            test_loader = self.data_model.train_dataloader()
             
-            pred = {
-                # "id": int(batch["id"][idx]),
-                'text': batch['sentence'][idx],
-                'label': label_classes_reverse[predict],
-                # 'content': batch['sentence'][idx],
-                "probs": prob.tolist(),
-            }
+        results, y_true, y_pred = self.inference(test_loader=test_loader, data_set=data_set)
+        self.save_to_file(data_set, results, y_true, y_pred)
 
-                
+        TP, total_pred, total_true = 0, 0, 0
+        for i in range(len(y_true)):
+            true_list = y_true[i].split('|')
+            pred_list = y_pred[i].split('|')
+            pred_list = list(set(pred_list))
 
-            results.append(pred)
+            for pred in pred_list:
+                if pred in true_list:
+                    TP += 1
 
+            total_pred += len(pred_list)
+            total_true += len(true_list)
 
+        precision = TP / total_pred
+        recall = TP / total_true
+        f1 = float(2 * (precision * recall)) / (precision + recall) if precision + recall > 0 else 0.0
+        
+        logger.info("precision: {}".format(precision))
+        logger.info("recall: {}".format(recall))
+        logger.info("f1: {}".format(f1))
+        return f1
+
+    def inference(self, test_loader, data_set):
+        results = []
+        y_true = []
+        y_pred = []
+
+        for batch in tqdm(test_loader):
+
+            _, _, predicts, labels = self.model.predict(batch)
+            
+            if data_set in ["val","test"]:
+                y_true += list(labels)
+                y_pred += list(predicts)
+
+            for idx, predict in enumerate(predicts):
+            
+                pred = {
+                        "id": int(batch["id"][idx]),
+                        'label': predict
+                    }
+
+                results.append(pred)
     
-    if data_set=="test":
-        with open(save_path+"test_set_predictions.json", 'w') as f:
-            for result in results:
-                result = json.dumps(result,ensure_ascii=False)
-                f.write(result+"\n")
+        return results, y_true, y_pred
+
 
         
-            eval_results = result_eval(y_true, y_pred, label_names=label_classes)
-            
-            
-            with open(save_path+"test_set_confusion_matrix.json", "w") as f:
-                json.dump(eval_results, f, indent=4, ensure_ascii=False)
-
-
-
-    with open(save_path+"label_classes.json", 'w') as f:
-            result = json.dumps(label_classes,ensure_ascii=False)
-            f.write(result+"\n")
-
-    logger.info("Evaluation file saved at {}".format(save_path))
