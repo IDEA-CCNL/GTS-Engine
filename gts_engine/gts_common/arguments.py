@@ -11,7 +11,7 @@ class GtsEngineArgs(Namespace):
     engine_type: Literal["qiankunding", "bagualu"]
     train_mode: Literal["fast", "standard", "advanced"]
     task_dir: PathStr
-    task_type: Literal["classification", "similarity", "nli"]
+    task_type: Literal["classification", "similarity", "nli", "ie"]
     num_workers: int
     train_batchsize: int
     valid_batchsize: int
@@ -27,24 +27,22 @@ class GtsEngineArgs(Namespace):
     seed: int
     lr: float
     gpus: int
-    num_sanity_val_steps: int
-    accumulate_grad_batches: int
     val_check_interval: float
     max_epochs: Optional[int]
     min_epochs: Optional[int]
-    
+    gradient_checkpointing_gate: str
     @property
     def train_data_path(self) -> Path:
         return Path(self.data_dir) / self.train_data
-    
+
     @property
     def valid_data_path(self) -> Path:
         return Path(self.data_dir) / self.valid_data
-    
+
     @property
     def test_data_path(self) -> Optional[Path]:
         return Path(self.data_dir) / self.test_data if hasattr(self, "test_data") else None
-    
+
     @property
     def label_data_path(self) -> Optional[Path]:
         return Path(self.data_dir) / self.label_data if hasattr(self, "label_data") else None

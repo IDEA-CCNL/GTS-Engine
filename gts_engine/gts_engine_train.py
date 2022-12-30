@@ -60,7 +60,7 @@ def main():
                             type=str, help="training mode")
     total_parser.add_argument("--task_dir", required=True, 
                             type=str, help="specific task directory")
-    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli"],
+    total_parser.add_argument("--task_type", required=True, choices=["classification", "similarity", "nli", "ie"],
                             type=str, help="task type for training")
     total_parser.add_argument('--num_workers', default=8,
                             type=int, help="number of workers for data preprocessing.")
@@ -99,9 +99,15 @@ def main():
                             type=float, help="learning rate")
     
     # * Args for Trainer
-    total_parser = Trainer.add_argparse_args(total_parser)
-    logger.info("total_parser:{}".format(total_parser))
-    args = total_parser.parse_args()
+    total_parser.add_argument('--max_epochs', default=None,
+                              type=int, help="upper limit of training epochs")
+    total_parser.add_argument('--min_epochs', default=None,
+                              type=int, help="lower limit of training epochs")
+    total_parser.add_argument('--val_check_interval', default=0.5,
+                              type=float, help="perform a validation loop every after every `N` training epochs")
+
+    print("total_parser:",total_parser)
+    args = total_parser.parse_args(namespace=GtsEngineArgs())
 
     logger.info("pretrained_model_dir {}".format(args.pretrained_model_dir))
     args.gpus = 1

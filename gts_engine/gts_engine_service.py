@@ -24,7 +24,6 @@ import gc
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()
-format_checker = service_utils.DataFormatChecker()
 
 app = FastAPI()
 
@@ -183,6 +182,8 @@ def start_train(train_input: TrainInput):
         return {"ret_code": -102, "message": "任务信息文件不存在"}
     task_info = json.load(open(task_info_path))
 
+    format_checker = service_utils.DataFormatChecker()
+
     valid, msg = format_checker.check_from_path(task_type=task_info["task_type"],
                                                 data_type="train",
                                                 data_path=os.path.join(task_data_dir, train_input.train_data))
@@ -338,6 +339,7 @@ def predict(inputs: PredictInput):
     task_type = task_info["task_type"]
     engine_type = task_info["engine_type"]
 
+    format_checker = service_utils.DataFormatChecker()
     valid, msg = format_checker.check_data(task_type=task_type,
                                            data_type="unlabeled",
                                            data=sentences)
