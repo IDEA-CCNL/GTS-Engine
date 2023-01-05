@@ -3,13 +3,20 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+def read_requirements_file(filepath):
+    with open(filepath) as fin:
+        requirements = fin.read()
+    return requirements
+
+REQUIRED_PACKAGES = read_requirements_file("requirements.txt")
+
 setup(
     name="gts_engine",
     version="0.1.3",
     description="git_engine development suite: a powerful NLU training system",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    license="MIT Licence",
+    license="Apache 2.0",
     url="https://github.com/IDEA-CCNL/GTS-Engine",
     author="pankunhao",
     author_email="pankunhao@gmail.com",
@@ -18,25 +25,7 @@ setup(
     include_package_data=True,
     platforms="any",
     exclude_package_date={'':['.gitignore']},
-    install_requires=[
-        "fastapi==0.86.0",
-        "numpy==1.22.3",
-        "psutil==5.8.0",
-        "pydantic==1.10.2",
-        "pynvml==11.0.0",
-        "pytorch_lightning==1.7.6",
-        "scikit_learn==1.1.3",
-        "setuptools==58.0.4",
-        "starlette==0.20.4",
-        "torch==1.11.0",
-        "tqdm==4.62.3",
-        "transformers==4.18.0",
-        "uvicorn==0.19.0",
-        "python-multipart==0.0.5",
-        "sentence-transformers==2.2.2",
-        "LAC==2.1.2",
-        "textda==0.1.0.6",
-    ],
+    install_requires=REQUIRED_PACKAGES,
 
     scripts=[],
 
