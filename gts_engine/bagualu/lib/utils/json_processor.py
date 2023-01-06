@@ -1,11 +1,12 @@
 """json读写工具集
 
 提供支持类别推导、校验，支持json和json列表（每行为一个json字符串）形式的读写工具
+
+Todo:
+    - [ ] (Jiang Yuzhen) 修改模块名为json_utils或更合适的其他名称
 """
 import json
 from pathlib import Path
-from pydantic import parse_obj_as
-from pydantic.json import pydantic_encoder
 from typing import (
     List,
     Union,
@@ -16,6 +17,8 @@ from typing import (
     Generator,
     overload
 )
+from pydantic import parse_obj_as
+from pydantic.json import pydantic_encoder
 
 LoadType = TypeVar("LoadType", bound=Type)
 
@@ -47,12 +50,12 @@ def load_json(file: Union[str, Path], type_: Type[LoadType]) -> LoadType:
         LoadType: json文件对象，并检查、解析为 type_ 参数指定类型
 
     Todo:
-        - [ ] (Jiang Yuzhen)将文件类型解析错误捕获抛出，并给出文件信息
+        - [ ] (Jiang Yuzhen) 将文件类型解析错误捕获抛出，并给出文件信息
 
     Example:
         json文件如下
 
-        ```
+        ```json
         [
             {
                 "id": 1,
@@ -107,7 +110,7 @@ def load_json_list(
         LoadType: 依次生成每一行的json对象，并检查、解析为 type_ 参数指定的类型
 
     Todo:
-        - [ ] (Jiang Yuzhen)将文件类型解析错误捕获抛出，并定位到类型错误的行/json字符串
+        - [ ] (Jiang Yuzhen) 将文件类型解析错误捕获抛出，并定位到类型错误的行/json字符串
 
     Example:
         json文件如下

@@ -1,11 +1,17 @@
+"""路径相关工具集
+
+Todo:
+    - [ ] 将模块名改为path_utils或类似名称，和json_utils等工具集保持一致
+"""
 import os
 from typing import Literal
 import shutil
 from typing import Union
 from pathlib import Path
 
+
 def mk_inexist_dir(path: Union[str, Path], r: bool = True, clean: bool = False):
-    """创建不存在的路径 
+    """创建不存在的路径
 
     Args:
         path: 路径
@@ -20,9 +26,16 @@ def mk_inexist_dir(path: Union[str, Path], r: bool = True, clean: bool = False):
     if clean:
         shutil.rmtree(path)
         os.mkdir(path)
-        
-def get_file_size(path: Union[str, Path], unit: Literal["kb", "mb", "gb"]) -> float:
-    """获取文件在指定单位下的大小"""
+
+
+def get_file_size(
+    path: Union[str, Path], unit: Literal["kb", "mb", "gb"]
+) -> float:
+    """获取文件在指定单位下的大小
+
+    Todo:
+        - [ ] (Jiang Yuzhen) 预先检查该路径是否为文件，否则抛出错误
+    """
     if unit == "kb":
         scale = 1024
     elif unit == "mb":
@@ -33,4 +46,3 @@ def get_file_size(path: Union[str, Path], unit: Literal["kb", "mb", "gb"]) -> fl
         raise Exception("unit is not supported")
     size = os.path.getsize(path)
     return round(size / scale, 4)
-    
