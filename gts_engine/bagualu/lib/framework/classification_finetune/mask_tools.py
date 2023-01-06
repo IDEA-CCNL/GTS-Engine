@@ -3,7 +3,7 @@ from typing import List, NamedTuple
 from transformers.tokenization_utils import PreTrainedTokenizer
 import re
 
-from .prompt import PromptBase
+from .label import LabelBase
 
 class MaskedLmInstance(NamedTuple):
     index: int
@@ -107,11 +107,11 @@ class WWMMaskingOutput(NamedTuple):
     input_mask: List[int]
     masked_lm_positions: List[int]
 
-def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenizer, prompt_mode: PromptBase, max_length: int, mask_rate: float, offset: int=0):
+def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenizer, label_mode: LabelBase, max_length: int, mask_rate: float, offset: int=0):
     output_tokens, masked_lm_positions, masked_lm_labels = create_masked_lm_predictions(new_tokens[offset:],
                                                                                         masked_lm_prob=mask_rate,
                                                                                         max_predictions_per_seq=30,
-                                                                                        masked_label=prompt_mode.mask_token,
+                                                                                        masked_label=label_mode.mask_token,
                                                                                         vocab_words=list(tokenizer.get_vocab().keys()),
                                                                                         index=index)
 

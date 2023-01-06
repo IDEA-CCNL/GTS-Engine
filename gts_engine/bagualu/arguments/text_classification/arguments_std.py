@@ -23,12 +23,11 @@ class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
         return self.input_dir / "eda_augment.json" if (
             self._aug_eda_path is None) else self._aug_eda_path
 
-    @property
-    def memory_optimization_setting(self) -> None:
+    def set_memory_optimization(self) -> None:
         # 基于显卡显存大小，设定显存优化的参数
         gpu_memory, gpu_cur_used_memory = detect_gpu_memory()
         gpu_type = decide_gpu(gpu_memory)
-        self.precision = 16 if "low" in gpu_type else 32 
+        self.precision = 16 if "low" in gpu_type else 32  # type: ignore
         self.use_gradient_checkpointing = "True" if gpu_type == "lower_gpu" else "False"
         print("基于当前显卡的显存大小 {}M, 设置training precision为{}, 设置use_gradient_checkpointing为{}".format(gpu_memory, self.precision, self.use_gradient_checkpointing))
 

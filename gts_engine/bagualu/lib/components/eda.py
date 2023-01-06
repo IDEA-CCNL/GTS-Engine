@@ -8,7 +8,7 @@ import time
 import copy
 from pydantic import FilePath
 
-from ..utils.json_processor import load_json_list, dump_json_list
+from ..utils.json_utils import load_json_list, dump_json_list
 from .text_tools import segment_text
 from ..framework.mixin import OptionalLoggerMixin
 

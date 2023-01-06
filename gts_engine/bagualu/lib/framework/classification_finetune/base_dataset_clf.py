@@ -3,7 +3,7 @@ from typing import Generic, Protocol, Sequence, Union, TypeVar
 from dataclasses import asdict, is_dataclass
 
 from .base_arguments_clf import BaseTrainingArgumentsClf
-from .prompt import StdPrompt
+from .label import StdLabel
 from .consts import PreTrainedTokenizer
 from collections import defaultdict
 
@@ -12,7 +12,7 @@ class RawSampleProto(Protocol):
     text: str
 
 class DatasetArgsProto(Protocol):
-    inference_label_prompt: str
+    inference_prompt: str
     prefix_prompt: str
     
 
@@ -22,10 +22,10 @@ class BaseDatasetClf(Dataset):
         self,
         sample_list: Sequence[RawSampleProto],
         tokenizer: PreTrainedTokenizer,
-        prompt: StdPrompt
+        label: StdLabel
     ):
         self._tokenizer = tokenizer
-        self._prompt = prompt
+        self._label = label
         self._pre_encoded_sample_list = [self._encode_before_iter(sample, idx) for idx, sample in enumerate(sample_list)]
         self.sample_list = sample_list
         self._classwise_indices = defaultdict(list)

@@ -3,7 +3,7 @@ from pydantic import BaseModel, DirectoryPath, FilePath
 from pathlib import Path
 
 from ...lib.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
-from ...lib.utils.json_processor import dump_json, load_json
+from ...lib.utils.json_utils import dump_json, load_json
 
 from .training_pipeline_std import TrainingPipelineClfStd
 from .inference_manager_std import InferenceManagerClfStd

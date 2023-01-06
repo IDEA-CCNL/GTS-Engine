@@ -83,22 +83,22 @@ InferenceManagerInputSampleList = List[InferenceManagerInputSample]
 ## Prompt & Label
 #############################################################################################
 
-class PromptToken(NamedTuple):
+class LabelToken(NamedTuple):
     label: str
     label_id: int
     label_id_clf: int
     key: str
 
-class PromptLabel(NamedTuple):
+class Label(NamedTuple):
     label: str
     key: str
 
-Label2Token = Dict[str, PromptToken]
+Label2Token = Dict[str, LabelToken]
 
-class PromptLabelParseOutput(NamedTuple):
+class LabelParseOutput(NamedTuple):
     label2token: Label2Token
-    id2label: Dict[int, PromptLabel]
-    label_ids: List[PromptToken]
+    id2label: Dict[int, Label]
+    label_ids: List[LabelToken]
 
 class Label2IdValue(BaseModel):
     id: int
@@ -142,8 +142,8 @@ class TrainingSettings:
     learning_rate: float
     label_guided_rate: float
     prefix_prompt: str
-    training_label_prompt: str
-    inference_label_prompt: str
+    training_prompt: str
+    inference_prompt: str
     batch_size: int
     epoch: int
     warmup_epoch: int

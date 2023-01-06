@@ -76,8 +76,8 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     pretrained_model_dir: DirectoryPath
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："
-    training_label_prompt = "[unused1][unused2][MASK][MASK][MASK][unused3][unused4]"
-    inference_label_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
+    training_prompt = "[unused1][unused2][MASK][MASK][MASK][unused3][unused4]"
+    inference_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     label_guided_rate = 0.5
     wwm_mask_rate = 0.12
     @property
@@ -131,7 +131,7 @@ class BaseInferenceArgumentsClf(BaseArguments):
         
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："
-    inference_label_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
+    inference_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     max_length = 512
     batch_size = 8
     

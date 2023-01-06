@@ -10,17 +10,18 @@ from ...lib.components.text_tools import segment_text
 
 class TrainDatasetClfStd(BaseDatasetClf):
     
-    def __init__(self, sample_list, tokenizer, prompt, training_label_prompt: str, label_guided_rate: float, max_length: int, wwm_mask_rate: float):
-        self._training_label_prompt = training_label_prompt
+    def __init__(self, sample_list, tokenizer, label, prefix_prompt, training_prompt: str, label_guided_rate: float, max_length: int, wwm_mask_rate: float):
+        self._prefix_prompt = prefix_prompt
+        self._training_prompt = training_prompt
         self._label_guided_rate = label_guided_rate
         self._max_length = max_length
         self._wwm_mask_rate = wwm_mask_rate
-        super().__init__(sample_list, tokenizer, prompt)
+        super().__init__(sample_list, tokenizer, label)
     
     def _encode_before_iter(self, sample: LabeledSample, idx: int) -> PreEncodedTrainSample:
         words = segment_text(sample.text)
-        inference_prompt = segment_text(self._prompt.prompt, self._tokenizer) + self._tokenizer.tokenize(self._training_label_prompt)
-        prompt_t = self._prompt.prompt + sample.label
+        inference_prompt = segment_text(self._prefix_prompt, self._tokenizer) + self._tokenizer.tokenize(self._training_prompt)
+        prompt_t = self._prefix_prompt + sample.label
         training_prompt = segment_text(prompt_t, self._tokenizer)
         return PreEncodedTrainSample(**asdict(sample), words=words, inference_prompt=inference_prompt, training_prompt=training_prompt)
     
@@ -49,7 +50,7 @@ class TrainDatasetClfStd(BaseDatasetClf):
             new_tokens=new_tokens,
             index=idx,
             tokenizer=self._tokenizer,
-            prompt_mode=self._prompt,
+            label_mode=self._label,
             max_length=self._max_length,
             mask_rate=self._wwm_mask_rate
         )
@@ -83,15 +84,15 @@ class TrainDatasetClfStd(BaseDatasetClf):
         
 class TestDatasetClfStd(BaseDatasetClf):
     
-    def __init__(self, sample_list, tokenizer, prompt, inference_label_prompt: str, prefix_prompt: str, max_length: int):
-        self._inference_label_prompt = inference_label_prompt
+    def __init__(self, sample_list, tokenizer, label, inference_prompt: str, prefix_prompt: str, max_length: int):
+        self._inference_prompt = inference_prompt
         self._prefix_prompt = prefix_prompt
         self._max_length = max_length
-        super().__init__(sample_list, tokenizer, prompt)
+        super().__init__(sample_list, tokenizer, label)
     
     def _encode_before_iter(self, sample: LabeledSample, idx: int) -> EncodedTrainSample:
         mask_positions = []
-        predict_prompt = self._inference_label_prompt
+        predict_prompt = self._inference_prompt
         prompt = self._prefix_prompt + predict_prompt
         encode_dict = self._tokenizer.encode_plus(prompt,
                                                  text_pair=sample.text,
@@ -127,15 +128,15 @@ class TestDatasetClfStd(BaseDatasetClf):
     
 class InfDatasetClfStd(BaseDatasetClf):
     
-    def __init__(self, sample_list, tokenizer, prompt, inference_label_prompt: str, prefix_prompt: str, max_length: int):
-        self._inference_label_prompt = inference_label_prompt
+    def __init__(self, sample_list, tokenizer, label, inference_prompt: str, prefix_prompt: str, max_length: int):
+        self._inference_prompt = inference_prompt
         self._prefix_prompt = prefix_prompt
         self._max_length = max_length
-        super().__init__(sample_list, tokenizer, prompt)
+        super().__init__(sample_list, tokenizer, label)
     
     def _encode_before_iter(self, sample: InfSampleProto, idx: int) -> EncodedInfSample:
         mask_positions = []
-        predict_prompt = self._inference_label_prompt
+        predict_prompt = self._inference_prompt
         prompt = self._prefix_prompt + predict_prompt
         encode_dict = self._tokenizer.encode_plus(sample.text,
                                                  max_length=self._max_length,

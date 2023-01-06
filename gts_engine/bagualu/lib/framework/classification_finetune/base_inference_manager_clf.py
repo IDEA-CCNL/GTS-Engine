@@ -14,7 +14,7 @@ from .base_dataset_clf import BaseDatasetClf
 from .consts import InferenceManagerInputSampleList, InferenceManagerOutput
 from ..mixin import OptionalLoggerMixin
 from ...components import TokenizerGenerator
-from .prompt import StdPrompt
+from .label import StdLabel
 
 class BaseInferenceManagerClf(BaseInferenceManager, OptionalLoggerMixin):
     
@@ -24,8 +24,8 @@ class BaseInferenceManagerClf(BaseInferenceManager, OptionalLoggerMixin):
         self.info(f"loading model...")
         self.info(f"generate tokenizer...")
         self._tokenizer = self._generate_tokenizer()
-        self.info(f"loading prompt...")
-        self._prompt = self._load_prompt()
+        self.info(f"loading label...")
+        self._label = self._load_label()
         self.info(f"loading model...")
         self._inf_lightning = self._get_inf_lightning()
         self._inf_lightning.load_model_from_state_dict(torch.load(self._args.model_state_dict_file_path))
@@ -54,8 +54,8 @@ class BaseInferenceManagerClf(BaseInferenceManager, OptionalLoggerMixin):
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         return TokenizerGenerator.generate_tokenizer(self._args.model_save_dir)
     
-    def _load_prompt(self):
-        return StdPrompt(self._args.prefix_prompt, self._args.label2id_path)
+    def _load_label(self):
+        return StdLabel(self._args.label2id_path)
     
     @abstractmethod
     def _get_inf_lightning(self) -> BaseInferenceLightningClf: ...

@@ -16,10 +16,10 @@ from pydantic import DirectoryPath
 
 from ...utils import LoggerManager
 from ...components import TokenizerGenerator
-from .prompt import StdPrompt
+from .label import StdLabel
 from ..base_training_pipeline import BaseTrainingPipeline
 from ..consts import TRAINING_STAGE
-from ...utils.json_processor import dump_json_list, load_json_list, dump_json, load_json
+from ...utils.json_utils import dump_json_list, load_json_list, dump_json, load_json
 from ...utils.path import get_file_size
 from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
 from ...utils.statistics import interval_mean, acc
@@ -46,8 +46,8 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         self._select_pretrained_model()
         self._logger.info("generate tokenizer...")
         self._tokenizer = self._generate_tokenizer()
-        self._logger.info("loading prompt...")
-        self._prompt = self._load_prompt()
+        self._logger.info("loading label...")
+        self._label = self._load_label()
         
     def _train(self) -> None:
         self._data_module = self._get_data_module()
@@ -159,12 +159,12 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             self._logger.info("local pretrained model path does not exist, model %s is downloaded from huggingface." % huggingface_model_name)
         return TokenizerGenerator.generate_tokenizer(self._args.pretrained_model_dir)
     
-    def _load_prompt(self):
+    def _load_label(self):
         try:
             assert(self._args.label2id_path is not None)
         except:
             raise Exception("no label2id path is passed")
-        return StdPrompt(self._args.prefix_prompt, self._args.label2id_path)
+        return StdLabel(self._args.label2id_path)
     
     #############################################################################################
     ##################################### training ###########################################
@@ -220,7 +220,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         return type(self._training_lightning).load_from_checkpoint(
                 checkpoint_path,
                 args=self._args,
-                class_num=len(self._prompt.label2token),
+                class_num=len(self._label.label2token),
                 sample_num=self._data_module.train_sample_num
             )
     
@@ -284,12 +284,12 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         y_true = []
         y_pred = []
         result_list = []
-        id2label = {key: val.label for key, val in self._prompt.id2label.items()}
+        id2label = {key: val.label for key, val in self._label.id2label.items()}
         label2id = {val: key for key, val in id2label.items()}
         for idx, sample in enumerate(sample_list):
             prediction = prediction_output[idx]
             content = sample.text
-            true_label = self._prompt.id2label[sample.label_id_clf].label if hasattr(sample, "label_id_clf") else None # type: ignore
+            true_label = self._label.id2label[sample.label_id_clf].label if hasattr(sample, "label_id_clf") else None # type: ignore
             result_list.append(PredictionResult(
                 id=sample.id,
                 content=content,
@@ -353,8 +353,8 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             learning_rate=self._args.learning_rate,
             label_guided_rate=self._args.label_guided_rate,
             prefix_prompt=self._args.prefix_prompt,
-            training_label_prompt=self._args.training_label_prompt,
-            inference_label_prompt=self._args.inference_label_prompt,
+            training_prompt=self._args.training_prompt,
+            inference_prompt=self._args.inference_prompt,
             batch_size=self._args.train_batch_size,
             epoch=self._args.epoch,
             warmup_epoch=self._args.warm_up_epoch,
@@ -396,7 +396,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         
     def _load_test_results(self, path: str):
         test_results_list = list(load_json_list(path, PredictionResult))
-        id2label = {key: val.label for key, val in self._prompt.id2label.items()}
+        id2label = {key: val.label for key, val in self._label.id2label.items()}
         label2id = {val: key for key, val in id2label.items()}
         y_true = [label2id[result.label] for result in test_results_list] # type: ignore
         y_pred = [label2id[result.predict] for result in test_results_list]

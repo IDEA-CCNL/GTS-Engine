@@ -7,7 +7,7 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...lib.framework.consts import BertInput
 from ...lib.framework.classification_finetune.consts import InfBatch, InferenceManagerOutput, InferenceModelOutput, TrainBatch
-from ...lib.framework.classification_finetune import StdPrompt, BaseTrainingLightningClf, BaseInferenceLightningClf
+from ...lib.framework.classification_finetune import StdLabel, BaseTrainingLightningClf, BaseInferenceLightningClf
 from ...lib.components.schedulers import warmup_linear_decay_scheduler_factory
 from ...lib.components.metrics import Logits2Acc
 from ...lib.components.losses import compute_kl_loss
@@ -178,15 +178,15 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
 class PredictLightningClfStd(BaseTrainingLightningClf):
     def __init__(
         self, 
-        prompt: StdPrompt,
+        label: StdLabel,
         args: TrainingArgumentsClfStd,
         tokenizer: PreTrainedTokenizer,
         datastore=None,
         best_hyper=None,
     ):
         super().__init__()
-        self._model: InferenceModelClfStd = InferenceModelClfStd(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper)
-        self._prompt = prompt
+        self._model: InferenceModelClfStd = InferenceModelClfStd(label, args, tokenizer, datastore=datastore, best_hyper=best_hyper)
+        self._label = label
         
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
         return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
@@ -201,7 +201,7 @@ class PredictLightningClfStd(BaseTrainingLightningClf):
         prediction_id_list: List[int] = inference_output["positions"].squeeze().tolist()
         if not isinstance(prediction_id_list, list): # 可能出现最后一个batch是单个值的情况
             prediction_id_list = [prediction_id_list]
-        prediction_label_list = [self._prompt.id2label[prediction_id].label for prediction_id in prediction_id_list]
+        prediction_label_list = [self._label.id2label[prediction_id].label for prediction_id in prediction_id_list]
         prediction_output_list = [(int(id), label) for id, label in zip(id_list, prediction_label_list)]
         return prediction_output_list
     
@@ -216,15 +216,15 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
     
     def __init__(
         self, 
-        prompt: StdPrompt,
+        label: StdLabel,
         args: InferenceArgumentsClfStd,
         tokenizer: PreTrainedTokenizer,
         datastore=None,
         best_hyper=None,
     ):
         super().__init__()
-        self._model: InferenceModelClfStd = InferenceModelClfStd(prompt, args, tokenizer, datastore=datastore, best_hyper=best_hyper) # type: ignore
-        self._prompt = prompt
+        self._model: InferenceModelClfStd = InferenceModelClfStd(label, args, tokenizer, datastore=datastore, best_hyper=best_hyper) # type: ignore
+        self._label = label
         
     def forward(self, input_ids: Tensor, input_mask: Tensor, input_seg: Tensor):
         return InferenceModelOutput(**self._model.forward(input_ids, input_mask, input_seg))
@@ -238,7 +238,7 @@ class InferenceLightningClfStd(BaseInferenceLightningClf):
         prediction_id_list: List[int] = inference_output["positions"].squeeze().tolist()
         if not isinstance(prediction_id_list, list): # 可能出现最后一个batch是单个值的情况
             prediction_id_list = [prediction_id_list]
-        prediction_label_list = [self._prompt.id2label[prediction_id].label for prediction_id in prediction_id_list]
+        prediction_label_list = [self._label.id2label[prediction_id].label for prediction_id in prediction_id_list]
         probabilities_list = inference_output["probs"].tolist()
         return InferenceManagerOutput(
             predictions=prediction_label_list,
