@@ -165,15 +165,19 @@ _T = TypeVar("_T")
 
 
 class DynamicMax(Generic[_T]):
-    """带缓存、可自定义比较符的、可指定top n的动态max类
+    """带缓存、可自定义比较符的、记录第top n的动态max类
 
     Example:
-        >>> # 记录最长的三个字符串，不允许重复
+        >>> # 记录第三长的字符串，重复值只记录一次
         >>> str_len_dyn_max = DynamicMax[str](top_n=3, allow_repeat=False, cmp=lambda s1, s2: len(s1) - len(s2))
         >>> str_len_dyn_max.step(["123456789", "12345", "12", "1234567", "1234", "123456789"])
+        >>> str_len_dyn_max.max  # 第三长的字符串
+        '12345'
         >>> str_len_dyn_max.max_list
         ['123456789', '1234567', '12345']
         >>> str_len_dyn_max.step("1234567890123")
+        >>> str_len_dyn_max.max
+        '1234567'
         >>> str_len_dyn_max.max_list
         ['1234567890123', '123456789', '1234567']
     """
@@ -214,8 +218,8 @@ class DynamicMax(Generic[_T]):
 
     @property
     def max(self) -> _T:
-        """返回最大值"""
-        return self.__cache[0]
+        """返回第top_n大的值"""
+        return self.__cache[-1]
 
     def __step_value(self, value: _T) -> None:
         self.__cache.append(value)
