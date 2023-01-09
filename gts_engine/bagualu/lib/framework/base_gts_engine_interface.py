@@ -2,7 +2,7 @@ from abc import abstractmethod, ABCMeta, abstractproperty
 from typing import Type, List
 from enum import Enum
 
-from gts_common.arguments import GtsEngineArgs
+from gts_engine.gts_common.arguments import GtsEngineArgs
 
 from .base_training_pipeline import BaseTrainingPipeline
 from .base_inference_manager import BaseInferenceManager

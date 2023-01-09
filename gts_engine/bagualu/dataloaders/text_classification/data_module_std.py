@@ -50,7 +50,7 @@ class DataModuleClfStd(BaseDataModuleClf):
         if self._args.aug_eda_gate:
             if self._args.aug_eda_path is None:
                 raise Exception("eda augmentation file path is not passed")
-            eda: EDA[LabeledSample] = EDA(self._tokenizer, logger_name=self._args.logger)
+            eda: EDA[LabeledSample] = EDA(tokenizer=self._tokenizer, logger_name=self._args.logger)
             sample_list += eda.eda_aug(sample_list, self._args.aug_eda_path)
         return sample_list
 
