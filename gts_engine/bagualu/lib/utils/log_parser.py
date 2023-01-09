@@ -3,7 +3,7 @@
 方便自动从日志文件中提取需要的指标
 
 Todo:
-    - [ ] (Jiang Yuzhen) 完善docstring和用例
+    - [ ] (Jiang Yuzhen) 完善docstring和用例（如果工具有后续的使用和维护需要）
 """
 from abc import ABCMeta, abstractmethod
 from typing import Callable, Dict, Optional

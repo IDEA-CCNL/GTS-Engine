@@ -9,7 +9,7 @@ from collections import Counter
 from sklearn.model_selection import train_test_split
 import random
 
-from ...components import LoggerManager
+from ...utils import LoggerManager
 from .prompt import StdPrompt
 from .consts import Label2Token, LabeledSample, UnlabeledSample, InfSampleProto
 from .base_arguments_clf import BaseTrainingArgumentsClf

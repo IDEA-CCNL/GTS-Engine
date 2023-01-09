@@ -1,7 +1,7 @@
 """路径相关工具集
 
 Todo:
-    - [ ] 将模块名改为path_utils或类似名称，和json_utils等工具集保持一致
+    - [ ] (Jiang Yuzhen) 将模块名改为path_utils或类似名称，和json_utils等工具集保持一致
 """
 import os
 from typing import Literal
