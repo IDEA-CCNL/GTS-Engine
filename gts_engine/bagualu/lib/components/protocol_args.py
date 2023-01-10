@@ -1,4 +1,9 @@
-"""工程协议参数"""
+"""工程协议参数集合模块
+
+Todo:
+    - [ ] (Jiang Yuzhen) 本模块是为了将gts-factory的通用调用协议参数模块化，整合进gts-engine后，
+        需要重新考虑存在的必要性。
+"""
 from typing import Optional
 from pathlib import Path
 from pydantic import DirectoryPath
@@ -9,7 +14,7 @@ from gts_engine.bagualu.lib.utils.path import mk_inexist_dir
 
 
 class ProtocolArgs(BaseArguments):
-    """通用的工程协议参数模块"""
+    """通用的工程协议参数集合"""
 
     input_dir: DirectoryPath
     """输入数据路径"""

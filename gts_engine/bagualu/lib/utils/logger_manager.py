@@ -1,4 +1,9 @@
 """全局的单输出文件日志管理器
+
+Todo:
+    - [ ] (Jiang Yuzhen) 目前这个模块的功能只是对log的输出格式和文件处理
+        进行了整合，并且和qiankunding的log模块有冲突，未来可以使用统一的
+        方案来代替。
 """
 import logging
 

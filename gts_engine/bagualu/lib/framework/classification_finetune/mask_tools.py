@@ -136,7 +136,7 @@ def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenize
     return WWMMaskingOutput(input_ids, mlm_labels, input_mask, masked_lm_positions)
 
 
-# TODO: 存在问题，之后再来改
+# TODO (Jiang Yuzhen) 实现存在问题
 # def random_masking(token_ids, max_length, mask_rate, prompt_mode, tokenizer=None):
 #     """
 #     对输入进行随机mask

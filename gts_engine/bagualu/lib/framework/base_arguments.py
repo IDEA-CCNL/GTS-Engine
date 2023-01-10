@@ -36,7 +36,7 @@ class BaseArguments(Namespace, metaclass=ABCMeta):
         ...
         >>> # 解析参数(不传入参数列表时则从命令行获取参数)
         >>> args = Arguments().parse_args(["--foo", "1"])
-        >>> # 此时参数已被解析，且带有代码提示和类型推导
+        >>> # 此时参数已被解析，且带有代码提示和类型推导（不声明、只定义就不会有代码提示）
         >>> args.foo
         1
         >>> args.bar
@@ -173,7 +173,7 @@ class BaseArguments(Namespace, metaclass=ABCMeta):
         # 加入并解析当前层参数
         self._add_args(parser)
         _, left_params = parser.parse_known_args(parse_list, namespace=self)
-        # 将剩余参数传入下一层参数
+        # 将剩余参数传入子参数集合
         for arg_name, arg_cls in self._sub_args_dict.items():
             setattr(self, arg_name, arg_cls().parse_args(left_params))
         # 调用后处理逻辑

@@ -1,13 +1,12 @@
 from pathlib import Path
-from typing import Union, Iterable
+from typing import Union, Generator
 
 from ...utils.json_processor import load_json_list, load_json
 from .consts import (
-    Label2Token, 
-    LabeledSample, 
-    UnlabeledSample, 
-    Label2Id, 
-    Label2IdValue, 
+    Label2Token,
+    LabeledSample,
+    UnlabeledSample,
+    Label2Id,
     RawSample
 )
 
@@ -16,7 +15,7 @@ Path_ = Union[str, Path]
 class DataReaderClf:
     
     @classmethod
-    def read_labeled_sample(cls, path: Path_, label2token: Label2Token) -> Iterable[LabeledSample]:
+    def read_labeled_sample(cls, path: Path_, label2token: Label2Token) -> Generator[LabeledSample, None, None]:
         for raw_sample in cls.__read_raw_clf_sample(path):
             label_key = str(raw_sample.label)
             label = label2token[label_key].label
@@ -33,7 +32,7 @@ class DataReaderClf:
             yield labeled_sample
     
     @classmethod
-    def read_unlabeled_sample(cls, path: Path_) -> Iterable[UnlabeledSample]:
+    def read_unlabeled_sample(cls, path: Path_) -> Generator[UnlabeledSample, None, None]:
         for raw_sample in cls.__read_raw_clf_sample(path):
             yield UnlabeledSample(raw_sample.content, raw_sample.id)
             
@@ -42,5 +41,5 @@ class DataReaderClf:
         return load_json(path, Label2Id)
         
     @classmethod
-    def __read_raw_clf_sample(cls, path: Path_) -> Iterable[RawSample]:
+    def __read_raw_clf_sample(cls, path: Path_) -> Generator[RawSample, None, None]:
         return load_json_list(path, RawSample)
