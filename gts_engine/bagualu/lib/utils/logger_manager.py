@@ -10,6 +10,15 @@ import logging
 
 class LoggerManager:
     """全局的单输出文件日志管理器
+
+    Example:
+
+        设置全局logger及其输出日志文件路径
+        >>> LoggerManager.set_logger("test", "./tmp.log")
+
+        在任意模块中可以通过logger名称获取logger
+        >>> logger = LoggerManager.get_logger("test")
+        >>> logger.info("hello world!")
     """
     @staticmethod
     def set_logger(logger_name: str, log_file_path: str):
