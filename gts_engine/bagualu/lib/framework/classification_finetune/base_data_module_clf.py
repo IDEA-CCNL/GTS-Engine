@@ -7,9 +7,9 @@ import os
 import math
 from collections import Counter
 from sklearn.model_selection import train_test_split
-import random
 
-from ...components import LoggerManager
+
+from ...utils import LoggerManager
 from .label import StdLabel
 from .consts import Label2Token, LabeledSample, UnlabeledSample, InfSampleProto
 from .base_arguments_clf import BaseTrainingArgumentsClf
@@ -17,9 +17,9 @@ from ..consts import TRAINING_STAGE
 from .base_dataset_clf import BaseDatasetClf
 from .data_reader_clf import DataReaderClf
 
-    
+
 class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
-    
+
     def __init__(
         self,
         args: BaseTrainingArgumentsClf,
@@ -31,13 +31,13 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         self._label = label
         self._tokenizer = tokenizer
         self._logger = LoggerManager.get_logger(self._args.logger)
-        
+
     def train_dataloader(self, load_ratio: float = 1):
         sample_list = self.train_sample_list[:int(len(self.train_sample_list) * load_ratio)]
         self._logger.info(f"number of training sample: {len(sample_list)}")
         lg_dataset = self._get_train_dataset(sample_list)
         return DataLoader(dataset=lg_dataset, batch_size=self._args.train_batch_size, num_workers=self._args.num_workers * self._args.device_num, shuffle=True)
-        
+
     def val_dataloader(self, stage: Literal[TRAINING_STAGE.VALIDATION, TRAINING_STAGE.INFERENCE], load_ratio: float = 1, resample_thres: Optional[int] = None):
         if self.dev_sample_num == 0:
             return None
@@ -52,7 +52,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return DataLoader(dataset=lg_dataset, batch_size=self._args.valid_batchsize_per_device, num_workers=self._args.num_workers)
         else:
             raise Exception("stage is not in [TRAINING_STAGE.VALIDATION, TRAINING_STAGE.INFERENCE]")
-    
+
     def test_dataloader(self, stage: Literal[TRAINING_STAGE.TEST, TRAINING_STAGE.INFERENCE], load_ratio: float = 1):
         sample_list = self.test_sample_list[:int(len(self.test_sample_list) * load_ratio)]
         if stage == TRAINING_STAGE.TEST:
@@ -63,38 +63,37 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return DataLoader(dataset=lg_dataset, batch_size=self._args.test_batchsize_per_device, num_workers=self._args.num_workers)
         else:
             raise Exception("stage is not in [TRAINING_STAGE.VALIDATION, TRAINING_STAGE.INFERENCE]")
-    
+
     def online_test_dataloader(self, load_ratio: float = 1):
         sample_list = self.online_test_sample_list[:int(len(self.online_test_sample_list) * load_ratio)]
         lg_dataset = self._get_inf_dataset(sample_list)
         return DataLoader(dataset=lg_dataset, batch_size=self._args.test_batchsize_per_device, num_workers=self._args.num_workers)
-            
+
     @property
     def train_sample_num(self) -> int:
         return len(self.train_sample_list)
-    
+
     @property
     def dev_sample_num(self) -> int:
         return len(self.dev_sample_list)
-    
+
     @property
     def class_num(self) -> int:
         return len(self._label.label2token)
-    
     _train_sample_list: Optional[List[LabeledSample]] = None
     @property
     def train_sample_list(self) -> List[LabeledSample]:
         if self._train_sample_list is None:
             self._train_sample_list = self._load_train_sample_list()
         return self._train_sample_list
-    
+
     _dev_sample_list: Optional[List[LabeledSample]] = None
     @property
     def dev_sample_list(self) -> List[LabeledSample]:
         if self._dev_sample_list is None:
             self._dev_sample_list = self._load_dev_sample_list()
         return self._dev_sample_list
-    
+
     _test_sample_list: Optional[List[LabeledSample]] = None
     @property
     def test_sample_list(self) -> List[LabeledSample]:
@@ -102,7 +101,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         if self._test_sample_list is None:
             self._test_sample_list = self._load_test_sample_list()
         return self._test_sample_list
-    
+
     _online_test_sample_list: Optional[List[UnlabeledSample]] = None
     @property
     def online_test_sample_list(self) -> List[UnlabeledSample]:
@@ -110,7 +109,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         if self._online_test_sample_list is None:
             self._online_test_sample_list = self._load_online_test_sample_list()
         return self._online_test_sample_list
-    
+
     def _resample_sample_list(self, sample_list: List[LabeledSample], resample_thres: int = 1000) -> List[LabeledSample]:
         """验证数据过多时，进行重新抽样"""
         sample_num = len(sample_list)
@@ -143,23 +142,23 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         self._logger.info('Size of new dev dataset: {}'.format(len(new_dev)))
 
         return new_dev
-    
+
     #############################################################################################
     ## abstract
     #############################################################################################
-    
+
     @abstractmethod
     def _get_train_dataset(self, sample_list: Sequence[LabeledSample]) -> BaseDatasetClf:
         """根据需要加载训练Dataset"""
-        
+
     @abstractmethod
     def _get_test_dataset(self, sample_list: Sequence[LabeledSample]) -> BaseDatasetClf:
         """根据需要加载测试Dataset"""
-        
+
     @abstractmethod
     def _get_inf_dataset(self, sample_list: Sequence[InfSampleProto]) -> BaseDatasetClf:
         """根据需要加载推理Dataset"""
-    
+
     def _load_train_sample_list(self) -> List[LabeledSample]:
         """加载训练Sample列表"""
         train_data_path = self._args.train_data_path
@@ -167,7 +166,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return list(DataReaderClf.read_labeled_sample(self._args.train_data_path, self._label.label2token))
         else:
             raise Exception("no training data is passed")
-        
+
     def _load_dev_sample_list(self) -> List[LabeledSample]:
         """加载验证Sample列表"""
         dev_data_path = self._args.dev_data_path
@@ -175,7 +174,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return list(DataReaderClf.read_labeled_sample(dev_data_path, self._label.label2token))
         else:
             return []
-    
+
     def _load_test_sample_list(self) -> List[LabeledSample]:
         """加载离线测试Sample列表"""
         test_data_path = self._args.test_data_path
@@ -183,7 +182,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return list(DataReaderClf.read_labeled_sample(test_data_path, self._label.label2token))
         else:
             raise Exception("no valid test data path is passed")
-    
+
     def _load_online_test_sample_list(self) -> List[UnlabeledSample]:
         """加载在线推理Sample列表"""
         online_test_data_path = self._args.online_test_data_path
@@ -191,7 +190,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
             return list(DataReaderClf.read_unlabeled_sample(online_test_data_path))
         else:
             raise Exception("no valid online test data path is passed")
-        
+
     def reparse_args(self):
         """根据数据信息更改训练参数"""
         if len(self._label.label_ids) <= 5:

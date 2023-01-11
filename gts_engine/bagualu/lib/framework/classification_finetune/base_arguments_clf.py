@@ -1,20 +1,25 @@
-from typing import Optional, List, Union
-import os
+from typing import Optional
 import time
 from pathlib import Path
 from pydantic import DirectoryPath, FilePath
 
-from ..base_arguments import BaseArguments, GeneralParser
-from ...components import ProtocolArgsMixin
-from ...utils.path import mk_inexist_dir
-from ...components.lightning_callbacks.adaptive_val_intervals import ADAPTIVE_VAL_INTERVAL_MODE
-from ..consts import RUN_MODE
+from gts_engine.bagualu.lib.framework.base_arguments import (
+    BaseArguments,
+    GeneralParser
+)
+from gts_engine.bagualu.lib.framework.consts import RUN_MODE
+from gts_engine.bagualu.lib.utils.path import mk_inexist_dir
+from gts_engine.bagualu.lib.components import ProtocolArgsMixin
+from gts_engine.bagualu.lib.components.lightning_callbacks.adaptive_val_intervals import (
+    ADAPTIVE_VAL_INTERVAL_MODE
+)
 
-class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin): 
 
-    #############################################################################################
-    ######################################## 外部参数 ##########################################
-    
+class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
+    """句子分类任务TrainingPipeline对应参数集合基类"""
+
+    # ========================== 外部参数 ===============================
+
     dataset: str
     gpu_num: int
     load_data_ratio: float
@@ -69,10 +74,9 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         parser.add_argument("--max_length", dest="max_length", type=int, default=512)
         parser.add_argument("--learning_rate", dest="learning_rate", type=float, default=2e-5)
         parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
-        
-    #############################################################################################
-    ######################################## 固定参数 ##########################################
-    
+
+    # ========================== 固定参数 ===============================
+
     pretrained_model_dir: DirectoryPath
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："
@@ -80,24 +84,12 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     inference_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     label_guided_rate = 0.5
     wwm_mask_rate = 0.12
-    @property
-    def train_batch_size(self) -> int:
-        return self.train_batchsize_per_device * self.device_num
-    @property
-    def test_batch_size(self) -> int:
-        return self.test_batchsize_per_device * self.device_num
-    @property
-    def valid_batch_size(self) -> int:
-        return self.valid_batchsize_per_device * self.device_num
     epoch = 5
-    @property
-    def decay_epoch(self): 
-        return self.epoch - 1
     warm_up_epoch = 1
     clip_norm = 0.25
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
     timestamp = str(int(time.time()))
-    
+
     @property
     def ft_output_dir(self) -> DirectoryPath:
         if self.run_mode == RUN_MODE.OFFLINE:
@@ -106,39 +98,52 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         else:
             output_path = self.protocol_args.student_output_dir / 'finetune_output'
         return output_path
-    
+
     @property
     def device_num(self) -> int:
         return self.gpu_num
-    
-    #############################################################################################
-    ######################################## 其他逻辑 ##########################################
-    
+
+    @property
+    def train_batch_size(self) -> int:
+        return self.train_batchsize_per_device * self.device_num
+
+    @property
+    def test_batch_size(self) -> int:
+        return self.test_batchsize_per_device * self.device_num
+
+    @property
+    def valid_batch_size(self) -> int:
+        return self.valid_batchsize_per_device * self.device_num
+
+    @property
+    def decay_epoch(self):
+        return self.epoch - 1
+
     def _after_parse(self) -> None:
         mk_inexist_dir(self.log_dir)
         mk_inexist_dir(self.ft_output_dir, clean=True)
-     
-   
-    
+
+
 class BaseInferenceArgumentsClf(BaseArguments):
-    
+    """句子分类任务InferenceManager对应参数集合"""
+
     model_save_dir: DirectoryPath
     label2id_path: FilePath
-    
+
     def _add_args(self, parser) -> None:
         parser.add_argument("--model_save_dir", dest="model_save_dir", type=Path, help="输出文件路径", required=True)
         parser.add_argument("--label2id_path", dest="label2id_path", type=Path, help="[可选]指定label2id文件路径", required=True)
-        
+
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："
     inference_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     max_length = 512
     batch_size = 8
-    
+
     @property
     def model_state_dict_file_path(self) -> FilePath:
         return self.model_save_dir / "finetune_pytorch.bin"
-    
+
     @property
     def pretrained_model_dir(self) -> DirectoryPath:
         return self.model_save_dir

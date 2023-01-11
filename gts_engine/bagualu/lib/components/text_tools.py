@@ -1,15 +1,14 @@
+"""文本处理相关工具集"""
 from typing import List, Optional, Tuple
 import re
+import numpy as np
 from LAC import LAC
 from transformers.tokenization_utils import PreTrainedTokenizer
-import numpy as np
 
 
-
-
-def cut_sent(para):
+def cut_sent(para: str) -> List[str]:
     """分字并处理标点符号"""
-    para = re.sub('([，。！？,\.\?!])([^”’])', r"\1\n\2", para)  # 单字符断句符 
+    para = re.sub('([，。！？,\.\?!])([^”’])', r"\1\n\2", para)  # 单字符断句符
     para = re.sub('(\.{6})([^”’])', r"\1\n\2", para)  # 英文省略号
     para = re.sub('(\…{2})([^”’])', r"\1\n\2", para)  # 中文省略号
     para = re.sub('([。！？\?][”’])([^，。！？\?])', r'\1\n\2', para)
@@ -18,28 +17,47 @@ def cut_sent(para):
     # 很多规则中会考虑分号;，但是这里我把它忽略不计，破折号、英文双引号等同样忽略，需要的再做些简单调整即可。
     return para.split("\n")
 
+
 lac_seg = LAC(mode='lac')
 
-# TODO 未改动，需要优化
-def segment_text(text: str, tokenizer: Optional[PreTrainedTokenizer] = None)-> List[str]: 
+
+def segment_text(
+    text: str,
+    tokenizer: Optional[PreTrainedTokenizer] = None
+) -> List[str]:
+    """分词
+
+    输入一句话，返回一句经过处理的分词列表: 为了支持中文全称mask，将被分开的词，将上特殊标记("#")，
+    使得后续处理模块，能够知道哪些字是属于同一个词的。
+
+    Args:
+        text (str): 待分词字符串
+        tokenizer (Optional[PreTrainedTokenizer], optional):
+            用于分词的tokenizer. Defaults to None.
+
+    Returns:
+        List[str]: 分词后的token列表
+
+    Todo:
+        - [ ] (Jiang Yuzhen) 可读性和函数结构待优化
     """
-    输入一句话，返回一句经过处理的分词列表: 为了支持中文全称mask，将被分开的词，将上特殊标记("#")，使得后续处理模块，能够知道哪些字是属于同一个词的。
-    """
-    #text = "".join(cut_sent(text)) # 处理标点符号
+    # text = "".join(cut_sent(text)) # 处理标点符号
     seq_cws = lac_seg.run(text)[0]
     seq_cws_dict = {x: 1 for x in seq_cws}  # 分词后的词加入到词典dict
-    
     segment: List[str] = []
     i = 0
     while i < len(text):  # 从句子的第一个字开始处理，知道处理完整个句子
-        '''if len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0:  # 如果找不到中文的，原文加进去即不用特殊处理。
-            new_text.append(text[i])
-            i += 1
-            continue'''
+        # 如果找不到中文的，原文加进去即不用特殊处理。
+        # if len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0:
+        #     new_text.append(text[i])
+        #     i += 1
+        #     continue
 
-        # 由于LAC对于像2018或者abc这种非中文字符会直接切分成单个字符，所以这里加入连续非中文字符的识别，然后使用bert的分词器进行重新切分
+        # 由于LAC对于像2018或者abc这种非中文字符会直接切分成单个字符，
+        # 所以这里加入连续非中文字符的识别，然后使用bert的分词器进行重新切分
         non_chinese = []
-        while i < len(text) and len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0:
+        while (i < len(text) and
+               len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0):
             non_chinese.append(text[i])
             i += 1
         if non_chinese:
@@ -48,7 +66,6 @@ def segment_text(text: str, tokenizer: Optional[PreTrainedTokenizer] = None)-> L
             segment.extend(tokens)
         if i >= len(text):
             break
-
         has_add = False
         for length in range(3, 0, -1):
             if i + length > len(text):
@@ -65,8 +82,27 @@ def segment_text(text: str, tokenizer: Optional[PreTrainedTokenizer] = None)-> L
             i += 1
     return segment
 
-# TODO 未改动，需要优化
-def text_2_training_instance(text: str, max_length: int, tokenizer: PreTrainedTokenizer, index: Optional[int]=None) -> Tuple[List[str], Optional[bool]]: # type: ignore
+
+def text_2_training_instance(
+    text: str,
+    max_length: int,
+    tokenizer: PreTrainedTokenizer,
+    index: Optional[int] = None
+) -> Tuple[List[str], Optional[bool]]:  # type: ignore
+    """文本转训练样本
+
+    Args:
+        text (str): 文本字符串
+        max_length (int): 长度上限
+        tokenizer (PreTrainedTokenizer):
+        index (Optional[int], optional): 样本对应id. Defaults to None.
+
+    Returns:
+        Tuple[List[str], Optional[bool]]: (token列表, is_random_next)
+
+    Todo:
+        - [ ] (Jiang Yuzhen) 可读性和函数结构待优化
+    """
     # char_list = segment_text(text, tokenizer) .   # 用来分句的
     char_list = [segment_text(sen, tokenizer) for sen in cut_sent(text)]
     max_num_tokens = max_length - 3
@@ -83,8 +119,10 @@ def text_2_training_instance(text: str, max_length: int, tokenizer: PreTrainedTo
 
     while i < len(char_list):  # 从文档的第一个位置开始，按个往下看
         # segment是列表，代表的是按字分开的一个完整句子，
-        # segment=['我', '是', '一', '爷', '##们', '，', '我', '想', '我', '会', '给', '我',
-        # '媳', '##妇', '最', '##好', '的', '##幸', '##福', '。']
+        # segment=['我', '是', '一', '爷', '##们',
+        # '，', '我', '想', '我', '会', '给', '我',
+        # '媳', '##妇', '最', '##好', '的', '##幸',
+        # '##福', '。']
         segment = char_list[i]
 
         current_chunk.append(segment)  # 将一个独立的句子加入到当前的文本块中
@@ -131,7 +169,8 @@ def text_2_training_instance(text: str, max_length: int, tokenizer: PreTrainedTo
                 assert len(tokens_a) >= 1
                 assert len(tokens_b) >= 1
 
-                # 把tokens_a & tokens_b加入到按照bert的风格，即以[CLS]tokens_a[SEP]tokens_b[SEP]的形式，结合到一起，
+                # 把tokens_a & tokens_b加入到按照bert的风格，
+                # 即以[CLS]tokens_a[SEP]tokens_b[SEP]的形式，结合到一起，
                 # 作为最终的tokens; 也带上segment_ids，前面部分segment_ids的值是0，后面部分的值是1.
                 tokens = []
                 segment_ids = []
@@ -151,8 +190,8 @@ def text_2_training_instance(text: str, max_length: int, tokenizer: PreTrainedTo
             return tokens, is_random_next
 
         i += 1  # 接着文档中的内容往后看
-    
-    
+
+
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
     """Truncates a pair of sequences to a maximum sequence length."""
     while True:
@@ -169,6 +208,3 @@ def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):
             del trunc_tokens[0]
         else:
             trunc_tokens.pop()
-    
-    
-    
