@@ -54,8 +54,7 @@ def load_json(file: Union[str, Path], type_: Type[LoadType]) -> LoadType:
 
     Example:
         json文件如下
-
-        ```json
+        -----------------------------------
         [
             {
                 "id": 1,
@@ -66,19 +65,17 @@ def load_json(file: Union[str, Path], type_: Type[LoadType]) -> LoadType:
                 "name": "Lucy"
             }
         ]
-        ```
+        -----------------------------------
 
-        ```python
-
-        from dataclasses import dataclass
-
-        @dataclass
-        class User:
-            id: int
-            name: str
-
-        user_list = load_json(file=json_path, type_=List[User])
-        ```
+        >>> # 定义结构体，dataclass、pydantic.BaseModel均可支持
+        >>> @dataclass
+        ... class User:
+        ...    id: int
+        ...    name: str
+        ...
+        >>> user_list = load_json(file=json_path, type_=List[User])
+        >>> user_list
+        [User(id=1, name='Sam'), User(id=2, name='Lucy')]
 
         此时user_list被加载为List[User]，且类型推导也为List[User]
     """
@@ -114,26 +111,23 @@ def load_json_list(
 
     Example:
         json文件如下
-
-        ```json
+        -----------------------------------
         {"id": 1, "name": "Sam"}
         {"id": 2, "name": "Lucy"}
-        ```
+        -----------------------------------
 
-        ```python
-
-        from dataclasses import dataclass
-
-        @dataclass
-        class User:
-            id: int
-            name: str
-
-        for user in load_json_list(file=json_path, type_=User):
-            print(user)
-
-        user_list = list(load_json_list(file=json_path, type_=User))
-        ```
+        >>> # 定义结构体，dataclass、pydantic.BaseModel均可支持
+        >>> @dataclass
+        ... class User:
+        ...     id: int
+        ...     name: str
+        ...
+        >>> for user in load_json_list(file=json_path, type_=User):
+        ...     user
+        ...
+        >>> user_list = list(load_json_list(file=json_path, type_=User))
+        >>> user_list
+        [User(id=1, name='Sam'), User(id=2, name='Lucy')]
 
         此时user_list被加载为List[User]，且类型推导也为List[User]
     """
