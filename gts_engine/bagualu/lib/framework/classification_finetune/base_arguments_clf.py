@@ -3,14 +3,14 @@ import time
 from pathlib import Path
 from pydantic import DirectoryPath, FilePath
 
-from gts_engine.bagualu.lib.framework.base_arguments import (
+from bagualu.lib.framework.base_arguments import (
     BaseArguments,
     GeneralParser
 )
-from gts_engine.bagualu.lib.framework.consts import RUN_MODE
-from gts_engine.bagualu.lib.utils.path import mk_inexist_dir
-from gts_engine.bagualu.lib.components import ProtocolArgsMixin
-from gts_engine.bagualu.lib.components.lightning_callbacks.adaptive_val_intervals import (
+from bagualu.lib.framework.consts import RUN_MODE
+from bagualu.lib.utils.path import mk_inexist_dir
+from bagualu.lib.components import ProtocolArgsMixin
+from bagualu.lib.components.lightning_callbacks.adaptive_val_intervals import (
     ADAPTIVE_VAL_INTERVAL_MODE
 )
 

@@ -1,5 +1,4 @@
-#encoding=utf8
-
+"""检索增强中的knn插值模块"""
 import os
 import json
 import itertools

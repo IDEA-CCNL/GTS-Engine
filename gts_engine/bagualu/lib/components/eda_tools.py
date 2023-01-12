@@ -9,8 +9,8 @@ from transformers.tokenization_utils import PreTrainedTokenizer
 from pydantic import FilePath
 
 
-from gts_engine.bagualu.lib.utils.json_processor import load_json_list, dump_json_list
-from gts_engine.bagualu.lib.framework.mixin import OptionalLoggerMixin
+from bagualu.lib.utils.json_utils import load_json_list, dump_json_list
+from bagualu.lib.framework.mixin import OptionalLoggerMixin
 
 
 class SampleProto(Protocol):

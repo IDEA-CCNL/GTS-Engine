@@ -5,12 +5,11 @@
     * ProtocolArgsMixin: 将工程接口协议参数作为子参数集合加入参数集合并隔离的Mixin
     * TokenizerGenerator: Tokenizer生成器
     * EDA: EDA数据增强
-    * es_search: es search数据增强
     * lightning_callbacks: pytorch_lightning自定义callback集
     * losses: ?
     * metrics: ?
     * knn_tools: knn相关工具集
-    * sample_tools: ?
+    * sampling_tools: ?
     * schedulers: pytorch 学习率scheduler集
     * text_tools: 文本处理工具集
 
@@ -24,7 +23,7 @@ Todo:
 """
 from .protocol_args import ProtocolArgs, ProtocolArgsMixin
 from .tokenizer_generator import TokenizerGenerator
-from .eda import EDA
+from .eda_tools import EDA
 
 __all__ = [
     "ProtocolArgs",

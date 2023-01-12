@@ -12,12 +12,12 @@ import pytorch_lightning as pl
 from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.callbacks import Callback
 
-from gts_engine.bagualu.lib.utils.statistics import (
+from bagualu.lib.utils.statistics import (
     ExponentialSmoothingList,
     DynamicMax,
     interval_mean
 )
-from gts_engine.bagualu.lib.framework.mixin import OptionalLoggerMixin
+from bagualu.lib.framework.mixin import OptionalLoggerMixin
 
 
 # =============================================================================

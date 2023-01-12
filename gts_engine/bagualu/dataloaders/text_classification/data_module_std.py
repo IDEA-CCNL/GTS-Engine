@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from ...lib.framework.classification_finetune import BaseDataModuleClf, DataReaderClf
 from ...lib.framework.classification_finetune.consts import LabeledSample
 from ...lib.components import EDA
-from ...lib.components.samplers import PairBatchSampler
+from ...lib.components.batch_sampler import PairBatchSampler
 
 from ...dataloaders.text_classification.datasets_std import TrainDatasetClfStd, TestDatasetClfStd, InfDatasetClfStd
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
