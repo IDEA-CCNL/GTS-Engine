@@ -2,8 +2,8 @@ from typing import List, Optional, Dict
 from pydantic import BaseModel, DirectoryPath, FilePath
 from pathlib import Path
 
-from ...lib.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
-from ...lib.utils.json_utils import dump_json, load_json
+from gts_common.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
+from gts_common.utils.json_utils import dump_json, load_json
 
 from .training_pipeline_std import TrainingPipelineClfStd
 from .inference_manager_std import InferenceManagerClfStd

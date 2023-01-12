@@ -10,11 +10,11 @@ from pathlib import Path
 import numpy as np
 from sklearn.metrics import pairwise_distances
 
-from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import LabelToken, TrainingModelOutput, InferenceModelOutput
-from ...lib.framework.classification_finetune import StdLabel
-from ...lib.components.losses import MaxMultiLogits, LabelSmoothing
-from ...lib.components.knn_tools import inference_with_knn
+from gts_common.framework.consts import BertInput
+from gts_common.framework.classification_finetune.consts import LabelToken, TrainingModelOutput, InferenceModelOutput
+from gts_common.framework.classification_finetune import StdLabel
+from gts_common.components.losses import MaxMultiLogits, LabelSmoothing
+from gts_common.components.knn_for_bagualu import inference_with_knn
 
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 

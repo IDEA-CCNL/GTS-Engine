@@ -8,7 +8,7 @@ import os
 import unicodedata
 from io import open
 from typing import List, Union, Dict, Set, Tuple, Optional
-from .utils import truncate_sequences
+from gts_common.utils.utils import truncate_sequences
 from transformers import AutoTokenizer, BertTokenizer, T5Tokenizer
 from transformers.models.bart.tokenization_bart import BartTokenizer
 from gts_common.logs_utils import Logger

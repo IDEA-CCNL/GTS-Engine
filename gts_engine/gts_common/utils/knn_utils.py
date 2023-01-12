@@ -6,7 +6,7 @@ import itertools
 import numpy as np
 from tqdm import tqdm
 from sklearn.metrics import pairwise_distances, accuracy_score
-from .evaluation import result_eval
+from gts_common.utils.evaluation import result_eval
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()

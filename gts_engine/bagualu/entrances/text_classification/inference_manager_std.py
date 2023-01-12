@@ -1,7 +1,7 @@
 from typing import List
 
-from ...lib.framework.classification_finetune import BaseInferenceManagerClf
-from ...lib.framework.classification_finetune.consts import InferenceManagerInputSampleList
+from gts_common.framework.classification_finetune import BaseInferenceManagerClf
+from gts_common.framework.classification_finetune.consts import InferenceManagerInputSampleList
 
 from ...models.text_classification.lightnings_std import InferenceLightningClfStd
 from ...dataloaders.text_classification.datasets_std import InfDatasetClfStd

@@ -1,7 +1,7 @@
 """提供参数集合(BaseArguments)管理功能的Mixin模块"""
 from typing import Type, Optional, List, get_type_hints
 
-from bagualu.lib.framework import BaseArguments
+from gts_common.framework import BaseArguments
 
 class ArgsMixin:
     """提供参数集合(BaseArguments)管理功能的Mixin

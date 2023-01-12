@@ -27,9 +27,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 
 from ...arguments.ie import TrainingArgumentsIEStd
 from ...models.ie import BagualuIELitModel, BagualuIEExtractModel, BagualuIEOnnxConfig
-from ...lib.framework.base_training_pipeline import BaseTrainingPipeline
-from ...lib.utils import LoggerManager
-from ...lib.utils.json_utils import (load_json_list,
+from gts_common.framework.base_training_pipeline import BaseTrainingPipeline
+from gts_common.utils import LoggerManager
+from gts_common.utils.json_utils import (load_json_list,
                                          dump_json,
                                          dump_json_list)
 from ...dataloaders.ie import (BagualuIEDataModel,

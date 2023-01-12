@@ -3,10 +3,10 @@ from typing import Sequence
 import numpy as np
 import torch
 
-from ...lib.framework.classification_finetune import BaseDatasetClf
-from ...lib.framework.classification_finetune.consts import LabeledSample, PreEncodedTrainSample, EncodedTrainSample, InfSampleProto, EncodedInfSample
-from ...lib.framework.classification_finetune.mask_tools import wwm_masking
-from ...lib.components.text_processing_tools import segment_text
+from gts_common.framework.classification_finetune import BaseDatasetClf
+from gts_common.framework.classification_finetune.consts import LabeledSample, PreEncodedTrainSample, EncodedTrainSample, InfSampleProto, EncodedInfSample
+from gts_common.framework.classification_finetune.mask_tools import wwm_masking
+from gts_common.components.text_processing_tools import segment_text
 
 class TrainDatasetClfStd(BaseDatasetClf):
     

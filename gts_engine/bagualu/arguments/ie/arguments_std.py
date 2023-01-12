@@ -16,9 +16,9 @@
 import os
 from typing import Optional
 
-from ...lib.utils.path import mk_inexist_dir
-from ...lib.framework.base_arguments import BaseArguments, GeneralParser
-from ...lib.components.protocol_args import ProtocolArgsMixin
+from gts_common.utils.path import mk_inexist_dir
+from gts_common.framework.base_arguments import BaseArguments, GeneralParser
+from gts_common.components.protocol_args import ProtocolArgsMixin
 
 
 class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):

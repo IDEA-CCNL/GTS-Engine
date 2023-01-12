@@ -5,13 +5,13 @@ from transformers.optimization import AdamW
 import torch
 from transformers.tokenization_utils import PreTrainedTokenizer
 
-from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import InfBatch, InferenceManagerOutput, InferenceModelOutput, TrainBatch
-from ...lib.framework.classification_finetune import StdLabel, BaseTrainingLightningClf, BaseInferenceLightningClf
-from ...lib.components.schedulers import warmup_linear_decay_scheduler_factory
-from ...lib.components.metrics import Logits2Acc
-from ...lib.components.losses import compute_kl_loss
-from ...lib.utils import LoggerManager
+from gts_common.framework.consts import BertInput
+from gts_common.framework.classification_finetune.consts import InfBatch, InferenceManagerOutput, InferenceModelOutput, TrainBatch
+from gts_common.framework.classification_finetune import StdLabel, BaseTrainingLightningClf, BaseInferenceLightningClf
+from gts_common.components.schedulers import warmup_linear_decay_scheduler_factory
+from gts_common.components.metrics import Logits2Acc
+from gts_common.components.losses import compute_kl_loss
+from gts_common.utils import LoggerManager
 
 from ...models.text_classification.models_std import TrainingModelClfStd, InferenceModelClfStd
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd, InferenceArgumentsClfStd

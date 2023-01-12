@@ -8,9 +8,9 @@ from typing import Optional
 from pathlib import Path
 from pydantic import DirectoryPath
 
-from bagualu.lib.framework import BaseArguments
-from bagualu.lib.framework.consts import TRAIN_MODE
-from bagualu.lib.utils.path import mk_inexist_dir
+from gts_common.framework import BaseArguments
+from gts_common.framework.consts import TRAIN_MODE
+from gts_common.utils.path import mk_inexist_dir
 
 
 class ProtocolArgs(BaseArguments):

@@ -9,7 +9,7 @@
     * losses: ?
     * metrics: ?
     * knn_tools: knn相关工具集
-    * sampling_tools: ?
+    * sampling_utils: ?
     * schedulers: pytorch 学习率scheduler集
     * text_tools: 文本处理工具集
 
@@ -23,7 +23,7 @@ Todo:
 """
 from .protocol_args import ProtocolArgs, ProtocolArgsMixin
 from .tokenizer_generator import TokenizerGenerator
-from .eda_tools import EDA
+from .eda_utils import EDA
 
 __all__ = [
     "ProtocolArgs",

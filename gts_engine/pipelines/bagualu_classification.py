@@ -5,10 +5,10 @@ from enum import Enum
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.pipeline_utils import load_args, save_args
 
-from bagualu.lib.framework.base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface, TRAIN_MODE
-from bagualu.lib.framework.classification_finetune.consts import InferenceManagerInputSample
+from gts_common.framework.base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface, TRAIN_MODE
+from gts_common.framework.classification_finetune.consts import InferenceManagerInputSample
 from bagualu.entrances.text_classification import GtsEngineInterfaceClfStd
-from bagualu.lib.framework.classification_finetune import BaseInferenceManagerClf
+from gts_common.framework.classification_finetune import BaseInferenceManagerClf
 
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {

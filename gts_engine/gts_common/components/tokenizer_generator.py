@@ -7,7 +7,7 @@ from types import MethodType
 from pydantic import DirectoryPath
 
 
-from bagualu.lib.utils.json_utils import load_json
+from gts_common.utils.json_utils import load_json
 
 class TokenizerGenerator:
     """Tokenizer生成器

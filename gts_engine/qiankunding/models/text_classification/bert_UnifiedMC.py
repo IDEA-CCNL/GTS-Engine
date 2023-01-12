@@ -11,8 +11,8 @@ from transformers import AdamW,Adafactor
 from .base_model import BaseModel, Pooler
 import numpy as np
 
-from ...utils.detect_gpu_memory import detect_gpu_memory
-from ...utils import globalvar as globalvar
+from gts_common.utils.detect_gpu_memory import detect_gpu_memory
+from gts_common.utils import globalvar as globalvar
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()

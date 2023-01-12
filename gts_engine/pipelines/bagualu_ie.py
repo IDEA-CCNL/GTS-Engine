@@ -19,7 +19,7 @@ from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.pipeline_utils import load_args, save_args, download_model_from_huggingface
 from gts_common.arguments import GtsEngineArgs
 
-from bagualu.lib.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
+from gts_common.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
 from bagualu.entrances.ie import GtsEngineInterfaceIEStd
 from bagualu.entrances.ie.inference_manager_std import InferenceManagerIEStd
 from bagualu.models.ie import BagualuIEModel

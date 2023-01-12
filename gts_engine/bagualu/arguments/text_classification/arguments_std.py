@@ -2,13 +2,13 @@ from typing import Optional
 from pydantic import FilePath
 from pathlib import Path
 
-from ...lib.framework.base_arguments import GeneralParser
-from ...lib.components.lightning_callbacks.adaptive_val_intervals import (
+from gts_common.framework.base_arguments import GeneralParser
+from gts_common.components.lightning_callbacks.adaptive_val_intervals import (
     ADAPTIVE_VAL_INTERVAL_MODE)
-from ...lib.framework.classification_finetune import (
+from gts_common.framework.classification_finetune import (
     BaseTrainingArgumentsClf,
     BaseInferenceArgumentsClf)
-from ...lib.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+from gts_common.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 
 
 class TrainingArgumentsClfStd(BaseTrainingArgumentsClf):
