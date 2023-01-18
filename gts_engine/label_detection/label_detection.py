@@ -6,7 +6,7 @@ import torch
 import json
 import random
 import sys
-sys.path.append('../')
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
 from qiankunding.models.nli.bert_UnifiedMC import taskModel
@@ -22,28 +22,19 @@ from datetime import datetime
 logger = Logger().get_log()
 
 
-def read_data(data_path, result_path):
+def read_data(label_path, data_path):
     input_data = []
-    with open(os.path.join(data_path, 'tnews_test.json'), 'r',
+    with open(os.path.join(data_path), 'r',
               encoding='utf8') as f:
         for line in f:
             input_data.append(json.loads(line.strip()))
 
     input_labels = object
-    with open(os.path.join(data_path, 'tnews_label.json'),
+    with open(os.path.join(label_path),
               'r',
               encoding='utf8') as f:
         input_labels = json.load(f)
-
-    labels_info = {}
-    if os.path.exists(result_path):
-        with open(result_path, 'r', encoding='utf8') as f:
-            for line in f:
-                line = json.loads(line.strip())
-                labels_info[line['label']] = [
-                    line['rank'], line['label_id'], line['score']
-                ]
-    return input_data, input_labels, labels_info
+    return input_data, input_labels
 
 
 def take_sample_input(labels_length, input_data,):
@@ -64,14 +55,14 @@ def take_sample_input(labels_length, input_data,):
 def take_sample(sample_input_data, current_label):
     # 样本采样  1:2 正负样本
     total_sentences = [i['content'] for i in sample_input_data]
-    total_vail_data = sample_input_data
-    total_vail_data_index = [i for i in range(len(total_vail_data))]
+    total_val_data = sample_input_data
+    total_val_data_index = [i for i in range(len(total_val_data))]
     true_label_index = [
-        i for i, k in enumerate(total_vail_data)
+        i for i, k in enumerate(total_val_data)
         if k['label'] == current_label
     ]
 
-    tmp_set = set(total_vail_data_index).difference(set(true_label_index))
+    tmp_set = set(total_val_data_index).difference(set(true_label_index))
     negative_label_index = list(tmp_set)
     random.shuffle(negative_label_index)
     # 负采样个数
@@ -80,35 +71,92 @@ def take_sample(sample_input_data, current_label):
     need_index.sort()
 
     sentences = []
-    vail_data = []
+    val_data = []
     for i in need_index:
         sentences.append(total_sentences[i])
-        vail_data.append(total_vail_data[i])
-    return sentences, vail_data
+        val_data.append(total_val_data[i])
+    return sentences, val_data
 
 
-def label_detection(model_path, data_path):
-    start = time.time()
+def predict_process(two_choices, tokenizer, sentences, model):
+    logger.info("start {}".format(two_choices))
+    samples = []
+    for sentence in sentences:
+        tmp_sample = {
+            "content": sentence,
+            "label": two_choices[0]
+        }
+        samples.append(tmp_sample)
+
+    train_data = TaskDatasetUnifiedMC(data_path=None,
+                                      args=args,
+                                      used_mask=False,
+                                      tokenizer=tokenizer,
+                                      load_from_list=True,
+                                      samples=samples,
+                                      choice=two_choices)
+
+    train_dataloader = DataLoader(train_data,
+                                  shuffle=False,
+                                  batch_size=1,
+                                  pin_memory=False)
+
+    total_predicts = []
+
+    for batch in tqdm(train_dataloader):
+
+        inputs = {
+            'input_ids': batch['input_ids'].cuda(),
+            'attention_mask': batch['attention_mask'].cuda(),
+            'token_type_ids': batch['token_type_ids'].cuda(),
+            "position_ids": batch['position_ids'].cuda(),
+            "mlmlabels": batch['mlmlabels'].cuda(),
+            "clslabels": batch['clslabels'].cuda(),
+            "clslabels_mask": batch['clslabels_mask'].cuda(),
+            "mlmlabels_mask": batch['mlmlabels_mask'].cuda(),
+        }
+
+        loss, logits, cls_logits, hidden_states = model(**inputs)
+
+        probs = torch.nn.functional.softmax(cls_logits, dim=-1)
+        predicts = torch.argmax(probs, dim=-1)
+        score = torch.max(probs, dim=-1)[0]
+
+        probs = probs.detach().cpu().numpy()
+        predicts = predicts.detach().cpu().numpy()
+        score = score.detach().cpu().numpy()
+
+        label_idx = list(batch["label_idx"][0].numpy())
+        total_predicts += [label_idx.index(i) for i in predicts]
+    return total_predicts
+
+
+def label_detection(label_path, data_path):
+    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
+    pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pretrained")
+    download_model_from_huggingface(pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
+    model_path = os.path.join(pretrained_model_dir,
+                              model_name)
     starttime = datetime.now()
     tokenizer = BertTokenizer.from_pretrained(model_path)
     model = taskModel(model_path, tokenizer=tokenizer)
     model.eval()
     model.cuda()
     random.seed(123)
-
-    result_path = os.path.join(data_path, 'label_detection_result.json')
-    input_data, input_labels, labels_info = read_data(data_path=data_path, result_path=result_path)
+    labels_info = {}
+    result_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'label_detection_result.json')
+    input_data, input_labels = read_data(label_path=label_path, data_path=data_path)
     sample_input_data = take_sample_input(len(input_labels["labels"]), input_data)
     label_detection_result = []
 
     total_count = 0
     index = 0
-    for value in input_labels["labels"]:
-        current_label = value
+    for label_value in input_labels["labels"]:
+        current_label = label_value
         current_label_id = index
         index += 1
 
-        sentences, vail_data = take_sample(sample_input_data=sample_input_data, current_label=current_label)
+        sentences, val_data = take_sample(sample_input_data=sample_input_data, current_label=current_label)
 
         total_count += len(sentences)
         random_f1 = -1
@@ -118,62 +166,15 @@ def label_detection(model_path, data_path):
         ]
         n = 0
         while n < 2:
-            logger.info("start {}".format(two_choices))
-            samples = []
-            for sentence in sentences:
-                tmp_sample = {
-                    "content": sentence,
-                    "label": two_choices[0]
-                }
-                samples.append(tmp_sample)
-
-            start1 = time.time()
-            train_data = TaskDatasetUnifiedMC(data_path=None,
-                                              args=args,
-                                              used_mask=False,
-                                              tokenizer=tokenizer,
-                                              load_from_list=True,
-                                              samples=samples,
-                                              choice=two_choices)
-
-            train_dataloader = DataLoader(train_data,
-                                          shuffle=False,
-                                          batch_size=1,
-                                          pin_memory=False)
-
-            total_predicts = []
-
-            for batch in tqdm(train_dataloader):
-
-                inputs = {
-                    'input_ids': batch['input_ids'].cuda(),
-                    'attention_mask': batch['attention_mask'].cuda(),
-                    'token_type_ids': batch['token_type_ids'].cuda(),
-                    "position_ids": batch['position_ids'].cuda(),
-                    "mlmlabels": batch['mlmlabels'].cuda(),
-                    "clslabels": batch['clslabels'].cuda(),
-                    "clslabels_mask": batch['clslabels_mask'].cuda(),
-                    "mlmlabels_mask": batch['mlmlabels_mask'].cuda(),
-                }
-
-                loss, logits, cls_logits, hidden_states = model(**inputs)
-
-                probs = torch.nn.functional.softmax(cls_logits, dim=-1)
-                predicts = torch.argmax(probs, dim=-1)
-                score = torch.max(probs, dim=-1)[0]
-
-                probs = probs.detach().cpu().numpy()
-                predicts = predicts.detach().cpu().numpy()
-                score = score.detach().cpu().numpy()
-
-                label_idx = list(batch["label_idx"][0].numpy())
-                total_predicts += [label_idx.index(i) for i in predicts]
-
-            logger.info("every_time:{}".format(time.time() - start1))
+            total_predicts = predict_process(two_choices=two_choices,
+                                             tokenizer=tokenizer,
+                                             sentences=sentences,
+                                             model=model)
+           
             y_true = []
             y_pred = []
             y_senetence = []
-            for sample, predict in zip(vail_data, total_predicts):
+            for sample, predict in zip(val_data, total_predicts):
                 if sample['label'] == current_label:
                     y_true.append(0)
                 else:
@@ -222,9 +223,9 @@ def label_detection(model_path, data_path):
 
     tmp_result = []
     index = 0
-    for value in input_labels["labels"]:
-        if value in labels_info:
-            current_label = value
+    for label_value in input_labels["labels"]:
+        if label_value in labels_info:
+            current_label = label_value
             tmp_result.append(
                 (current_label, labels_info[current_label][0],
                  labels_info[current_label][1], labels_info[current_label][2]))
@@ -240,7 +241,6 @@ def label_detection(model_path, data_path):
             "score": score
         })
 
-    logger.info("label_detection_time: {}".format(time.time() - start))
     logger.info("label_detection_result {}".format(label_detection_result))
     logger.info("result {}".format(result))
     endtime = datetime.now()
@@ -254,33 +254,23 @@ def label_detection(model_path, data_path):
 
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "5"
-    model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
-    pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pretrained")
-    download_model_from_huggingface(pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
-    # Set path to load pretrained model
-
     total_parser = argparse.ArgumentParser()
     total_parser.add_argument(
-        "--model_path",
-        default=pretrained_model_dir,
+        "--label_path",
+        default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "examples/text_classification/tnews_label.json"),
         type=str,
-        help="train task name")
+        help="data path")
     total_parser.add_argument(
         "--data_path",
-        default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "examples/text_classification"),
+        default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "examples/text_classification/tnews_test.json"),
         type=str,
-        help="train task name")
-
+        help="data path")
     total_parser.add_argument("--max_len", default=630, type=str)
-    #total_parser.add_argument("--num_labels", default=0, type=int)
-
     args = total_parser.parse_args()
-    # args.data_path = '/cognitive_comp/liuyibo/zero_training_demo/'
+
     logger.info("args: {}".format(args))
 
-    label_detection(model_path=os.path.join(args.model_path,
-                                            'Erlangshen-UniMC-MegatronBERT-1.3B-Chinese'),
+    label_detection(label_path=args.label_path,
                     data_path=args.data_path)
 
     # python inference.py --model_path /cognitive_comp/liuyibo/pretrained/pytorch/ --data_path /cognitive_comp/liuyibo/zero_training_demo/label_dete/demo/
