@@ -336,7 +336,7 @@ optional arguments:
 一行代码启动.py文件即可开始检测
 
 ```bash
-python label_detection.py
+python label_detection.py --label_path /cognitive_comp/zhubohan/GTS-Engine/examples/text_classification/tnews_label.json --data_path /cognitive_comp/zhubohan/GTS-Engine/examples/text_classification/tnews_test.json
 ```
 
 ## API文档
