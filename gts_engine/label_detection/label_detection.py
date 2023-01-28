@@ -39,8 +39,7 @@ def read_data(label_path, data_path):
 
 def take_sample_input(labels_length, input_data,):
     labels_count = labels_length
-    # sample_count_every_class = int(6000/labels_count)   # 600/(0.05 * 2)
-    sample_count_every_class = int(2000 / labels_count)  # 600/(0.05 * 2)
+    sample_count_every_class = int(2000 / labels_count)
     logger.info("sample_count_every_class {}".format(sample_count_every_class))
     random.shuffle(input_data)
     sample_input_data = []
@@ -63,10 +62,8 @@ def take_sample(sample_input_data, current_label):
     ]
 
     tmp_set = set(total_val_data_index).difference(set(true_label_index))
-    negative_label_index = list(tmp_set)
-    random.shuffle(negative_label_index)
     # 负采样个数
-    negative_label_index = negative_label_index[:len(true_label_index) * 2]
+    negative_label_index = random.sample(list(tmp_set),min(len(true_label_index) * 2, len(list(tmp_set))))
     need_index = true_label_index + negative_label_index
     need_index.sort()
 
@@ -257,12 +254,10 @@ if __name__ == '__main__':
     total_parser = argparse.ArgumentParser()
     total_parser.add_argument(
         "--label_path",
-        default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "examples/text_classification/tnews_label.json"),
         type=str,
         help="data path")
     total_parser.add_argument(
         "--data_path",
-        default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "examples/text_classification/tnews_test.json"),
         type=str,
         help="data path")
     total_parser.add_argument("--max_len", default=630, type=str)
@@ -272,5 +267,3 @@ if __name__ == '__main__':
 
     label_detection(label_path=args.label_path,
                     data_path=args.data_path)
-
-    # python inference.py --model_path /cognitive_comp/liuyibo/pretrained/pytorch/ --data_path /cognitive_comp/liuyibo/zero_training_demo/label_dete/demo/
