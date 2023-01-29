@@ -49,7 +49,7 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
             optimizer=optimizer,
             warm_up_epoch=self._args.warm_up_epoch,
             decay_epoch=self._args.decay_epoch,
-            epoch=self._args.epoch,
+            epoch=self._args.max_epochs,
             train_data_length=self._sample_num,
             batch_size=self._args.train_batch_size
         )

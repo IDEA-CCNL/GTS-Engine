@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Protocol, TypedDict, Dict, NamedTuple
 
-from torch import Tensor
 from pydantic import BaseModel, Field
+from torch import Tensor
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 
 #############################################################################################
@@ -165,7 +166,8 @@ class TrainingSettings:
     training_prompt: str
     inference_prompt: str
     batch_size: int
-    epoch: int
+    max_epochs: int
+    min_epochs: int
     warmup_epoch: int
     decay_epoch: int
     dropout_rate: float

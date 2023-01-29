@@ -80,13 +80,15 @@ class DataModuleClfStd(BaseDataModuleClf):
         if len(self._label.label_ids) <= 5:
             self._args.label_guided_rate = 0.3
         step_per_epoch = self.train_sample_num // self._args.train_batch_size
-        steps = step_per_epoch * self._args.epoch
+        steps = step_per_epoch * self._args.max_epochs
         min_steps = min(1400 // self._args.device_num, 40 * step_per_epoch)
         if steps < min_steps:
-            self._args.epoch = math.ceil(min_steps // step_per_epoch)
+            self._args.max_epochs = math.ceil(min_steps // step_per_epoch)
         if self.dev_sample_num == 0:
-            self._args.epoch = int(0.75 * self._args.epoch)
-        self._logger.info(f"reparsing epoch: {self._args.epoch}")
+            self._args.max_epochs = int(0.75 * self._args.max_epochs)
+        if self._args.max_epochs < self._args.min_epochs:
+            self._args.min_epochs = self._args.max_epochs
+        self._logger.info(f"reparsing epoch: {self._args.max_epochs}")
         self._logger.info(f"batch size per device: {self._args.train_batchsize_per_device}")
         self._logger.info(f"total batch size: {self._args.train_batch_size}")
 

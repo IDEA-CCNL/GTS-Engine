@@ -74,6 +74,8 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         parser.add_argument("--max_length", dest="max_length", type=int, default=512)
         parser.add_argument("--learning_rate", dest="learning_rate", type=float, default=2e-5)
         parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
+        parser.add_argument("--max_epochs", dest="max_epochs", type=int, default=5)
+        parser.add_argument("--min_epochs", dest="min_epochs", type=int, default=5)
 
     # ========================== 固定参数 ===============================
 
@@ -84,7 +86,6 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
     inference_prompt = "[unused1][MASK][MASK][MASK][MASK][MASK][unused2]"
     label_guided_rate = 0.5
     wwm_mask_rate = 0.12
-    epoch = 5
     warm_up_epoch = 1
     clip_norm = 0.25
     validation_mode = ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE
@@ -117,7 +118,7 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
 
     @property
     def decay_epoch(self):
-        return self.epoch - 1
+        return self.max_epochs - 1
 
     def _after_parse(self) -> None:
         mk_inexist_dir(self.log_dir)
