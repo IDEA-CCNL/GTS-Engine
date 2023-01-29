@@ -1,13 +1,13 @@
 """EDA数据增强模块"""
-from typing import Optional, List, Protocol, Sequence, TypeVar, Generic, Union
-import os
-import multiprocessing as mp
-from tqdm import tqdm
-import time
 import copy
-from transformers.tokenization_utils import PreTrainedTokenizer
-from pydantic import FilePath
+import multiprocessing as mp
+import os
+import time
+from typing import Optional, List, Protocol, Sequence, TypeVar, Generic, Union
 
+from pydantic import FilePath
+from tqdm import tqdm
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 from gts_common.utils.json_utils import load_json_list, dump_json_list
 from gts_common.framework.mixin import OptionalLoggerMixin
@@ -19,10 +19,12 @@ class SampleProto(Protocol):
     至少需要包含可读写的text属性
     """
     @property
-    def text(self) -> str: ...
+    def text(self) -> str:
+        ...
 
     @text.setter
-    def text(self, value: str) -> None: ...
+    def text(self, value: str) -> None:
+        ...
 
 
 _SampleType = TypeVar("_SampleType", bound=SampleProto)

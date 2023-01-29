@@ -4,10 +4,10 @@ Todo:
     - [ ] (Jiang Yuzhen) 将模块名改为path_utils或类似名称，和json_utils等工具集保持一致
 """
 import os
-from typing import Literal
+from pathlib import Path
 import shutil
 from typing import Union
-from pathlib import Path
+from typing import Literal
 
 
 def mk_inexist_dir(path: Union[str, Path], r: bool = True, clean: bool = False):

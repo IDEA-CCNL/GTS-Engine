@@ -1,5 +1,5 @@
-from typing import Optional
 import time
+from typing import Optional
 from pathlib import Path
 from pydantic import DirectoryPath, FilePath
 
@@ -60,8 +60,8 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         parser.add_argument("--dataset", dest="dataset", type=str, help="数据集名称/路径名", default="default")
         parser.add_argument("--label2id_path", dest="label2id_path", type=Path, help="指定label2id文件路径", required=True)
         parser.add_argument("--log_dir", dest="_log_dir", type=Path, default=None, help="[可选]指定日志文件保存路径")
-        parser.add_argument("--run_mode", dest="run_mode", type=RUN_MODE, 
-                            choices=RUN_MODE, default=RUN_MODE.ONLINE, 
+        parser.add_argument("--run_mode", dest="run_mode", type=RUN_MODE,
+                            choices=RUN_MODE, default=RUN_MODE.ONLINE,
                             help="运行模式 [offline - 离线测试 | online - 上线运行]")
         parser.add_argument("--load_data_ratio", dest="load_data_ratio", type=float, default=1, help="[可选]指定加载数据比例（0到1之间），用于测试")
         parser.add_argument("--selected_pretrained_model_dir", dest="selected_pretrained_model_dir", type=str, default=None, help="[可选]指定预训练模型路径")

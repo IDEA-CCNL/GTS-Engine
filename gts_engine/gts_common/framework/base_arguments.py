@@ -1,9 +1,9 @@
 """参数集合基类模块"""
 from abc import ABCMeta
 from argparse import ArgumentParser, Namespace, _ArgumentGroup
+import sys
 from typing import Optional, Dict, List, Type, Union, get_type_hints
 from typing_extensions import Self
-import sys
 
 
 GeneralParser = Union[ArgumentParser, _ArgumentGroup]

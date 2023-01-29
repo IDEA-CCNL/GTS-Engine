@@ -1,6 +1,6 @@
 """框架包
 
-理想中的bagualu框架分为三层：
+理想中的框架分为三层：
     * 通用接口层，如base_training_pipeline、base_inference_manager等。定义各个基本模块的性质
       和通用行为，向下层提供基本的功能如与参数集合的交互等。
     * 任务层，如classification_finetune。基于base层，定义特定任务的通用行为，因为特定任务之
@@ -30,6 +30,7 @@ from .base_arguments import BaseArguments
 from .base_training_pipeline import BaseTrainingPipeline
 from .base_inference_manager import BaseInferenceManager
 from .base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface
+
 
 __all__ = [
     "BaseArguments",

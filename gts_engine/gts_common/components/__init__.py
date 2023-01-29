@@ -4,14 +4,14 @@
     * ProtocolArgs: 工程接口协议参数集合
     * ProtocolArgsMixin: 将工程接口协议参数作为子参数集合加入参数集合并隔离的Mixin
     * TokenizerGenerator: Tokenizer生成器
-    * EDA: EDA数据增强
+    * eda_utils: EDA数据增强
     * lightning_callbacks: pytorch_lightning自定义callback集
     * losses: ?
     * metrics: ?
-    * knn_tools: knn相关工具集
+    * knn_for_bagualu: knn相关工具集
     * sampling_utils: ?
     * schedulers: pytorch 学习率scheduler集
-    * text_tools: 文本处理工具集
+    * text_processing_tools: 文本处理工具集
 
 Todo:
     - [ ] (Jiang Yuzhen) 一些空缺内容待补全
@@ -21,9 +21,10 @@ Todo:
         `metrics`等，这里可以参考开源库https://github.com/shenweichen/DeepCTR/tree/master/deepctr/layers；
         再将模型评估`model_evaluation`相关的工具单独放在外面。
 """
+from .eda_utils import EDA
 from .protocol_args import ProtocolArgs, ProtocolArgsMixin
 from .tokenizer_generator import TokenizerGenerator
-from .eda_utils import EDA
+
 
 __all__ = [
     "ProtocolArgs",

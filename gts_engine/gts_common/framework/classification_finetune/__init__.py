@@ -29,9 +29,9 @@ from .base_lightnings_clf import (
 )
 from .base_dataset_clf import BaseDatasetClf
 from .base_inference_manager_clf import BaseInferenceManagerClf
-
-from .label import StdLabel
 from .data_reader_clf import DataReaderClf
+from .label import StdLabel
+
 
 __all__ = [
     "BaseTrainingPipelineClf",

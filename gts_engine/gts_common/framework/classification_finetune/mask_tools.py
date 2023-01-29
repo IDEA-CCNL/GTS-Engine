@@ -1,27 +1,30 @@
-import numpy as np
 from typing import List, NamedTuple
-from transformers.tokenization_utils import PreTrainedTokenizer
+
+import numpy as np
 import re
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 from .label import LabelBase
+
 
 class MaskedLmInstance(NamedTuple):
     index: int
     label: str
 
+
 class CreateMaskedLmPredictionsOutput(NamedTuple):
     output_tokens: List[str]
     masked_lm_positions: List[int]
     masked_lm_labels: List[str]
-    
+
 
 def create_masked_lm_predictions(tokens: List[str],
                                  masked_lm_prob: float,
                                  max_predictions_per_seq: int,
                                  vocab_words: List[str],
                                  index: int,
-                                 masked_label: str='[MASK]',
-                                 do_wwm: bool=True):
+                                 masked_label: str = '[MASK]',
+                                 do_wwm: bool = True):
     """Creates the predictions for the masked LM objective."""
 
     rng = np.random.RandomState(seed=((1234 + index) % 2 ** 32))
@@ -101,13 +104,15 @@ def create_masked_lm_predictions(tokens: List[str],
 
     return CreateMaskedLmPredictionsOutput(output_tokens, masked_lm_positions, masked_lm_labels)
 
+
 class WWMMaskingOutput(NamedTuple):
     input_ids: List[int]
     mlm_labels: List[int]
     input_mask: List[int]
     masked_lm_positions: List[int]
 
-def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenizer, label_mode: LabelBase, max_length: int, mask_rate: float, offset: int=0):
+
+def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenizer, label_mode: LabelBase, max_length: int, mask_rate: float, offset: int = 0):
     output_tokens, masked_lm_positions, masked_lm_labels = create_masked_lm_predictions(new_tokens[offset:],
                                                                                         masked_lm_prob=mask_rate,
                                                                                         max_predictions_per_seq=30,
@@ -134,7 +139,6 @@ def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenize
         mlm_labels[pos] = masked_id
 
     return WWMMaskingOutput(input_ids, mlm_labels, input_mask, masked_lm_positions)
-
 
 # TODO (Jiang Yuzhen) 实现存在问题
 # def random_masking(token_ids, max_length, mask_rate, prompt_mode, tokenizer=None):
@@ -172,7 +176,7 @@ def wwm_masking(new_tokens: List[str], index: int, tokenizer: PreTrainedTokenize
 #         else:
 #             source.append(t)
 #             target.append(-100)
-    
+
 #     while len(source) < max_length:
 #         source.append(0)
 #         target.append(-100)

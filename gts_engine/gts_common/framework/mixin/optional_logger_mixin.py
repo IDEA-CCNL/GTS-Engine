@@ -1,6 +1,6 @@
 """提供可选使用logger或print输出功能的Mixin模块"""
-from typing import Optional
 import logging
+from typing import Optional
 
 
 class OptionalLoggerMixin:

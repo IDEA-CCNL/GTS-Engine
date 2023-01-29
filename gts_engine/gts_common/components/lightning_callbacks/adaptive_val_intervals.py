@@ -3,14 +3,15 @@
 Todo:
     - [ ] (Jiang Yuzhen) 进一步实验、调参或寻找理论依据，甚至考虑使用简单模型来学习验证开始时机
 """
-from typing import Dict, Optional, List
-from enum import Enum
 from abc import ABCMeta, abstractmethod
+from enum import Enum
+from typing import Dict, Optional, List
+
 import numpy as np
-from torch import Tensor
 import pytorch_lightning as pl
 from pytorch_lightning.trainer.states import TrainerFn
 from pytorch_lightning.callbacks import Callback
+from torch import Tensor
 
 from gts_common.utils.statistics import (
     ExponentialSmoothingList,

@@ -1,21 +1,21 @@
 from abc import abstractmethod, ABCMeta
-from pytorch_lightning import LightningDataModule
-from transformers.tokenization_utils import PreTrainedTokenizer
-from typing import List, Optional, Literal, Sequence
-from torch.utils.data import DataLoader
-import os
-import math
 from collections import Counter
-from sklearn.model_selection import train_test_split
+import math
+import os
+from typing import List, Optional, Literal, Sequence
 
+from pytorch_lightning import LightningDataModule
+from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
+from transformers.tokenization_utils import PreTrainedTokenizer
 
 from ...utils import LoggerManager
-from .label import StdLabel
-from .consts import Label2Token, LabeledSample, UnlabeledSample, InfSampleProto
-from .base_arguments_clf import BaseTrainingArgumentsClf
 from ..consts import TRAINING_STAGE
+from .base_arguments_clf import BaseTrainingArgumentsClf
 from .base_dataset_clf import BaseDatasetClf
+from .consts import LabeledSample, UnlabeledSample, InfSampleProto
 from .data_reader_clf import DataReaderClf
+from .label import StdLabel
 
 
 class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
@@ -81,6 +81,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
     def class_num(self) -> int:
         return len(self._label.label2token)
     _train_sample_list: Optional[List[LabeledSample]] = None
+
     @property
     def train_sample_list(self) -> List[LabeledSample]:
         if self._train_sample_list is None:
@@ -88,6 +89,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         return self._train_sample_list
 
     _dev_sample_list: Optional[List[LabeledSample]] = None
+
     @property
     def dev_sample_list(self) -> List[LabeledSample]:
         if self._dev_sample_list is None:
@@ -95,6 +97,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         return self._dev_sample_list
 
     _test_sample_list: Optional[List[LabeledSample]] = None
+
     @property
     def test_sample_list(self) -> List[LabeledSample]:
         """离线测试数据集"""
@@ -103,6 +106,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         return self._test_sample_list
 
     _online_test_sample_list: Optional[List[UnlabeledSample]] = None
+
     @property
     def online_test_sample_list(self) -> List[UnlabeledSample]:
         """推理数据集"""
@@ -144,7 +148,7 @@ class BaseDataModuleClf(LightningDataModule, metaclass=ABCMeta):
         return new_dev
 
     #############################################################################################
-    ## abstract
+    # abstract
     #############################################################################################
 
     @abstractmethod

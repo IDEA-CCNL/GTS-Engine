@@ -2,9 +2,10 @@
 
 将所有需要复用的常量定义在这里，防止循环导入。
 """
+from enum import Enum
 from typing import Optional
 from typing_extensions import TypedDict
-from enum import Enum
+
 from torch import Tensor
 
 

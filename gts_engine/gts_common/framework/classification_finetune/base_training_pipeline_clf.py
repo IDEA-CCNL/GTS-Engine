@@ -2,53 +2,55 @@ from abc import abstractmethod, ABCMeta
 from dataclasses import asdict
 import datetime
 from logging import Logger
-import re
 import os
+from pathlib import Path
+import re
 import shutil
-from transformers import AutoTokenizer, AutoModelForMaskedLM
-from transformers.tokenization_utils import PreTrainedTokenizer
+from typing import List, Literal, Tuple, Dict, Union
+
+from pydantic import DirectoryPath
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger, TensorBoardLogger
-from typing import List, Literal, Tuple, Dict, Union, Any
 import torch
-from pathlib import Path
-from pydantic import DirectoryPath
+from transformers import AutoTokenizer, AutoModelForMaskedLM
+from transformers.tokenization_utils import PreTrainedTokenizer
 
-from ...utils import LoggerManager
 from ...components import TokenizerGenerator
-from .label import StdLabel
+from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
+from ...utils import LoggerManager
+from ...utils.json_utils import dump_json_list, load_json_list, dump_json
+from ...utils.path import get_file_size
+from ...utils.statistics import interval_mean, acc
 from ..base_training_pipeline import BaseTrainingPipeline
 from ..consts import TRAINING_STAGE
-from ...utils.json_utils import dump_json_list, load_json_list, dump_json, load_json
-from ...utils.path import get_file_size
-from ...components.metrics.clf_evaluation import get_confusion_matrix, get_classification_report
-from ...utils.statistics import interval_mean, acc
 from .base_arguments_clf import BaseTrainingArgumentsClf
 from .base_data_module_clf import BaseDataModuleClf
 from .base_lightnings_clf import BaseTrainingLightningClf
 from .consts import DevOutput, LabeledSample, InfSampleProto, PredictionResult, TrainingSettings
 from .data_reader_clf import DataReaderClf
+from .label import StdLabel
+
 
 class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
-    
+
     _args: BaseTrainingArgumentsClf
     _mode_name: str = "classification_ft"
-    
+
     #############################################################################################
-    ## overwrite
+    # overwrite
     #############################################################################################
-    
+
     def _before_training(self) -> None:
         self._logger = self._get_logger()
         self._logger.info(f"use saving path: {self._output_dir}")
         self._logger.info(f"log_file: {self._log_file}")
-        self._logger.info("selecting pretrainde model...") 
+        self._logger.info("selecting pretrainde model...")
         self._select_pretrained_model()
         self._logger.info("generate tokenizer...")
         self._tokenizer = self._generate_tokenizer()
         self._logger.info("loading label...")
         self._label = self._load_label()
-        
+
     def _train(self) -> None:
         self._data_module = self._get_data_module()
         self._data_module.reparse_args()
@@ -56,7 +58,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         self._trainer = self._get_trainer()
         self._logger.info(f"used gpus: {self._trainer.gpus}")
         self._fit()
-        
+
     def _after_training(self) -> None:
         self._logger.info("select model from checkpoints...")
         best_ckpt = self._select_best_model_from_ckpts()
@@ -73,7 +75,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         self._logger.info("generating inference model...")
         state_dict = self._load_ckpt(best_ckpt).get_model_state_dict()
         self._inference_lightning = self._get_inf_lightning()
-        self._inference_lightning.load_model_from_state_dict(state_dict) 
+        self._inference_lightning.load_model_from_state_dict(state_dict)
         self._inference_lightning.model.eval()
         self._logger.info("generate prediction file...")
         self._generate_prediction_file()
@@ -97,27 +99,27 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         if os.path.exists(lightning_logs_path := os.path.join(self._output_dir, "lightning_logs")):
             shutil.rmtree(lightning_logs_path)
         self._copy_output_files()
-    
+
     #############################################################################################
-    ## private
+    # private
     #############################################################################################
-    
+
     #############################################################################################
-    ##################################### before training #######################################
-    
+    # before training
+
     def _get_logger(self) -> Logger:
         now_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         self._task_name = f"{self._mode_name}_{self._args.dataset}_{now_date}"
         self._log_file = os.path.join(self._args.log_dir, self._task_name + ".log")
         LoggerManager.set_logger(self._args.logger, self._log_file)
         return LoggerManager.get_logger(self._args.logger)
-       
+
     @property
     def _output_dir(self) -> DirectoryPath:
         """输出地址"""
         return self._args.ft_output_dir
-    
-    def _select_pretrained_model(self): # todo 优化可读性
+
+    def _select_pretrained_model(self):  # todo 优化可读性
         if self._args.selected_pretrained_model_dir is not None and os.path.exists(self._args.selected_pretrained_model_dir):
             pretrained_model_dir = self._args.selected_pretrained_model_dir
             self._logger.info(f"using selected pretrained model: {pretrained_model_dir}")
@@ -140,13 +142,13 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 pretrained_model_dir = os.path.join(self._args.pretrained_model_root, model)
                 self._logger.info(f"using auto selected pretrained model: {pretrained_model_dir}")
         self._args.pretrained_model_dir = Path(pretrained_model_dir)
-        
+
     def _generate_tokenizer(self) -> PreTrainedTokenizer:
         if not os.path.exists(self._args.pretrained_model_dir):
             pretrained_model_dir, model_name = os.path.split(self._args.pretrained_model_dir)
-            if model_name=="chinese-macbert-base":
+            if model_name == "chinese-macbert-base":
                 huggingface_model_name = "hfl/chinese-macbert-base"
-            elif model_name=="ernie-1.0-base-zh":
+            elif model_name == "ernie-1.0-base-zh":
                 huggingface_model_name = "xiaoqin/ernie-1.0-base-zh"
             else:
                 huggingface_model_name = "IDEA-CCNL/Erlangshen-MacBERT-110M-BinaryClassification-Chinese"
@@ -158,30 +160,30 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             shutil.rmtree(cache_path)
             self._logger.info("local pretrained model path does not exist, model %s is downloaded from huggingface." % huggingface_model_name)
         return TokenizerGenerator.generate_tokenizer(self._args.pretrained_model_dir)
-    
+
     def _load_label(self):
         try:
-            assert(self._args.label2id_path is not None)
-        except:
+            assert (self._args.label2id_path is not None)
+        except Exception:
             raise Exception("no label2id path is passed")
         return StdLabel(self._args.label2id_path)
-    
+
     #############################################################################################
-    ##################################### training ###########################################
-        
+    # training
+
     def _get_lightning_loggers(self) -> List[PlLogger]:
         tb_logger = TensorBoardLogger(
             save_dir=str(self._args.log_dir),
             name="tensor_board_logs",
             version=self._task_name,
-            max_queue=2, 
+            max_queue=2,
             flush_secs=5
         )
         return [tb_logger]
-    
+
     #############################################################################################
-    ##################################### after training #############################################
-    
+    # after training
+
     def _select_best_model_from_ckpts(self) -> str:
         """从保存的多个checkpoints中选择在全样本验证数据中表现最好的，返回checkpoint路径"""
         ckpt_file_list = self._ckpt_file_list
@@ -196,34 +198,33 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         best_ckpt_tuple = max(acc_ckpt_tuple_list, key=lambda tp: tp[0])
         self._logger.info(f"best checkpoint dev acc: {best_ckpt_tuple[0]:.4f}")
         return best_ckpt_tuple[1]
-    
+
     @property
     def _ckpt_file_list(self) -> List[str]:
         file_list = os.listdir(self._output_dir)
         ckpt_file_list = [os.path.join(self._output_dir, file) for file in file_list if re.match(r"^.*\.ckpt$", file) is not None]
         return ckpt_file_list
-    
+
     def _dev_from_ckpt(self, checkpoint_path: str, stage: Literal[TRAINING_STAGE.TEST, TRAINING_STAGE.VALIDATION]) -> DevOutput:
         """输出对应checkpoint的验证/测试结果"""
         model = self._load_ckpt(checkpoint_path)
         data_loader = self._data_module.test_dataloader(stage=TRAINING_STAGE.TEST) if stage == TRAINING_STAGE.TEST else self._data_module.val_dataloader(stage=TRAINING_STAGE.VALIDATION, load_ratio=self._args.load_data_ratio)
         eval_output = self._trainer.validate(
-            model=model, 
-            dataloaders = data_loader,
+            model=model,
+            dataloaders=data_loader,
             verbose=False
         )
         dev_acc = eval_output[0]["dev_acc"]
         dev_loss = eval_output[0]["dev_loss"]
         return DevOutput(dev_loss=dev_loss, dev_acc=dev_acc)
-    
+
     def _load_ckpt(self, checkpoint_path: str) -> BaseTrainingLightningClf:
         return type(self._training_lightning).load_from_checkpoint(
-                checkpoint_path,
-                args=self._args,
-                class_num=len(self._label.label2token),
-                sample_num=self._data_module.train_sample_num
-            )
-    
+            checkpoint_path,
+            args=self._args,
+            class_num=len(self._label.label2token),
+            sample_num=self._data_module.train_sample_num)
+
     def _implement_test(self, ckpt: str) -> None:
         dev_output = self._dev_from_ckpt(ckpt, TRAINING_STAGE.TEST)
         self._logger.info(f"training model test acc: {dev_output.dev_acc:.4f}")
@@ -248,7 +249,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 model=self._inference_lightning,
                 dataloaders=self._data_module.val_dataloader(stage=TRAINING_STAGE.INFERENCE)
             )
-            dev_results = self._generate_prediction_results(dev_prediction_output, self._data_module.dev_sample_list) # type: ignore
+            dev_results = self._generate_prediction_results(dev_prediction_output, self._data_module.dev_sample_list)  # type: ignore
             dump_json_list(dev_results, os.path.join(self._output_dir, "test_prediction_results.json"))
         if self._args.test_data_path is None:
             self._logger.info(
@@ -262,7 +263,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 model=self._inference_lightning,
                 dataloaders=self._data_module.test_dataloader(stage=TRAINING_STAGE.INFERENCE)
             )
-            test_results = self._generate_prediction_results(test_prediction_output, self._data_module.test_sample_list) # type: ignore
+            test_results = self._generate_prediction_results(test_prediction_output, self._data_module.test_sample_list)  # type: ignore
             dump_json_list(test_results, os.path.join(self._output_dir, "offline_test_prediction_results.json"))
         if self._args.online_test_data_path is None:
             self._logger.info(
@@ -276,7 +277,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 model=self._inference_lightning,
                 dataloaders=self._data_module.online_test_dataloader()
             )
-            online_test_results = self._generate_prediction_results(online_test_prediction_output, self._data_module.online_test_sample_list) # type: ignore
+            online_test_results = self._generate_prediction_results(online_test_prediction_output, self._data_module.online_test_sample_list)  # type: ignore
             dump_json_list(online_test_results, os.path.join(self._output_dir, "online_test_prediction_results.json"))
 
     def _generate_prediction_results(self, prediction_output: Dict[int, str], sample_list: Union[List[InfSampleProto], List[LabeledSample]]) -> List[PredictionResult]:
@@ -289,7 +290,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         for idx, sample in enumerate(sample_list):
             prediction = prediction_output[idx]
             content = sample.text
-            true_label = self._label.id2label[sample.label_id_clf].label if hasattr(sample, "label_id_clf") else None # type: ignore
+            true_label = self._label.id2label[sample.label_id_clf].label if hasattr(sample, "label_id_clf") else None  # type: ignore
             result_list.append(PredictionResult(
                 id=sample.id,
                 content=content,
@@ -299,12 +300,12 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
             if hasattr(sample, "label_id_clf"):
                 y_true.append(sample.label_id_clf)  # type: ignore
             y_pred.append(label2id[prediction])
-        if len(y_true)>0:
+        if len(y_true) > 0:
             clf_report = get_classification_report(y_true, y_pred, id2label)
             accuracy = clf_report.pop('accuracy')
             self._logger.info(f"acc is: {accuracy:.4f}")
         return result_list
-            
+
     def _export_onnx(self) -> None:
         batch_size = 2
         seq_len = 64
@@ -338,7 +339,7 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         }
         self._inference_lightning.model.eval()
         torch.onnx.export(
-            self._inference_lightning.model.cuda(0), 
+            self._inference_lightning.model.cuda(0),
             (dummy_input_ids, dummy_input_mask, dummy_input_seg),
             os.path.join(self._output_dir, "model.onnx"),
             verbose=False,
@@ -393,20 +394,20 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
                 "model_size": model_size
             }
         dump_json(eval_results, os.path.join(self._output_dir, "result.json"), indent=2)
-        
+
     def _load_test_results(self, path: str):
         test_results_list = list(load_json_list(path, PredictionResult))
         id2label = {key: val.label for key, val in self._label.id2label.items()}
         label2id = {val: key for key, val in id2label.items()}
-        y_true = [label2id[result.label] for result in test_results_list] # type: ignore
+        y_true = [label2id[result.label] for result in test_results_list]  # type: ignore
         y_pred = [label2id[result.predict] for result in test_results_list]
         return y_true, y_pred, id2label
-    
+
     def _log_test_acc_on_inf_model(self) -> None:
         y_true, y_pred, _ = self._load_test_results(os.path.join(self._output_dir, "offline_test_prediction_results.json"))
         acc_ = acc(y_true, y_pred)
         self._logger.info(f"inference model test acc: {acc_:.4f}")
-    
+
     def _copy_output_files(self) -> None:
         shutil.copy(os.path.join(self._args.pretrained_model_dir, "vocab.txt"), os.path.join(self._output_dir, "vocab.txt"))
         shutil.copy(os.path.join(self._args.pretrained_model_dir, "config.json"), os.path.join(self._output_dir, "config.json"))
@@ -417,28 +418,27 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
         shutil.copy(os.path.join(self._output_dir, "config.json"), os.path.join(self._args.student_output_dir, "config.json"))
         if os.path.exists(os.path.join(self._output_dir, "test_prediction_results.json")):
             shutil.copy(os.path.join(self._output_dir, "test_prediction_results.json"), os.path.join(self._args.student_output_dir, "test_prediction_results.json"))
-    
-    
+
     #############################################################################################
-    ## abstract 
+    # abstract
     #############################################################################################
-    
+
     @abstractmethod
-    def _get_data_module(self) -> BaseDataModuleClf: 
+    def _get_data_module(self) -> BaseDataModuleClf:
         """根据模式需要处理和加载数据"""
-        
+
     @abstractmethod
-    def _get_training_lightning(self) -> BaseTrainingLightningClf: 
+    def _get_training_lightning(self) -> BaseTrainingLightningClf:
         """根据模式需要加载训练模型"""
-        
+
     @abstractmethod
     def _get_trainer(self) -> Trainer:
         """根据模式需要定义和加载Lightning Trainer"""
-        
+
     @abstractmethod
     def _fit(self) -> None:
         """根据模式需要定义和实施训练"""
-        
+
     @abstractmethod
     def _get_inf_lightning(self) -> BaseTrainingLightningClf:
         """根据模式需要加载推理模型"""

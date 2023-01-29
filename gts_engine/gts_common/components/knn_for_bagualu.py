@@ -1,11 +1,9 @@
 """检索增强中的knn插值模块"""
-import os
-import json
 import itertools
-import torch
 import numpy as np
-from tqdm import tqdm
 from sklearn.metrics import pairwise_distances, accuracy_score
+import torch
+
 
 class PrototypeEnhancer(object):
     def __init__(self):
@@ -28,6 +26,7 @@ class PrototypeEnhancer(object):
         print("enhance num:", enhance_num)
         return label_enhanced_embeds_dict
 
+
 class WhiteningTransformer(object):
     def __init__(self):
         self.kernel = None
@@ -46,7 +45,7 @@ class WhiteningTransformer(object):
             W = W[:, :n_components]
         self.kernel = W
         self.bias = -mu
-        return self.kernel ,self.bias
+        return self.kernel, self.bias
 
     def transform_raw(self, embeds):
         embeds = (embeds + self.bias).dot(self.kernel)
@@ -60,6 +59,7 @@ class WhiteningTransformer(object):
         embeds = embeds / torch.clamp(norms, 1e-8, np.inf)
         return embeds
 
+
 class BasicDatastore(object):
     def __init__(self, n_components=64):
         self.embeds = None
@@ -71,7 +71,7 @@ class BasicDatastore(object):
         self.n_components = n_components
         self.kernel = None
         self.bias = None
-    
+
     def get_embed_transformer(self):
         return self.embed_transformer
 
@@ -95,7 +95,7 @@ class BasicDatastore(object):
 
     def transform_embed(self, embeds):
         return self.embed_transformer.transform(embeds, self.kernel, self.bias)
-    
+
     def transform_embed_raw(self, embeds):
         return self.embed_transformer.transform_raw(embeds)
 
@@ -106,13 +106,14 @@ class BasicDatastore(object):
         embeds = []
         probs = []
         device = None
-        label_embeds_dict = {} # 每个label下所有样本的向量表示
+        label_embeds_dict = {}  # 每个label下所有样本的向量表示
         for batch in dataset:
             labels = batch['label_id_clf']
-            inference_output = classify_model(input_ids=batch['input_ids'],
-                    input_mask=batch['input_mask'],
-                    input_seg=batch['input_seg'],
-                    prompt_gate=False)
+            inference_output = classify_model(
+                input_ids=batch['input_ids'],
+                input_mask=batch['input_mask'],
+                input_seg=batch['input_seg'],
+                prompt_gate=False)
             device = inference_output['positions'].device
             sample_embeds = np.array(inference_output['embeds'].detach().cpu())
             inner_probs = np.array(inference_output['probs'].detach().cpu())
@@ -127,9 +128,9 @@ class BasicDatastore(object):
                 for label, embed in zip(labels, sample_embeds):
                     if label not in label_embeds_dict:
                         label_embeds_dict[label] = []
-                    label_embeds_dict[label].append(embed)   
+                    label_embeds_dict[label].append(embed)
         # 构建句子向量变换器
-        kernel ,bias = self.embed_transformer.preprocess(np.vstack(embeds), self.n_components)
+        kernel, bias = self.embed_transformer.preprocess(np.vstack(embeds), self.n_components)
         # 在样本空间中采样增强datastore
         label_enhanced_embeds_dict = {}
         if self.data_enhancer:
@@ -137,7 +138,7 @@ class BasicDatastore(object):
         for label, enhanced_embeds in label_enhanced_embeds_dict.items():
             enhanced_embeds = np.vstack(enhanced_embeds)
             embeds.append(enhanced_embeds)
-            indices = label.detach().cpu().tolist()* enhanced_embeds.shape[0]
+            indices = label.detach().cpu().tolist() * enhanced_embeds.shape[0]
             probs.append(np.eye(inner_probs.shape[1])[indices])  # type: ignore
         embeds = np.vstack(embeds)
         probs = np.vstack(probs)
@@ -148,7 +149,7 @@ class BasicDatastore(object):
         self.embeds = embeds
         self.probs = torch.tensor(probs).float().to(device=device)
         self.dataset_name = dataset_name
-        
+
         datastore_dict = {
             "embeds": self.embeds,
             "probs": self.probs,
@@ -161,9 +162,10 @@ class BasicDatastore(object):
         print("datastore[%s] embed size:" % dataset_name, embeds.shape)
         return datastore_dict
 
+
 def get_datastore(model, data_model):
     """ 加载or计算索引 """
-    
+
     datastore = BasicDatastore()
     datastore.construct(
         classify_model=model,
@@ -171,12 +173,14 @@ def get_datastore(model, data_model):
     )
     return datastore
 
+
 def softmax_2D(x):
     """Compute the softmax in a numerically stable way."""
     x = x - np.max(x, axis=1, keepdims=True)
     exp_x = np.exp(x)
     softmax_x = exp_x / np.sum(exp_x, axis=1, keepdims=True)
     return softmax_x
+
 
 def get_knn_probs_raw(distances, datastore_probs, k, remove_self=False):
     """numpy算子，计算knn的概率
@@ -187,19 +191,19 @@ def get_knn_probs_raw(distances, datastore_probs, k, remove_self=False):
         k: knn的k值
         remove_self (bool, optional): 计算knn时是否移除自身，当query样本和datastore样本来源相同时，需要设置为True. Defaults to False.
     """
-    nearest_indices = np.argpartition(distances, kth=k, axis=1)[:, :k] # 最近的k个下标
-    nearest_distances = np.take_along_axis(distances, nearest_indices, axis=1) # 最近的k个距离
+    nearest_indices = np.argpartition(distances, kth=k, axis=1)[:, :k]  # 最近的k个下标
+    nearest_distances = np.take_along_axis(distances, nearest_indices, axis=1)  # 最近的k个距离
     if remove_self:
         valid_distances = (nearest_distances >= 1e-5)
         # 有可能存在多个距离等于0的情况，只保留一个
-        invalid_row_indices = np.where(np.count_nonzero(valid_distances, axis=1) != k-1)[0] # 存在问题的行
+        invalid_row_indices = np.where(np.count_nonzero(valid_distances, axis=1) != k - 1)[0]  # 存在问题的行
         for invalid_row_index in invalid_row_indices:
-            invalid_col_indices = np.where(valid_distances[invalid_row_index] == False)[0] # 存在问题的列
+            invalid_col_indices = np.where(valid_distances[invalid_row_index] == False)[0]  # 存在问题的列
             for invalid_col_index in invalid_col_indices[1:]:
-                valid_distances[invalid_row_index][invalid_col_index] = True # 只保留一个
-        nearest_indices = nearest_indices[valid_distances].reshape(distances.shape[0], k-1)
-        nearest_distances = nearest_distances[valid_distances].reshape(distances.shape[0], k-1)
-    nearest_distances = softmax_2D(-1.0 * nearest_distances) # norm distance
+                valid_distances[invalid_row_index][invalid_col_index] = True  # 只保留一个
+        nearest_indices = nearest_indices[valid_distances].reshape(distances.shape[0], k - 1)
+        nearest_distances = nearest_distances[valid_distances].reshape(distances.shape[0], k - 1)
+    nearest_distances = softmax_2D(-1.0 * nearest_distances)  # norm distance
     # nearest_distances = 1.0 - softmax_2D(nearest_distances)
     nearest_prob = np.take(datastore_probs, nearest_indices, axis=0)
     nearest_prob = np.transpose(nearest_prob, (0, 2, 1))
@@ -210,6 +214,7 @@ def get_knn_probs_raw(distances, datastore_probs, k, remove_self=False):
     nearest_prob = np.sum(nearest_prob, axis=2)
     return nearest_prob
 
+
 def get_knn_probs(distances, datastore_probs, k):
     """torch算子，计算knn的概率
 
@@ -218,31 +223,33 @@ def get_knn_probs(distances, datastore_probs, k):
         datastore_probs: 索引对应的样本概率分布
         k: knn的k值
     """
-    nearest_indices = torch.topk(distances, k=k, dim=1, largest=False).indices # 最近的k个下标
-    nearest_distances = torch.gather(distances, 1, nearest_indices) # 最近的k个距离
+    nearest_indices = torch.topk(distances, k=k, dim=1, largest=False).indices  # 最近的k个下标
+    nearest_distances = torch.gather(distances, 1, nearest_indices)  # 最近的k个距离
     m = torch.nn.Softmax(1)
-    nearest_distances = m(-1.0*nearest_distances)
-    nearest_prob = torch.gather(datastore_probs.unsqueeze(0).repeat(nearest_indices.shape[0],1,1), 1, \
-                                        nearest_indices.unsqueeze(-1).repeat(1,1,datastore_probs.shape[-1]))
-    nearest_prob = nearest_prob.permute(0,2,1)
-    nearest_distances = nearest_distances.unsqueeze(2).repeat(1,1,datastore_probs.shape[-1]).permute(0,2,1)
+    nearest_distances = m(-1.0 * nearest_distances)
+    nearest_prob = torch.gather(datastore_probs.unsqueeze(0).repeat(nearest_indices.shape[0], 1, 1), 1,
+                                nearest_indices.unsqueeze(-1).repeat(1, 1, datastore_probs.shape[-1]))
+    nearest_prob = nearest_prob.permute(0, 2, 1)
+    nearest_distances = nearest_distances.unsqueeze(2).repeat(1, 1, datastore_probs.shape[-1]).permute(0, 2, 1)
     nearest_prob = nearest_prob * nearest_distances
     nearest_prob = nearest_prob.sum(2)
     return nearest_prob
 
+
 def grid_search_for_hyper(datastores, dev_dataloader, classify_model):
     classify_model.eval()
-    datastores= [datastores]
+    datastores = [datastores]
     """ 加载验证数据 """
     y_true = []
     classify_probs = []
     sample_embeds = []
     for batch in dev_dataloader:
         labels = batch['label_id_clf']
-        inference_output = classify_model(input_ids=batch['input_ids'],
-                input_mask=batch['input_mask'],
-                input_seg=batch['input_seg'],
-                prompt_gate=False)
+        inference_output = classify_model(
+            input_ids=batch['input_ids'],
+            input_mask=batch['input_mask'],
+            input_seg=batch['input_seg'],
+            prompt_gate=False)
         embeds = np.array(inference_output['embeds'].detach().cpu())
         inner_probs = np.array(inference_output['probs'].detach().cpu())
         y_true.extend(labels)
@@ -255,7 +262,7 @@ def grid_search_for_hyper(datastores, dev_dataloader, classify_model):
     best_acc = 0.0
     best_hyper = {"lambda_values": [], "k_values": []}
     best_y_pred = []
-    
+
     # compute distances
     distance_cache = []
     for datastore in datastores:
@@ -297,11 +304,13 @@ def grid_search_for_hyper(datastores, dev_dataloader, classify_model):
             print("best acc:", round(best_acc * 100, 2), "\tbest hyper:", best_hyper)
 
     return best_hyper, y_true, best_y_pred
-    
+
+
 def pdist(a: torch.Tensor, b: torch.Tensor, p: int = 2) -> torch.Tensor:
-    a=a.unsqueeze(1)
-    b=b.unsqueeze(0)
-    return (a-b).abs().pow(p).sum(-1).pow(1/p)
+    a = a.unsqueeze(1)
+    b = b.unsqueeze(0)
+    return (a - b).abs().pow(p).sum(-1).pow(1 / p)
+
 
 def inference_with_knn(datastore, classify_probs, sample_embeds, best_hyper, whitening=True):
     datastore_embeds = datastore.get_datastore_embed()

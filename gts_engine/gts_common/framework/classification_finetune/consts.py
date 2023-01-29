@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
-from torch import Tensor
 from typing import List, Optional, Protocol, TypedDict, Dict, NamedTuple
+
 from torch import Tensor
-from transformers.tokenization_utils import PreTrainedTokenizer
 from pydantic import BaseModel, Field
 
+
 #############################################################################################
-## Sample & Data
+# Sample & Data
 #############################################################################################
 
 class RawSample(BaseModel):
@@ -14,8 +14,9 @@ class RawSample(BaseModel):
     content: str
     id: int
     label: Optional[str] = None
-    probs: List[float] = Field(default_factory=list) # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
-    
+    probs: List[float] = Field(default_factory=list)  # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
+
+
 @dataclass
 class LabeledSample:
     """数据被加载并初步处理后的字段"""
@@ -26,12 +27,14 @@ class LabeledSample:
     label_id_clf: int
     soft_label: List[float] = field(default_factory=list)
 
+
 @dataclass
 class UnlabeledSample:
     """无标注数据"""
     text: str
     id: int
-    
+
+
 @dataclass
 class PreEncodedTrainSample:
     text: str
@@ -43,6 +46,7 @@ class PreEncodedTrainSample:
     inference_prompt: List[str]
     training_prompt: List[str]
     soft_label: List[float] = field(default_factory=list)
+
 
 @dataclass
 class EncodedTrainSample:
@@ -61,6 +65,7 @@ class EncodedTrainSample:
     my_id: int
     """自定义辅助id"""
 
+
 @dataclass
 class EncodedInfSample:
     input_ids: Tensor
@@ -68,20 +73,24 @@ class EncodedInfSample:
     input_mask: Tensor
     my_id: int
     """自定义辅助id"""
-    
+
+
 class InfSampleProto(Protocol):
     """用于推理的数据格式"""
     id: int
     text: str
 
+
 class InferenceManagerInputSample(BaseModel):
     text: str
+
 
 InferenceManagerInputSampleList = List[InferenceManagerInputSample]
 
 #############################################################################################
-## Prompt & Label
+# Prompt & Label
 #############################################################################################
+
 
 class LabelToken(NamedTuple):
     label: str
@@ -89,27 +98,34 @@ class LabelToken(NamedTuple):
     label_id_clf: int
     key: str
 
+
 class Label(NamedTuple):
     label: str
     key: str
 
+
 Label2Token = Dict[str, LabelToken]
+
 
 class LabelParseOutput(NamedTuple):
     label2token: Label2Token
     id2label: Dict[int, Label]
     label_ids: List[LabelToken]
 
+
 class Label2IdValue(BaseModel):
     id: int
     label_desc_en: Optional[str] = None
     label_desc_zh: Optional[str] = None
-    
+
+
 Label2Id = Dict[str, Label2IdValue]
 
 #############################################################################################
-## In / Out
+# In / Out
 #############################################################################################
+
+
 class TrainingModelOutput(TypedDict):
     loss_total: Tensor
     loss_ce: Tensor
@@ -119,23 +135,27 @@ class TrainingModelOutput(TypedDict):
     loss_rd: Tensor
     loss_ctr: Tensor
     loss_ner: Tensor
-    
+
+
 class InferenceModelOutput(TypedDict):
     positions: Tensor
     probs: Tensor
     embeds: Tensor
 
+
 @dataclass
 class DevOutput:
     dev_loss: float
     dev_acc: float
-    
+
+
 @dataclass
 class PredictionResult:
     id: int
     content: str
     predict: str
     label: Optional[str] = None
+
 
 @dataclass
 class TrainingSettings:
@@ -150,17 +170,20 @@ class TrainingSettings:
     decay_epoch: int
     dropout_rate: float
 
+
 class InferenceManagerOutput(TypedDict):
     predictions: List[str]
     probabilities: List[List[float]]
-    
+
+
 class InfBatch(TypedDict):
     input_ids: Tensor
     input_seg: Tensor
     input_mask: Tensor
     my_id: List[int]
     """自定义辅助id"""
-    
+
+
 class TrainBatch(TypedDict):
     input_ids: Tensor
     input_seg: Tensor

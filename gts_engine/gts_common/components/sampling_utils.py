@@ -9,7 +9,8 @@ class LabeledSampleProto(Protocol):
     包含可读的label属性
     """
     @property
-    def label(self) -> str: ...
+    def label(self) -> str:
+        ...
 
 
 LabeledSampleType = TypeVar("LabeledSampleType", bound=LabeledSampleProto)

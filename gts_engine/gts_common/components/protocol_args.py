@@ -4,9 +4,9 @@ Todo:
     - [ ] (Jiang Yuzhen) 本模块是为了将gts-factory的通用调用协议参数模块化，整合进gts-engine后，
         需要重新考虑存在的必要性。
 """
-from typing import Optional
 from pathlib import Path
 from pydantic import DirectoryPath
+from typing import Optional
 
 from gts_common.framework import BaseArguments
 from gts_common.framework.consts import TRAIN_MODE
@@ -38,7 +38,7 @@ class ProtocolArgs(BaseArguments):
         parser.add_argument(
             "--gts_train_level", type=TRAIN_MODE,
             choices=TRAIN_MODE, dest="train_level",
-            help="运行模式: [0 - default | 1 - student | 2 - gts | 3 - 快速模式]", 
+            help="运行模式: [0 - default | 1 - student | 2 - gts | 3 - 快速模式]",
             required=True)
 
     def _after_parse(self) -> None:

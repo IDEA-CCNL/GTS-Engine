@@ -1,20 +1,20 @@
-from torch.utils.data import Dataset
-from typing import Generic, Protocol, Sequence, Union, TypeVar
-from dataclasses import asdict, is_dataclass
-
-from .base_arguments_clf import BaseTrainingArgumentsClf
-from .label import StdLabel
-from .consts import PreTrainedTokenizer
 from collections import defaultdict
+from dataclasses import asdict
+from typing import Protocol, Sequence
+
+from torch.utils.data import Dataset
+
+from .consts import PreTrainedTokenizer
+from .label import StdLabel
 
 
 class RawSampleProto(Protocol):
     text: str
 
+
 class DatasetArgsProto(Protocol):
     inference_prompt: str
     prefix_prompt: str
-    
 
 
 class BaseDatasetClf(Dataset):
@@ -36,22 +36,21 @@ class BaseDatasetClf(Dataset):
 
     def __len__(self):
         return len(self._pre_encoded_sample_list)
-    
+
     def __getitem__(self, index):
         encoded_sample = self._encode_on_iter(self._pre_encoded_sample_list[index], index)
         return asdict(encoded_sample)
-    
+
     def __getclass__(self, index):
-        return self.sample_list[index].label_id_clf # type: ignore
-    
-    def _encode_before_iter(self, sample: RawSampleProto, idx: int): 
+        return self.sample_list[index].label_id_clf  # type: ignore
+
+    def _encode_before_iter(self, sample: RawSampleProto, idx: int):
         """迭代前编码"""
         return sample
-    
+
     def _encode_on_iter(self, sample, idx: int):
         """迭代中编码
-        
+
             用于有随机成分的编码，使每次迭代时编码不同
         """
         return sample
-        

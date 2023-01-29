@@ -1,13 +1,13 @@
 """Tokenizer生成器模块"""
 import os
+from pydantic import DirectoryPath
+from types import MethodType
 from typing import Dict, Union
 from transformers.tokenization_utils import PreTrainedTokenizer
 from transformers.models.auto.tokenization_auto import AutoTokenizer
-from types import MethodType
-from pydantic import DirectoryPath
-
 
 from gts_common.utils.json_utils import load_json
+
 
 class TokenizerGenerator:
     """Tokenizer生成器

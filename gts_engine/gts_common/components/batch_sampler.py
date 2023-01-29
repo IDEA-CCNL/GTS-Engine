@@ -1,6 +1,6 @@
 """class-wise的样本采样"""
 import random
-from torch.utils.data import DataLoader, Sampler, Dataset, distributed
+from torch.utils.data import Sampler
 
 
 class PairBatchSampler(Sampler):
@@ -12,8 +12,8 @@ class PairBatchSampler(Sampler):
         indices = list(range(len(self.dataset)))
         random.shuffle(indices)
         for k in range(len(self)):
-            offset = k*self.batch_size
-            batch_indices = indices[offset:offset+self.batch_size]
+            offset = k * self.batch_size
+            batch_indices = indices[offset:offset + self.batch_size]
 
             pair_indices = []
             for idx in batch_indices:
@@ -23,4 +23,4 @@ class PairBatchSampler(Sampler):
             yield batch_indices + pair_indices
 
     def __len__(self):
-        return (len(self.dataset)+self.batch_size-1) // self.batch_size
+        return (len(self.dataset) + self.batch_size - 1) // self.batch_size

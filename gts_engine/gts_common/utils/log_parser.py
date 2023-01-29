@@ -6,9 +6,9 @@ Todo:
     - [ ] (Jiang Yuzhen) 完善docstring和用例（如果工具有后续的使用和维护需要）
 """
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Dict, Optional
-import re
 import os
+import re
+from typing import Callable, Dict, Optional
 
 
 Matcher = Callable[[str], Optional[str]]

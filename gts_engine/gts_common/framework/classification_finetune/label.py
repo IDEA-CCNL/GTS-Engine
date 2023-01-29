@@ -1,25 +1,27 @@
-from typing import Any, Dict, NamedTuple, Union, List
 from abc import abstractmethod, ABCMeta
 from pydantic import FilePath
+from typing import Dict, Union
 
 from .consts import LabelParseOutput, LabelToken, Label
 from .data_reader_clf import DataReaderClf
 
+
 class LabelBase(metaclass=ABCMeta):
-    
+
     def __init__(self, label2id_path: Union[str, FilePath]) -> None:
         self._mask_token = '[MASK]'
         self._label2id_path = label2id_path
         self._label_des2tag = DataReaderClf.read_label2id(label2id_path)
         self.parse_label()
-    
+
     @abstractmethod
     def parse_label(self) -> LabelParseOutput:
         pass
-    
+
     @property
     def mask_token(self):
         return self._mask_token
+
 
 class StdLabel(LabelBase):
     """通用Label"""
@@ -34,7 +36,7 @@ class StdLabel(LabelBase):
             id = val.id
             label2token[key] = LabelToken(label, i, id, key)
             id2label[id] = Label(label, key)
-            
+
         label_ids = [ele for ele in label2token.values()]
         label_ids.sort()
         self.label2token = label2token

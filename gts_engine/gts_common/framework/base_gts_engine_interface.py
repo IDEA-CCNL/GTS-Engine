@@ -8,8 +8,8 @@ Todo:
         来维护之后，可以直接用统一的接口启动qiankunding和bagualu，而不是用胶水层的方式。
 """
 from abc import abstractmethod, ABCMeta, abstractproperty
-from typing import Type, List
 from enum import Enum
+from typing import Type, List
 
 from gts_common.arguments import GtsEngineArgs
 
