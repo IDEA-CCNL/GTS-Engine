@@ -6,10 +6,10 @@
     * TokenizerGenerator: Tokenizer生成器
     * eda_utils: EDA数据增强
     * lightning_callbacks: pytorch_lightning自定义callback集
-    * losses: ?
-    * metrics: ?
+    * losses: loss计算工具集
+    * metrics: 评估工具集
     * knn_for_bagualu: knn相关工具集
-    * sampling_utils: ?
+    * sampling_utils: 抽样、样本筛选相关工具集
     * schedulers: pytorch 学习率scheduler集
     * text_processing_tools: 文本处理工具集
 

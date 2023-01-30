@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(__file__))
 
 from pipelines import *
 from gts_common.utils.tokenization import get_train_tokenizer
-from gts_common.utils import knn_utils
+from gts_common.components.retrieval_augmentations import knn_utils
 
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI

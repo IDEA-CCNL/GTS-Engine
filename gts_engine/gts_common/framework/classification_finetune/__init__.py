@@ -9,7 +9,7 @@
     * BaseDatasetClf: 句子分类torch.Dataset基类，主要包含数据编码逻辑
     * BaseTrainingLightningClf: 句子分类用于训练模型的pl_lightning.LightningModule基类
     * BaseInferenceLightningClf: 句子分类用于推理模型的pl_lightning.LightningModule基类
-    * StdPrompt: ?
+    * StdLabel: 标签处理器
     * DataReaderClf: 句子分类任务数据读取器
     * consts: 句子分类任务特定常量集合
     * mask_tools: 句子分类任务特定mask工具集

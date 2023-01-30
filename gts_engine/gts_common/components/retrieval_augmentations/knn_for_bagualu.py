@@ -1,4 +1,4 @@
-"""检索增强中的knn插值模块"""
+"""检索增强中的knn插值模块-适配八卦炉引擎"""
 import itertools
 import numpy as np
 from sklearn.metrics import pairwise_distances, accuracy_score

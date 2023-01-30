@@ -10,7 +10,7 @@ from gts_common.framework.classification_finetune import BaseTrainingPipelineClf
 from gts_common.framework.classification_finetune.consts import InferenceManagerInputSample
 from gts_common.framework.consts import TRAINING_STAGE
 from gts_common.components.lightning_callbacks.adaptive_val_intervals import AdaptiveValIntervalTrainLoss, ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed
-from gts_common.components.knn_for_bagualu import BasicDatastore, grid_search_for_hyper, get_datastore
+from gts_common.components.retrieval_augmentations.knn_for_bagualu import BasicDatastore, grid_search_for_hyper, get_datastore
 
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 from ...dataloaders.text_classification.data_module_std import DataModuleClfStd

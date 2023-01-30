@@ -14,7 +14,7 @@ from gts_common.framework.consts import BertInput
 from gts_common.framework.classification_finetune.consts import LabelToken, TrainingModelOutput, InferenceModelOutput
 from gts_common.framework.classification_finetune import StdLabel
 from gts_common.components.losses import MaxMultiLogits, LabelSmoothing
-from gts_common.components.knn_for_bagualu import inference_with_knn
+from gts_common.components.retrieval_augmentations.knn_for_bagualu import inference_with_knn
 
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 
