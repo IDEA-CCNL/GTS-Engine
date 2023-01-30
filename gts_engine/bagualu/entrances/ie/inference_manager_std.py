@@ -17,8 +17,8 @@ from typing import List
 
 from transformers import AutoTokenizer
 
-from ...lib.framework import BaseInferenceManager
-from ...lib.framework.mixin import OptionalLoggerMixin
+from gts_common.framework import BaseInferenceManager
+from gts_common.framework.mixin import OptionalLoggerMixin
 from ...models.ie import BagualuIEModel, BagualuIELitModel, BagualuIEExtractModel
 from ...arguments.ie import InferenceArgumentsIEStd
 from ...dataloaders.ie import data_segment, data_segment_restore
