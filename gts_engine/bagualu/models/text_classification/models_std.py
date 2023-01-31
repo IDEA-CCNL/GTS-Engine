@@ -10,11 +10,11 @@ from pathlib import Path
 import numpy as np
 from sklearn.metrics import pairwise_distances
 
-from ...lib.framework.consts import BertInput
-from ...lib.framework.classification_finetune.consts import PromptToken, TrainingModelOutput, InferenceModelOutput
-from ...lib.framework.classification_finetune import StdPrompt
-from ...lib.components.losses import MaxMultiLogits, LabelSmoothing
-from ...lib.components.knn_tools import inference_with_knn
+from gts_common.framework.consts import BertInput
+from gts_common.framework.classification_finetune.consts import LabelToken, TrainingModelOutput, InferenceModelOutput
+from gts_common.framework.classification_finetune import StdLabel
+from gts_common.components.losses import MaxMultiLogits, LabelSmoothing
+from gts_common.components.retrieval_augmentations.knn_for_bagualu import inference_with_knn
 
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 
@@ -24,7 +24,7 @@ class TrainingModelClfStd(nn.Module):
     def __init__(self, args, pretrained_model_dir: Union[str, Path], class_num: int, last_layers: int = 1):
         super().__init__()
         self._config = BertConfig.from_pretrained(pretrained_model_dir)
-        args.memory_optimization_setting
+        args.set_memory_optimization()
         if args.use_gradient_checkpointing=="True":
             self._config.gradient_checkpointing=True
             print("使用gradient_checkpointing！")
@@ -80,14 +80,15 @@ class TrainingModelClfStd(nn.Module):
 
 class InfModelArgsProto(Protocol):
     pretrained_model_dir: Path
-    inference_label_prompt: str
+    prefix_prompt: str
+    inference_prompt: str
     max_length: int
 
 class InferenceModelClfStd(nn.Module):
 
     def __init__(
         self,
-        prompt: StdPrompt,
+        label: StdLabel,
         args: InfModelArgsProto,
         tokenizer: PreTrainedTokenizer,
         last_layers: int = 1,
@@ -102,14 +103,14 @@ class InferenceModelClfStd(nn.Module):
         self._multiply = 1 if last_layers == 4 else 3
         
         self._max_logits = MaxMultiLogits(
-            class_num=len(prompt.label2token),
+            class_num=len(label.label2token),
             hidden_size=last_layers * self._config.hidden_size, 
             multiply=self._multiply
         )
         self._softmax = torch.nn.Softmax(dim=-1)
         
-        predict_prompt = args.inference_label_prompt
-        prompt_ = prompt.prompt + predict_prompt
+        predict_prompt = args.inference_prompt
+        prompt_ = args.prefix_prompt + predict_prompt
         prompt_tokens = tokenizer.tokenize(prompt_)
         encode_dict = tokenizer.encode_plus(prompt_)
         self._prompt_ids = torch.tensor(

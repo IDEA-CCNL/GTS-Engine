@@ -2,8 +2,8 @@ from typing import List, Optional, Dict
 from pydantic import BaseModel, DirectoryPath, FilePath
 from pathlib import Path
 
-from ...lib.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
-from ...lib.utils.json_processor import dump_json, load_json
+from gts_common.framework.base_gts_engine_interface import TRAIN_MODE, BaseGtsEngineInterface, GtsEngineArgs
+from gts_common.utils.json_utils import dump_json, load_json
 
 from .training_pipeline_std import TrainingPipelineClfStd
 from .inference_manager_std import InferenceManagerClfStd
@@ -28,6 +28,8 @@ class TypeCheckedTrainArgs(BaseModel):
     test_batchsize: int
     max_length: int
     learning_rate: float
+    max_epochs: int
+    min_epochs: int
     
 class TypeCheckedInfArgs(BaseModel):
     model_save_dir: DirectoryPath
@@ -61,6 +63,8 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
             test_batchsize=args.test_batchsize,
             max_length=args.max_len,
             learning_rate=args.lr,
+            max_epochs=args.max_epochs,
+            min_epochs=args.min_epochs,
         )
         args_parse_list: List[str] = []
         args_parse_list.extend(
@@ -90,6 +94,8 @@ class GtsEngineInterfaceClfStd(BaseGtsEngineInterface):
             ["--max_length", str(type_checked_args.max_length)])
         args_parse_list.extend(
             ["--learning_rate", str(type_checked_args.learning_rate)])
+        args_parse_list.extend(["--max_epochs", str(type_checked_args.max_epochs)])
+        args_parse_list.extend(["--min_epochs", str(type_checked_args.min_epochs)])
         if type_checked_args.test_data_path is not None:
             args_parse_list.extend(
                 ["--test_data_path", str(type_checked_args.test_data_path)])

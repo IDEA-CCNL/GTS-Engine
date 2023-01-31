@@ -19,7 +19,7 @@ from pathlib import Path
 from pydantic import BaseModel, DirectoryPath, FilePath
 
 from gts_common.arguments import GtsEngineArgs
-from ...lib.framework.base_gts_engine_interface import (TRAIN_MODE,
+from gts_common.framework.base_gts_engine_interface import (TRAIN_MODE,
                                                        BaseGtsEngineInterface)
 from .training_pipeline_std import TrainingPipelineIEStd
 from .inference_manager_std import InferenceManagerIEStd

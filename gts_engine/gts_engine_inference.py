@@ -9,7 +9,7 @@ sys.path.append(os.path.dirname(__file__))
 from gts_common.registry import PIPELINE_REGISTRY
 from pipelines import *
 # 设置gpu相关的全局变量
-import qiankunding.utils.globalvar as globalvar
+import gts_common.utils.globalvar as globalvar
 globalvar._init()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
