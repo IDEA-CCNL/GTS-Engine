@@ -6,11 +6,11 @@ import os
 import shutil
 import numpy as np
 
-from ...lib.framework.classification_finetune import BaseTrainingPipelineClf
-from ...lib.framework.classification_finetune.consts import InferenceManagerInputSample
-from ...lib.framework.consts import TRAINING_STAGE
-from ...lib.components.lightning_callbacks.adaptive_val_intervals import AdaptiveValIntervalTrainLoss, ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed
-from ...lib.components.knn_tools import BasicDatastore, grid_search_for_hyper, get_datastore
+from gts_common.framework.classification_finetune import BaseTrainingPipelineClf
+from gts_common.framework.classification_finetune.consts import InferenceManagerInputSample
+from gts_common.framework.consts import TRAINING_STAGE
+from gts_common.components.lightning_callbacks.adaptive_val_intervals import AdaptiveValIntervalTrainLoss, ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed
+from gts_common.components.retrieval_augmentations.knn_for_bagualu import BasicDatastore, grid_search_for_hyper, get_datastore
 
 from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
 from ...dataloaders.text_classification.data_module_std import DataModuleClfStd
@@ -22,7 +22,7 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
     _mode_name: str = "ft_std"
     
     def _get_data_module(self) -> DataModuleClfStd:
-        return DataModuleClfStd(self._args, self._prompt, self._tokenizer)
+        return DataModuleClfStd(self._args, self._label, self._tokenizer)
     
     def _get_training_lightning(self) -> TrainLightningClfStd:
         return TrainLightningClfStd(self._args, self._data_module.class_num, self._data_module.train_sample_num)
@@ -33,7 +33,8 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             accelerator="gpu", 
             devices=self._args.gpu_num, 
             callbacks=callbacks,
-            max_epochs=self._args.epoch,
+            max_epochs=self._args.max_epochs,
+            min_epochs=self._args.min_epochs,
             gradient_clip_val=self._args.clip_norm,
             default_root_dir=str(self._output_dir),
             enable_progress_bar=False,
@@ -63,9 +64,9 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
         
     def _get_inf_lightning(self, use_knn=False, datastore=None, best_hyper=None) -> PredictLightningClfStd:
         if use_knn:
-            return PredictLightningClfStd(self._prompt, self._args, self._tokenizer, datastore=datastore, best_hyper=best_hyper)
+            return PredictLightningClfStd(self._label, self._args, self._tokenizer, datastore=datastore, best_hyper=best_hyper)
         else:
-            return PredictLightningClfStd(self._prompt, self._args, self._tokenizer)
+            return PredictLightningClfStd(self._label, self._args, self._tokenizer)
     
     def __get_callbacks(self, dev_num: int) -> List[Callback]:
         model_summary = ModelSummary(max_depth=2)

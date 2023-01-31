@@ -17,8 +17,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 sys.path.append(os.path.dirname(__file__))
 
 from pipelines import *
-from qiankunding.utils.tokenization import get_train_tokenizer
-from qiankunding.utils import knn_utils
+from gts_common.utils.tokenization import get_train_tokenizer
+from gts_common.components.retrieval_augmentations import knn_utils
 
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
@@ -26,9 +26,9 @@ from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.arguments import GtsEngineArgs
 # 设置gpu相关的全局变量
-import qiankunding.utils.globalvar as globalvar
+import gts_common.utils.globalvar as globalvar
 globalvar._init()
-from qiankunding.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
+from gts_common.utils.detect_gpu_memory import detect_gpu_memory, decide_gpu
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()

@@ -7,10 +7,10 @@ from transformers import BertTokenizer, MegatronBertForMaskedLM
 
 from gts_common.registry import PIPELINE_REGISTRY
 from gts_common.pipeline_utils import download_model_from_huggingface, generate_common_trainer, load_args, save_args
-from qiankunding.utils.tokenization import get_train_tokenizer
+from gts_common.utils.tokenization import get_train_tokenizer
 from qiankunding.dataloaders.nli.dataloader_UnifiedMC import TaskDataModelUnifiedMCForNLI, TaskDatasetUnifiedMCForNLI
 from qiankunding.models.nli.bert_UnifiedMC import BertUnifiedMCForNLI
-from qiankunding.utils.evaluation import SentencePairEvaluator
+from gts_common.utils.evaluation import SentencePairEvaluator
 from gts_common.logs_utils import Logger
 
 logger = Logger().get_log()

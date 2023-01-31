@@ -26,7 +26,7 @@ from pytorch_lightning import LightningModule
 
 from .model import BagualuIEModel
 from ...arguments.ie import TrainingArgumentsIEStd
-from ...lib.components.losses import NegativeSampleLoss, DiceLoss, DistillSelfLoss, DecoupledBCEloss
+from gts_common.components.losses import NegativeSampleLoss, DiceLoss, DistillSelfLoss, DecoupledBCEloss
 
 
 class BagualuIELitModel(LightningModule):
