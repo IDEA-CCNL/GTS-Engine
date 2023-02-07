@@ -63,7 +63,7 @@ class ObjDict(dict):
     def __getattr__(self, name):
         try:
             return self[name]
-        except:
+        except BaseException:
             raise AttributeError(name)
 
     def __setattr__(self, name, value):
@@ -76,7 +76,7 @@ def save_args(args: GtsEngineArgs):
         json.dump(vars(args), f, indent=4)
     logger.info(f"Save args to {args_path}")
     for k, v in vars(args).items():
-        #logger.info(k, ":", v,',\t')
+
         logger.info(f"{k} : {v}    ")
     logger.info('\n' + '-' * 64)
     return args

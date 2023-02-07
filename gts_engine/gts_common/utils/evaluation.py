@@ -16,7 +16,7 @@ def result_eval(y_true, y_pred, label_names):
         confused_matrix = confusion_matrix(y_true=y_true,
                                            y_pred=y_pred,
                                            labels=label_ids).tolist()
-    except:
+    except BaseException:
         confused_matrix = None
 
     cm_dict = {'matrix': confused_matrix, 'label_list': label_names}
@@ -28,7 +28,7 @@ def result_eval(y_true, y_pred, label_names):
                                             digits=2,
                                             zero_division=0,
                                             output_dict=True)
-    except:
+    except BaseException:
         eval_report = None
 
     global_acc = accuracy_score(y_true, y_pred)
@@ -124,7 +124,7 @@ class Evaluator:
 
     def evaluation(self, mode, data_set, threshold=0):
         self.data_model.setup(mode)
-        tokenizer = self.data_model.tokenizer
+
 
         if data_set == "unlabeled":
             test_loader = self.data_model.unlabeled_dataloader()
@@ -190,7 +190,6 @@ class SentencePairEvaluator(Evaluator):
 
 def evaluation(args, model, data_model, save_path, mode, data_set):
     data_model.setup(mode)
-    tokenizer = data_model.tokenizer
     label_classes = data_model.label_classes
 
     logger.info(label_classes)

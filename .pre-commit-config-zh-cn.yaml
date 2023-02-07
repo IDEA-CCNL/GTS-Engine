@@ -25,4 +25,4 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        args: ["--ignore", "E203, E501, E741, W503, W504, W605, F401, F403, E402"]
+        args: ["--ignore", "E203, E501, E741, W503, W504, W605, F401, F403, E402, E126"]

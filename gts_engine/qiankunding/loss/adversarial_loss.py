@@ -1,9 +1,9 @@
-
 import torch
 import torch.nn.functional as F
 
 
-class AdversarialLoss(object):
+class AdversarialLoss:
+
     def __init__(self, args) -> None:
         super().__init__()
         self.args = args
@@ -12,10 +12,11 @@ class AdversarialLoss(object):
 
     def __call__(self, model, logits, train_inputs):
         # * get disturbed inputs
-        inputs_embeds = model.bert.embeddings.word_embeddings(train_inputs['input_ids'])
+        inputs_embeds = model.bert.embeddings.word_embeddings(
+            train_inputs['input_ids'])
         noise = inputs_embeds.clone().detach().normal_(
             0, 1).requires_grad_(True) * self.args.noise_var
-        
+
         # * adv loop
         for i in range(self.args.adv_nloop):
             inputs_embeds = inputs_embeds.detach() + noise
@@ -24,16 +25,17 @@ class AdversarialLoss(object):
                                inputs_embeds=inputs_embeds)
 
             adv_loss = self.divergence(adv_logits,
-                                    logits.detach(),
-                                    reduction='batchmean')
-
+                                       logits.detach(),
+                                       reduction='batchmean')
 
             # * now we need to find the best noise according to gradient
             # * theoretically we need the max, to be more efficient, we
             # * approximate with it by gradient assent
-            noise_grad = torch.autograd.grad(outputs=adv_loss, inputs=noise, retain_graph=True)[0]
+            noise_grad = torch.autograd.grad(outputs=adv_loss,
+                                             inputs=noise,
+                                             retain_graph=True)[0]
             noise = noise + noise_grad * self.args.adv_step_size
-        
+
         # * normalization 这里的noise之后好像都没用到, 故注释掉
         #  noise = self.adv_project(noise,
         #                           norm_type=self.args.project_norm_type,
@@ -41,7 +43,6 @@ class AdversarialLoss(object):
         adv_loss = self.divergence(adv_logits, logits)
 
         return adv_loss
-
 
     @staticmethod
     def adv_project(grad, norm_type='inf', eps=1e-6):
@@ -62,7 +63,6 @@ class AdversarialLoss(object):
                         reduction=reduction)
         return loss
 
-
     @staticmethod
     def sym_kl(input, target, reduction="sum"):
         input = input.float()
@@ -70,7 +70,6 @@ class AdversarialLoss(object):
         loss = F.kl_div(F.log_softmax(input, dim=-1, dtype=torch.float32), F.softmax(target.detach(), dim=-1, dtype=torch.float32), reduction=reduction) + \
             F.kl_div(F.log_softmax(target, dim=-1, dtype=torch.float32), F.softmax(input.detach(), dim=-1, dtype=torch.float32), reduction=reduction)
         return loss
-
 
     @staticmethod
     def js(input, target, reduction="sum"):

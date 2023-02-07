@@ -48,7 +48,7 @@ def is_data_format_valid(data_path, data_type):
         for line in f:
             try:
                 data = json.loads(line.strip())
-            except:
+            except BaseException:
                 valid = False
                 break
             if data_type == 'train' or data_type == 'dev':
@@ -88,7 +88,7 @@ class DataFormatChecker:
             for line in f:
                 try:
                     item = json.loads(line)
-                except:
+                except BaseException:
                     return False, f"行【{line}】非json格式"
                 data.append(item)
         return self.check_data(task_type, data_type, data)
@@ -161,7 +161,9 @@ class DataFormatChecker:
 
         class IESample(BaseModel):
             """sample."""
-            task: constr(regex=r"(实体识别|关系抽取)")
+
+            regex = "(实体识别|关系抽取)"
+            task: constr(regex=regex)
             text: constr(min_length=1)
             entity_list: Optional[List[Entity]]
             spo_list: Optional[List[SPO]]

@@ -281,14 +281,13 @@ class BasicTokenizer:
         """Checks whether CP is the codepoint of a CJK character."""
         # This defines a "chinese character" as anything in the CJK Unicode block:
         #   https://en.wikipedia.org/wiki/CJK_Unified_Ideographs_(Unicode_block)
-        if ((cp >= 0x4E00 and cp <= 0x9FFF) or  #
-            (cp >= 0x3400 and cp <= 0x4DBF) or  #
-            (cp >= 0x20000 and cp <= 0x2A6DF) or  #
-            (cp >= 0x2A700 and cp <= 0x2B73F) or  #
-            (cp >= 0x2B740 and cp <= 0x2B81F) or  #
-            (cp >= 0x2B820 and cp <= 0x2CEAF) or
-            (cp >= 0xF900 and cp <= 0xFAFF) or  #
-            (cp >= 0x2F800 and cp <= 0x2FA1F)):  #
+        if ((cp >= 0x4E00 and cp <= 0x9FFF) or (cp >= 0x3400 and cp <= 0x4DBF)
+                or (cp >= 0x20000 and cp <= 0x2A6DF)
+                or (cp >= 0x2A700 and cp <= 0x2B73F)
+                or (cp >= 0x2B740 and cp <= 0x2B81F)
+                or (cp >= 0x2B820 and cp <= 0x2CEAF)
+                or (cp >= 0xF900 and cp <= 0xFAFF)
+                or (cp >= 0x2F800 and cp <= 0x2FA1F)):
             return True
 
         return False
@@ -380,7 +379,7 @@ def _is_control(char):
 
 def _is_whitespace(char):
     """Checks whether `chars` is a whitespace character."""
-    # \t, \n, and \r are technically contorl characters but we treat them
+    # \t, \n, and \r are technically control characters but we treat them
     # as whitespace since they are generally considered as such.
     if char == " " or char == "\t" or char == "\n" or char == "\r":
         return True
@@ -419,14 +418,12 @@ def convert_to_unicode(text):
 
 if __name__ == "__main__":
     btokenizer = BasicTokenizer(do_lower_case=False)
-    tokenizer = Tokenizer(
-        vocab_file=
-        "/home/zxy21/codes_and_data/.cache/pretrained_models/bert-base-cased/vocab.txt",
-        do_lower_case=False)
-    c_tokenizer = Tokenizer(
-        vocab_file=
-        "/home/zxy21/codes_and_data/.cache/pretrained_models/bert-base-multilingual-cased/vocab.txt",
-        do_lower_case=False)
+    tokenizer = Tokenizer(vocab_file="/home/zxy21/codes_and_data/.cache/ \
+            pretrained_models/bert-base-cased/vocab.txt",
+                          do_lower_case=False)
+    c_tokenizer = Tokenizer(vocab_file="/home/zxy21/codes_and_data/.cache/ \
+            pretrained_models/bert-base-multilingual-cased/vocab.txt",
+                            do_lower_case=False)
 
     string = "are you an engineer or data scientist? Do you ship reliable and performant applied machine learning solutions? Check out our Introduction to Keras for engineers.Are you a machine learning researcher? Do you publish at NeurIPS and push the state-of-the-art in CV and NLP? Check out our Introduction to Keras for researchers."
     string2 = "Are you a beginner looking for both an introduction to machine learning and an introduction to Keras and TensorFlow? You're going to need more than a one-pager. And you're in luck: we've got just the book for you."
