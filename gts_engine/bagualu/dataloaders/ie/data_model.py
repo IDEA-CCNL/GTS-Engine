@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,17 +13,17 @@
 # limitations under the License.
 from typing import List
 
-from torch.utils.data import DataLoader
 import pytorch_lightning as pl
+from torch.utils.data import DataLoader
 from transformers import PreTrainedTokenizer
 
-from .item_encoder import ItemEncoder
-from .dataset import BagualuIEDataset
 from ...arguments.ie import TrainingArgumentsIEStd
+from .dataset import BagualuIEDataset
+from .item_encoder import ItemEncoder
 
 
 class BagualuIEDataModel(pl.LightningDataModule):
-    """ uniEXDataModel
+    """uniEXDataModel.
 
     Args:
         tokenizer (PreTrainedTokenizer): tokenizer
@@ -33,6 +32,7 @@ class BagualuIEDataModel(pl.LightningDataModule):
         dev_data (List[dict]): dev data
         test_data (List[dict]): test data
     """
+
     def __init__(self,
                  tokenizer: PreTrainedTokenizer,
                  args: TrainingArgumentsIEStd,
@@ -43,9 +43,12 @@ class BagualuIEDataModel(pl.LightningDataModule):
 
         self.batch_size = args.batch_size
 
-        self.train_data = BagualuIEDataset(train_data if train_data else [], tokenizer, args.max_length)
-        self.valid_data = BagualuIEDataset(dev_data if dev_data else [], tokenizer, args.max_length)
-        self.test_data = BagualuIEDataset(test_data if test_data else [], tokenizer, args.max_length)
+        self.train_data = BagualuIEDataset(train_data if train_data else [],
+                                           tokenizer, args.max_length)
+        self.valid_data = BagualuIEDataset(dev_data if dev_data else [],
+                                           tokenizer, args.max_length)
+        self.test_data = BagualuIEDataset(test_data if test_data else [],
+                                          tokenizer, args.max_length)
 
         if not args.distill_self:
             self.collate_fn = ItemEncoder.collate
@@ -53,7 +56,7 @@ class BagualuIEDataModel(pl.LightningDataModule):
             self.collate_fn = ItemEncoder.collate_expand
 
     def train_dataloader(self) -> DataLoader:
-        """ train_dataloader
+        """train_dataloader.
 
         Returns:
             DataLoader: data loader
@@ -65,7 +68,7 @@ class BagualuIEDataModel(pl.LightningDataModule):
                           pin_memory=False)
 
     def val_dataloader(self) -> DataLoader:
-        """ val_dataloader
+        """val_dataloader.
 
         Returns:
             DataLoader: data loader
@@ -77,7 +80,7 @@ class BagualuIEDataModel(pl.LightningDataModule):
                           pin_memory=False)
 
     def test_dataloader(self) -> DataLoader:
-        """ test_dataloader
+        """test_dataloader.
 
         Returns:
             DataLoader: data loader

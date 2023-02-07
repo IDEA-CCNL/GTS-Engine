@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
-from gts_common.registry import PIPELINE_REGISTRY
-from gts_common.pipeline_utils import load_args, save_args, download_model_from_huggingface
-from gts_common.arguments import GtsEngineArgs
-
-from gts_common.framework.base_gts_engine_interface import BaseGtsEngineInterface, TRAIN_MODE
 from bagualu.entrances.ie import GtsEngineInterfaceIEStd
 from bagualu.entrances.ie.inference_manager_std import InferenceManagerIEStd
 from bagualu.models.ie import BagualuIEModel
+from gts_common.arguments import GtsEngineArgs
+from gts_common.framework.base_gts_engine_interface import (
+    TRAIN_MODE, BaseGtsEngineInterface)
+from gts_common.pipeline_utils import (download_model_from_huggingface,
+                                       load_args, save_args)
+from gts_common.registry import PIPELINE_REGISTRY
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
     TRAIN_MODE.STD: GtsEngineInterfaceIEStd()
@@ -31,7 +31,7 @@ mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def train_pipeline(args: GtsEngineArgs) -> None:
-    """ Bagualu IE training pipeline
+    """Bagualu IE training pipeline.
 
     Args:
         args (GtsEngineArgs): user arguments
@@ -42,7 +42,8 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     download_model_from_huggingface(args.pretrained_model_dir,
                                     model_name,
                                     model_class=BagualuIEModel)
-    args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
+    args.pretrained_model_dir = os.path.join(args.pretrained_model_dir,
+                                             model_name)
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory: GtsEngineInterfaceIEStd = mode_to_interface[train_mode]
     module_factory.prepare_training(args)
@@ -51,7 +52,7 @@ def train_pipeline(args: GtsEngineArgs) -> None:
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def prepare_inference(save_path: str) -> InferenceManagerIEStd:
-    """ prepare inference
+    """prepare inference.
 
     Args:
         save_path (str): saved path from training.
@@ -64,7 +65,8 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
     download_model_from_huggingface(args.pretrained_model_dir,
                                     model_name,
                                     model_class=BagualuIEModel)
-    args.pretrained_model_dir = os.path.join(args.pretrained_model_dir, model_name)
+    args.pretrained_model_dir = os.path.join(args.pretrained_model_dir,
+                                             model_name)
     train_mode = TRAIN_MODE(args.train_mode)
     module_factory: GtsEngineInterfaceIEStd = mode_to_interface[train_mode]
     return module_factory.generate_inference_manager(args)
@@ -73,7 +75,7 @@ def prepare_inference(save_path: str) -> InferenceManagerIEStd:
 @PIPELINE_REGISTRY.register(suffix=__name__)
 def inference(samples: List[Dict[str, Any]],
               inference_manager: InferenceManagerIEStd) -> List[dict]:
-    """ inference
+    """inference.
 
     Args:
         samples (List[Dict[str, Any]]): input samples for inference.
