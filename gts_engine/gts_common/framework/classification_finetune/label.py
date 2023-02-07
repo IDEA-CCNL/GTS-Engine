@@ -1,8 +1,9 @@
-from abc import abstractmethod, ABCMeta
-from pydantic import FilePath
+from abc import ABCMeta, abstractmethod
 from typing import Dict, Union
 
-from .consts import LabelParseOutput, LabelToken, Label
+from pydantic import FilePath
+
+from .consts import Label, LabelParseOutput, LabelToken
 from .data_reader_clf import DataReaderClf
 
 
@@ -24,7 +25,8 @@ class LabelBase(metaclass=ABCMeta):
 
 
 class StdLabel(LabelBase):
-    """通用Label"""
+    """通用Label."""
+
     def parse_label(self) -> LabelParseOutput:
         label2token: Dict[str, LabelToken] = {}
         id2label: Dict[int, Label] = {}

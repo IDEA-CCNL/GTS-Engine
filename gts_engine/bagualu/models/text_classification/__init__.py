@@ -1,1 +1,2 @@
-from .lightnings_std import TrainLightningClfStd, PredictLightningClfStd, InferenceLightningClfStd
+from .lightnings_std import (InferenceLightningClfStd, PredictLightningClfStd,
+                             TrainLightningClfStd)

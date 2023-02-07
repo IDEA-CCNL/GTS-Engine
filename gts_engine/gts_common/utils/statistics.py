@@ -1,27 +1,19 @@
-"""统计相关工具集
+"""统计相关工具集.
 
 Todo:
     - [ ] (Jiang Yuzhen) 将模块名改为statistics_utils或类似名称，和json_utils等工具集保持一致
 """
-from typing import (
-    Hashable,
-    List,
-    TypeVar,
-    Sequence,
-    Literal,
-    Union,
-    Iterable,
-    Callable,
-    Generic
-)
 from functools import cmp_to_key
+from typing import (Callable, Generic, Hashable, Iterable, List, Literal,
+                    Sequence, TypeVar, Union)
+
 import numpy as np
 
 
-def interval_mean(
-    list_: List[float], low_quantile: float = 0.25, high_quantile: float = 0.75
-) -> float:
-    """计算上下分位数之间元素的均值"""
+def interval_mean(list_: List[float],
+                  low_quantile: float = 0.25,
+                  high_quantile: float = 0.75) -> float:
+    """计算上下分位数之间元素的均值."""
     length = len(list_)
     low_idx = int(length * low_quantile)
     high_idx = int(length * high_quantile)
@@ -32,18 +24,16 @@ def interval_mean(
 _ComparableType = TypeVar(name="_ComparableType", bound=Hashable)
 
 
-def acc(
-    predict_list: List[_ComparableType], true_list: List[_ComparableType]
-) -> float:
-    """计算两个等长序列对应位置元素相等的比例（accuracy），支持所有可比较的元素类型"""
+def acc(predict_list: List[_ComparableType],
+        true_list: List[_ComparableType]) -> float:
+    """计算两个等长序列对应位置元素相等的比例（accuracy），支持所有可比较的元素类型."""
     assert len(predict_list) == len(true_list)
     return np.mean(
-        np.array(predict_list) == np.array(true_list)
-    )  # type: ignore
+        np.array(predict_list) == np.array(true_list))  # type: ignore
 
 
 class ExponentialSmoothingList:
-    """动态计算的支持多阶的指数平滑列表
+    """动态计算的支持多阶的指数平滑列表.
 
     通过`append()`方法更新列表的元素，列表会自动根据历史数据计算每个元素的各阶指数平滑，
     支持使用索引`exp_smooth_list[i]`访问第i阶平滑列表，`exp_smooth_list[i][j]`则为
@@ -58,13 +48,11 @@ class ExponentialSmoothingList:
         10.970308056718565
     """
 
-    def __init__(
-        self,
-        level: Literal[1, 2, 3],
-        alpha: Union[float, List[float]],
-        warmup_steps: int = 3
-    ) -> None:
-        """实例化指数平滑列表
+    def __init__(self,
+                 level: Literal[1, 2, 3],
+                 alpha: Union[float, List[float]],
+                 warmup_steps: int = 3) -> None:
+        """实例化指数平滑列表.
 
         Args:
             level (Literal[1, 2, 3]):
@@ -86,7 +74,7 @@ class ExponentialSmoothingList:
         self.__warmup_steps = warmup_steps
 
     def append(self, value: Union[float, Sequence[float]]):
-        """更新指数平滑列表
+        """更新指数平滑列表.
 
         Args:
             value (Union[float, Sequence[float]]): 更新的值或多个值的列表
@@ -99,19 +87,19 @@ class ExponentialSmoothingList:
 
     @property
     def values(self):
-        """访问所有阶的平滑列表"""
+        """访问所有阶的平滑列表."""
         return self.__values
 
     def __repr__(self) -> str:
-        """支持打印"""
+        """支持打印."""
         return str(self.__values)
 
     def __getitem__(self, level: int):
-        """支持索引访问第i阶平滑列表"""
+        """支持索引访问第i阶平滑列表."""
         return self.__values[level]
 
     def __len__(self):
-        """支持len()方法获取列表长度"""
+        """支持len()方法获取列表长度."""
         return len(self.__values[0])
 
     # ========================== privates ===============================
@@ -165,7 +153,7 @@ _T = TypeVar("_T")
 
 
 class DynamicMax(Generic[_T]):
-    """带缓存、可自定义比较符的、记录第top n的动态max类
+    """带缓存、可自定义比较符的、记录第top n的动态max类.
 
     Example:
         >>> # 记录第三长的字符串，重复值只记录一次
@@ -186,9 +174,11 @@ class DynamicMax(Generic[_T]):
         self,
         top_n: int = 1,
         allow_repeat: bool = True,
-        cmp: Callable[[_T, _T], Union[int, float]] = lambda x1, x2: x1 - x2  # type: ignore
+        cmp: Callable[[_T, _T],
+                      Union[int,
+                            float]] = lambda x1, x2: x1 - x2  # type: ignore
     ):
-        """实例化
+        """实例化.
 
         Args:
             top_n (int, optional):
@@ -204,7 +194,7 @@ class DynamicMax(Generic[_T]):
         self.__cache: List[_T] = []
 
     def step(self, value: Union[_T, List[_T]]) -> None:
-        """更新值或值列表"""
+        """更新值或值列表."""
         if isinstance(value, List):
             for v in value:
                 self.__step_value(v)
@@ -213,18 +203,19 @@ class DynamicMax(Generic[_T]):
 
     @property
     def max_list(self) -> List[_T]:
-        """返回top n列表"""
+        """返回top n列表."""
         return self.__cache
 
     @property
     def max(self) -> _T:
-        """返回第top_n大的值"""
+        """返回第top_n大的值."""
         return self.__cache[-1]
 
     def __step_value(self, value: _T) -> None:
         self.__cache.append(value)
         if not self.__allow_repeat:
             self.__cache = list(set(self.__cache))
-        self.__cache.sort(key=cmp_to_key(self.__cmp), reverse=True)  # type: ignore
+        self.__cache.sort(key=cmp_to_key(self.__cmp),
+                          reverse=True)  # type: ignore
         if len(self.__cache) > self.__top_n:
             self.__cache.pop()

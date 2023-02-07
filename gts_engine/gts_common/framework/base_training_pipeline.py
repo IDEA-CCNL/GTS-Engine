@@ -1,4 +1,4 @@
-"""模型训练pipeline基类模块
+"""模型训练pipeline基类模块.
 
 Todo:
     目前存在最主要的问题，在于训练阶段的划分粒度太大，不利于任务层抽象。典型的例子如clf_std，
@@ -18,13 +18,13 @@ Todo:
     者并不在一个层级上，就像pytorch_lightning和pytorch不在一个层级一样。
 """
 from abc import ABCMeta, abstractmethod
-from typing import Optional, List
+from typing import List, Optional
 
 from .mixin import ArgsMixin
 
 
 class BaseTrainingPipeline(ArgsMixin, metaclass=ABCMeta):
-    """模型训练Pipeline接口基类
+    """模型训练Pipeline接口基类.
 
     定义了模型训练Pipeline对外暴露的启动接口main()，和子类应当实现的接口函数，来定义模型训练的
     不同阶段。同时通过继承`ArgsMixin`来提供和参数集合的交互，需要对该类对应的参数类进行声明，详
@@ -32,7 +32,7 @@ class BaseTrainingPipeline(ArgsMixin, metaclass=ABCMeta):
     """
 
     def __init__(self, args_parse_list: Optional[List[str]] = None):
-        """实例化训练Pipeline
+        """实例化训练Pipeline.
 
         Args:
             args_parse_list (Optional[List[str]], optional):
@@ -42,24 +42,21 @@ class BaseTrainingPipeline(ArgsMixin, metaclass=ABCMeta):
 
     @abstractmethod
     def _before_training(self) -> None:
-        """训练前处理
-        """
+        """训练前处理."""
         pass
 
     @abstractmethod
     def _train(self) -> None:
-        """模型训练
-        """
+        """模型训练."""
         pass
 
     @abstractmethod
     def _after_training(self) -> None:
-        """训练后处理
-        """
+        """训练后处理."""
         pass
 
     def main(self):
-        """启动训练pipeline"""
+        """启动训练pipeline."""
         self._before_training()
         self._train()
         self._after_training()

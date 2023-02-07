@@ -1,18 +1,13 @@
-"""loss计算工具集
+"""loss计算工具集.
 
 Todo:
     - [] (Jiang Yuzhen) 待修改和补全(详见components.__init__.py)
 """
-from .max_multi_logits import MaxMultiLogits
+from .ie_losses import (DecoupledBCEloss, DecoupledMSEloss, DiceLoss,
+                        DistillSelfLoss, NegativeSampleLoss)
 from .label_smoothing import LabelSmoothing
+from .max_multi_logits import MaxMultiLogits
 from .rdrop_kl_loss import compute_kl_loss
-from .ie_losses import (
-    NegativeSampleLoss,
-    DiceLoss,
-    DecoupledBCEloss,
-    DecoupledMSEloss,
-    DistillSelfLoss
-)
 
 __all__ = [
     "MaxMultiLogits",

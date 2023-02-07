@@ -1,23 +1,23 @@
-"""EDA数据增强模块"""
+"""EDA数据增强模块."""
 import copy
 import multiprocessing as mp
 import os
 import time
-from typing import Optional, List, Protocol, Sequence, TypeVar, Generic, Union
+from typing import Generic, List, Optional, Protocol, Sequence, TypeVar, Union
 
+from gts_common.framework.mixin import OptionalLoggerMixin
+from gts_common.utils.json_utils import dump_json_list, load_json_list
 from pydantic import FilePath
 from tqdm import tqdm
 from transformers.tokenization_utils import PreTrainedTokenizer
 
-from gts_common.utils.json_utils import load_json_list, dump_json_list
-from gts_common.framework.mixin import OptionalLoggerMixin
-
 
 class SampleProto(Protocol):
-    """数据增强样本类型协议
+    """数据增强样本类型协议.
 
     至少需要包含可读写的text属性
     """
+
     @property
     def text(self) -> str:
         ...
@@ -31,7 +31,7 @@ _SampleType = TypeVar("_SampleType", bound=SampleProto)
 
 
 class EDA(OptionalLoggerMixin, Generic[_SampleType]):
-    """EDA数据增强模块
+    """EDA数据增强模块.
 
     Example:
         >>> from dataclasses import dataclass
@@ -50,13 +50,11 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
         [Sample(text='配置文件数据1'), Sample(text='实例数据1'), Sample(text='数据1'), Sample(text='1'), Sample(text='示例数据1'), Sample(text='示例信息2'), Sample(text='示例统计数据2'), Sample(text='示例数据2')]
     """
 
-    def __init__(
-        self,
-        alpha: float = 0.1,
-        tokenizer: Optional[PreTrainedTokenizer] = None,
-        logger_name: Optional[str] = None
-    ):
-        """实例化EDA
+    def __init__(self,
+                 alpha: float = 0.1,
+                 tokenizer: Optional[PreTrainedTokenizer] = None,
+                 logger_name: Optional[str] = None):
+        """实例化EDA.
 
         Args:
             tokenizer (PreTrainedTokenizer):
@@ -71,13 +69,11 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
         self.__data_expansion = data_expansion
         OptionalLoggerMixin.__init__(self, logger_name)
 
-    def eda_aug(
-        self,
-        sample_list: Sequence[_SampleType],
-        aug_path: Union[FilePath, str],
-        aug_num: int = 10
-    ) -> List[_SampleType]:
-        """使用eda进行数据增强
+    def eda_aug(self,
+                sample_list: Sequence[_SampleType],
+                aug_path: Union[FilePath, str],
+                aug_num: int = 10) -> List[_SampleType]:
+        """使用eda进行数据增强.
 
         Args:
             sample_list (Sequence[_SampleType]): 需要增强的样本列表
@@ -112,24 +108,27 @@ class EDA(OptionalLoggerMixin, Generic[_SampleType]):
             load_json_list(aug_path, type_=self.__sample_cls))
         return eda_sample_list
 
-    def __generate_data(
-        self, sample_list: Sequence[_SampleType], aug_num: int = 10
-    ) -> List[_SampleType]:
+    def __generate_data(self,
+                        sample_list: Sequence[_SampleType],
+                        aug_num: int = 10) -> List[_SampleType]:
         res: List[_SampleType] = []
-        pool = mp.Pool(processes=8)
-        iters = pool.imap(self._process_sample, sample_list)
-        with tqdm(total=len(sample_list), desc="EDA Augmentation") as p_bar:
-            for eda_sample_list in iters:
-                res += eda_sample_list
-                p_bar.update(1)
-            self.info(p_bar.__str__())
-        pool.close()
-        pool.join()
+        for sample in sample_list:
+            res += self._process_sample(sample=sample)
+        # pool = mp.Pool(processes=8)
+        # iters = pool.imap(self._process_sample, sample_list)
+        # with tqdm(total=len(sample_list), desc="EDA Augmentation") as p_bar:
+        #     for eda_sample_list in iters:
+        #         res += eda_sample_list
+        #         p_bar.update(1)
+        #     self.info(p_bar.__str__())
+        # pool.close()
+        # pool.join()
         return res
 
-    def _process_sample(
-        self, sample: _SampleType, aug_num: int = 10
-    ) -> List[_SampleType]:
+    def _process_sample(self,
+                        sample: _SampleType,
+                        aug_num: int = 10) -> List[_SampleType]:
+
         def create_eda_sample(new_text: str) -> _SampleType:
             new_sample = copy.deepcopy(sample)
             new_sample.text = new_text

@@ -3,13 +3,14 @@ from torch import Tensor
 
 
 class Logits2Acc(torch.nn.Module):
-    """通过logits计算acc的pytorch模型层"""
+    """通过logits计算acc的pytorch模型层."""
+
     def __init__(self):
         super().__init__()
         self.__softmax = torch.nn.Softmax(dim=-1)
 
     def forward(self, logits: Tensor, labels: Tensor):
-        """forward
+        """forward.
 
         Args:
             logits (Tensor): 每个label的logits

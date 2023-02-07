@@ -1,4 +1,4 @@
-"""可复用工具集
+"""可复用工具集.
 
 包含:
     * detect_gpu_menmory: 显存管理工具集
@@ -18,6 +18,4 @@ Todo:
 """
 from .logger_manager import LoggerManager
 
-__all__ = [
-    "LoggerManager"
-]
+__all__ = ["LoggerManager"]

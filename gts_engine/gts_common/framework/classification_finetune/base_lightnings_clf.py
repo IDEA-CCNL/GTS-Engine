@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from logging import Logger
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from pytorch_lightning import LightningModule
 import torch
+from pytorch_lightning import LightningModule
 
 from .consts import InfBatch, InferenceManagerOutput
 
@@ -43,10 +43,14 @@ class BaseInferenceLightningClf(LightningModule):
         self._model.load_state_dict(state_dict, strict=False)  # type: ignore
 
     @abstractmethod
-    def predict_step(self, batch: InfBatch, batch_idx: int, dataloader_idx: int = 0) -> InferenceManagerOutput:
+    def predict_step(self,
+                     batch: InfBatch,
+                     batch_idx: int,
+                     dataloader_idx: int = 0) -> InferenceManagerOutput:
         ...
 
-    def on_predict_epoch_end(self, results: List[List[InferenceManagerOutput]]) -> None:
+    def on_predict_epoch_end(
+            self, results: List[List[InferenceManagerOutput]]) -> None:
         res = InferenceManagerOutput(predictions=[], probabilities=[])
         for inf_output in results[0]:
             res["predictions"].extend(inf_output["predictions"])

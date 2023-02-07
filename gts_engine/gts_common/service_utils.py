@@ -1,9 +1,7 @@
-# -*- encoding: utf-8 -*-
-'''
-Copyright 2022 The International Digital Economy Academy (IDEA). CCNL team. All rights reserved.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+"""Copyright 2022 The International Digital Economy Academy (IDEA). CCNL team.
+All rights reserved. Licensed under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance with the License.
+You may obtain a copy of the License at.
 
     http://www.apache.org/licenses/LICENSE-2.0
 
@@ -16,15 +14,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 @Version :   1.0
 @Contact :   pankunhao@idea.edu.cn
 @License :   (C)Copyright 2022-2023, CCNL-IDEA
-'''
+"""
 
-import os
 import json
-from typing import List, Tuple, Optional, Union
-
-from pydantic import BaseModel, conint, constr, conlist
+import os
+from typing import List, Optional, Tuple, Union
 
 from gts_common.logs_utils import Logger
+from pydantic import BaseModel, conint, conlist, constr
 
 logger = Logger().get_log()
 
@@ -35,17 +32,19 @@ def list_task(task_dir):
     tasks = os.listdir(task_dir)
     return tasks
 
+
 def is_task_valid(task_dir, task_id):
     tasks = list_task(task_dir)
     tasks = set(tasks)
     return (task_id in tasks)
+
 
 def is_data_format_valid(data_path, data_type):
     logger.info(format(data_path))
     if not os.path.exists(data_path):
         return False
     valid = True
-    with open(data_path, 'r', encoding='utf8') as f:
+    with open(data_path, encoding='utf8') as f:
         for line in f:
             try:
                 data = json.loads(line.strip())
@@ -62,18 +61,16 @@ def is_data_format_valid(data_path, data_type):
                     break
             if data_type == 'label':
                 if "labels" not in data:
-                    valid = False 
+                    valid = False
     return valid
 
 
-class DataFormatChecker(object):
-    """ 数据格式校验 """
+class DataFormatChecker:
+    """数据格式校验."""
 
-    def check_from_path(self,
-                        task_type: str,
-                        data_type: str,
+    def check_from_path(self, task_type: str, data_type: str,
                         data_path: str) -> Tuple[bool, str]:
-        """ check
+        """check.
 
         Args:
             task_type (str): task type
@@ -96,11 +93,9 @@ class DataFormatChecker(object):
                 data.append(item)
         return self.check_data(task_type, data_type, data)
 
-    def check_data(self,
-                   task_type: str,
-                   data_type: str,
+    def check_data(self, task_type: str, data_type: str,
                    data: List[dict]) -> Tuple[bool, str]:
-        """ check
+        """check.
 
         Args:
             task_type (str): task_type
@@ -119,9 +114,11 @@ class DataFormatChecker(object):
         elif task_type == "ie":
             return self._check_ie_data(data_type, data)
         else:
-            raise ValueError(f"task_type `{task_type}` format checking is not supported.")
+            raise ValueError(
+                f"task_type `{task_type}` format checking is not supported.")
 
-    def _check_classification_data(self, data_type: str, data: List[dict]) -> Tuple[bool, str]:
+    def _check_classification_data(self, data_type: str,
+                                   data: List[dict]) -> Tuple[bool, str]:
         for item in data:
             if data_type in {"train", "dev"}:
                 if "content" not in item:
@@ -137,30 +134,33 @@ class DataFormatChecker(object):
 
         return True, "OK"
 
-    def _check_similarity_data(self, data_type: str, data: List[dict]) -> Tuple[bool, str]:
+    def _check_similarity_data(self, data_type: str,
+                               data: List[dict]) -> Tuple[bool, str]:
         # TODO: 补充
         return True, "OK"
 
-    def _check_nli_data(self, data_type: str, data: List[dict]) -> Tuple[bool, str]:
+    def _check_nli_data(self, data_type: str,
+                        data: List[dict]) -> Tuple[bool, str]:
         # TODO: 补充
         return True, "OK"
 
-    def _check_ie_data(self, data_type: str, data: List[dict]) -> Tuple[bool, str]:
+    def _check_ie_data(self, data_type: str,
+                       data: List[dict]) -> Tuple[bool, str]:
 
         class Entity(BaseModel):
-            """ entity """
+            """entity."""
             entity_text: constr(min_length=1)
             entity_type: constr(min_length=1)
             entity_index: Tuple[conint(gt=0), conint(gt=0)]
 
         class SPO(BaseModel):
-            """ spo """
+            """spo."""
             predicate: constr(min_length=1)
             subject: Entity
             object: Entity
 
         class IESample(BaseModel):
-            """ sample """
+            """sample."""
             task: constr(regex=r"(实体识别|关系抽取)")
             text: constr(min_length=1)
             entity_list: Optional[List[Entity]]
