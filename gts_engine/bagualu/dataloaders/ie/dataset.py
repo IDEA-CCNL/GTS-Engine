@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,16 +20,15 @@ from .item_encoder import ItemEncoder
 
 
 class BagualuIEDataset(Dataset):
-    """ BagualuIEDataset
+    """BagualuIEDataset.
 
     Args:
         data (List[dict]): data
         tokenizer (PreTrainedTokenizer): tokenizer
         args (TrainingArgumentsIEStd): arguments
     """
-    def __init__(self,
-                 data: List[dict],
-                 tokenizer: PreTrainedTokenizer,
+
+    def __init__(self, data: List[dict], tokenizer: PreTrainedTokenizer,
                  max_length: int) -> None:
         super().__init__()
 
