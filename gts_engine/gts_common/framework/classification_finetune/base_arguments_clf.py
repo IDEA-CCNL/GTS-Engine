@@ -76,6 +76,7 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
         parser.add_argument("--max_epochs", dest="max_epochs", type=int, default=5)
         parser.add_argument("--min_epochs", dest="min_epochs", type=int, default=5)
+        parser.add_argument("--trainer_strategy", dest="trainer_strategy", type=str, default=None, choices=[None, "ddp", "deepspeed_stage_2"])
 
     # ========================== 固定参数 ===============================
 

@@ -108,13 +108,12 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
     
     def training_step_end(self, step_output: Dict[str, Tensor]):
         """聚合training_step多卡输出并打印"""
-        lr = step_output["lr"][0]
-        batch_idx = step_output["batch_idx"][0]
+        lr = step_output["lr"]
+        batch_idx = step_output["batch_idx"]
         batch_size_list = step_output["batch_size"]
-        avg = lambda loss_list: (loss_list * (batch_size_list / batch_size_list.sum())).sum()
-        loss = avg(step_output["loss"])
-        loss_mlm = avg(step_output["loss_mlm"])
-        loss_ce = avg(step_output["loss_ce"])
+        loss = step_output["loss"]
+        loss_mlm = step_output["loss_mlm"]
+        loss_ce = step_output["loss_ce"]
         self._logger.info(f"loss: {loss:.4f} lr: {lr:.2e} batch: {batch_idx}/{self.trainer.num_training_batches} epoch: {self.current_epoch} step: {self.global_step}")
         metrics = {
             "train_loss": loss,
@@ -150,23 +149,15 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
         acc, _ = self._logits_2_acc.forward(logits, batch["label_id_clf"])
         batch_size = len(batch["input_ids"])
         return {"loss": loss, "acc": acc, "batch_size": batch_size} 
-
-    def validation_step_end(self, validation_step_outputs: Dict[str, Tensor]): 
-        """聚合validation_step多卡输出"""
-        loss_list = validation_step_outputs["loss"]
-        batch_size_list = validation_step_outputs["batch_size"]
-        step_loss = (loss_list * (batch_size_list / batch_size_list.sum())).sum() # loss按batch_size加权平均
-        step_acc = validation_step_outputs["acc"].sum()
-        step_batch_size = batch_size_list.sum()
-        return {"loss": step_loss, "acc": step_acc, "batch_size": step_batch_size}
+        
     
     def validation_epoch_end(self, validation_step_outputs: List[Dict[str, Tensor]]) -> None:
         """聚合所有验证结果并打印"""
         loss_list = torch.stack([step["loss"] for step in validation_step_outputs])
         acc_list = torch.stack([step["acc"] for step in validation_step_outputs])
-        batch_size_list = torch.stack([step["batch_size"] for step in validation_step_outputs])
+        batch_size_list = [step["batch_size"] for step in validation_step_outputs]
         dev_loss = loss_list.mean()
-        dev_acc = acc_list.sum() / batch_size_list.sum()
+        dev_acc = acc_list.sum() / sum(batch_size_list)
         metrics = {
             "dev_loss": dev_loss,
             "dev_acc": dev_acc
