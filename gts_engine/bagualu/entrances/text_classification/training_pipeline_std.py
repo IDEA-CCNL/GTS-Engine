@@ -1,37 +1,46 @@
-from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import Callback, ModelSummary, ModelCheckpoint
-from typing import List, Literal, Tuple, Dict, Union
-import torch
 import os
 import shutil
+from typing import Dict, List, Literal, Tuple, Union
+
 import numpy as np
-
-from gts_common.framework.classification_finetune import BaseTrainingPipelineClf
-from gts_common.framework.classification_finetune.consts import InferenceManagerInputSample
+import torch
+from gts_common.components.lightning_callbacks.adaptive_val_intervals import (
+    ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed,
+    AdaptiveValIntervalTrainLoss)
+from gts_common.components.retrieval_augmentations.knn_for_bagualu import (
+    BasicDatastore, get_datastore, grid_search_for_hyper)
+from gts_common.framework.classification_finetune import \
+    BaseTrainingPipelineClf
+from gts_common.framework.classification_finetune.consts import \
+    InferenceManagerInputSample
 from gts_common.framework.consts import TRAINING_STAGE
-from gts_common.components.lightning_callbacks.adaptive_val_intervals import AdaptiveValIntervalTrainLoss, ADAPTIVE_VAL_INTERVAL_MODE, AdaptiveValIntervalFixed
-from gts_common.components.retrieval_augmentations.knn_for_bagualu import BasicDatastore, grid_search_for_hyper, get_datastore
+from pytorch_lightning import Trainer, seed_everything
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint, ModelSummary
 
-from ...arguments.text_classification.arguments_std import TrainingArgumentsClfStd
+from ...arguments.text_classification.arguments_std import \
+    TrainingArgumentsClfStd
 from ...dataloaders.text_classification.data_module_std import DataModuleClfStd
-from ...models.text_classification.lightnings_std import TrainLightningClfStd, PredictLightningClfStd
+from ...models.text_classification.lightnings_std import (
+    PredictLightningClfStd, TrainLightningClfStd)
+
 
 class TrainingPipelineClfStd(BaseTrainingPipelineClf):
-    
+
     _args: TrainingArgumentsClfStd
     _mode_name: str = "ft_std"
-    
+
     def _get_data_module(self) -> DataModuleClfStd:
         return DataModuleClfStd(self._args, self._label, self._tokenizer)
-    
+
     def _get_training_lightning(self) -> TrainLightningClfStd:
-        return TrainLightningClfStd(self._args, self._data_module.class_num, self._data_module.train_sample_num)
-    
+        return TrainLightningClfStd(self._args, self._data_module.class_num,
+                                    self._data_module.train_sample_num)
+
     def _get_trainer(self) -> Trainer:
         callbacks = self.__get_callbacks(self._data_module.dev_sample_num)
         return Trainer(
-            accelerator="gpu", 
-            devices=self._args.gpu_num, 
+            accelerator="gpu",
+            devices=self._args.gpu_num,
             callbacks=callbacks,
             max_epochs=self._args.max_epochs,
             min_epochs=self._args.min_epochs,
@@ -43,75 +52,73 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             logger=self._get_lightning_loggers(),
             precision=self._args.precision,
         )
-        
+
     def _fit(self) -> None:
         seed_everything(self._args.seed)
         self._logger.info('-' * 30 + 'Args' + '-' * 30)
         vars_str = ''
         for k, v in vars(self._args).items():
-            vars_str += str(k)+':'+str(v)+'\t'
+            vars_str += str(k) + ':' + str(v) + '\t'
         self._logger.info(vars_str)
         self._logger.info('\n' + '-' * 64)
 
         self._trainer.fit(
-            model=self._training_lightning, 
-            train_dataloaders=self._data_module.train_dataloader(load_ratio=self._args.load_data_ratio),
+            model=self._training_lightning,
+            train_dataloaders=self._data_module.train_dataloader(
+                load_ratio=self._args.load_data_ratio),
             val_dataloaders=self._data_module.val_dataloader(
-                stage=TRAINING_STAGE.VALIDATION, 
-                load_ratio=self._args.load_data_ratio, 
+                stage=TRAINING_STAGE.VALIDATION,
+                load_ratio=self._args.load_data_ratio,
                 resample_thres=self._args.dev_resample_thres),
         )
-        
-    def _get_inf_lightning(self, use_knn=False, datastore=None, best_hyper=None) -> PredictLightningClfStd:
+
+    def _get_inf_lightning(self,
+                           use_knn=False,
+                           datastore=None,
+                           best_hyper=None) -> PredictLightningClfStd:
         if use_knn:
-            return PredictLightningClfStd(self._label, self._args, self._tokenizer, datastore=datastore, best_hyper=best_hyper)
+            return PredictLightningClfStd(self._label,
+                                          self._args,
+                                          self._tokenizer,
+                                          datastore=datastore,
+                                          best_hyper=best_hyper)
         else:
-            return PredictLightningClfStd(self._label, self._args, self._tokenizer)
-    
+            return PredictLightningClfStd(self._label, self._args,
+                                          self._tokenizer)
+
     def __get_callbacks(self, dev_num: int) -> List[Callback]:
         model_summary = ModelSummary(max_depth=2)
-        if self._args.validation_mode == ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE and self._data_module.class_num > 2: 
+        if self._args.validation_mode == ADAPTIVE_VAL_INTERVAL_MODE.ADAPTIVE and self._data_module.class_num > 2:
             adaptive_test_interval_cls = AdaptiveValIntervalTrainLoss
         else:
             adaptive_test_interval_cls = AdaptiveValIntervalFixed
         adaptive_test_interval = adaptive_test_interval_cls(
-            int(self._data_module.train_sample_num * self._args.load_data_ratio),
-            self._args.train_batch_size,
-            self._args.logger
-        )
-        if dev_num == 0: # 无验证数据时，保存最终模型
-            model_checkpoint = ModelCheckpoint(
-                monitor="step",
-                mode="max", 
-                save_top_k=1,
-                save_on_train_epoch_end=True, 
-                verbose=True,
-                dirpath=self._output_dir
-            )
-        elif dev_num <= self._args.dev_resample_thres: # 验证数据较少时，保存dev_loss最小模型
-            model_checkpoint = ModelCheckpoint(
-                monitor="dev_acc",
-                mode="max", 
-                save_top_k=1,
-                save_on_train_epoch_end=False, 
-                verbose=True,
-                dirpath=self._output_dir
-            )
-        else: # 验证数据较多时，重采样验证数据，保存dev_loss最小的五个模型，训练完成后再用全样本筛选出最优模型
+            int(self._data_module.train_sample_num *
+                self._args.load_data_ratio), self._args.train_batch_size,
+            self._args.logger)
+        if dev_num == 0:  # 无验证数据时，保存最终模型
+            model_checkpoint = ModelCheckpoint(monitor="step",
+                                               mode="max",
+                                               save_top_k=1,
+                                               save_on_train_epoch_end=True,
+                                               verbose=True,
+                                               dirpath=self._output_dir)
+        elif dev_num <= self._args.dev_resample_thres:  # 验证数据较少时，保存dev_loss最小模型
+            model_checkpoint = ModelCheckpoint(monitor="dev_acc",
+                                               mode="max",
+                                               save_top_k=1,
+                                               save_on_train_epoch_end=False,
+                                               verbose=True,
+                                               dirpath=self._output_dir)
+        else:  # 验证数据较多时，重采样验证数据，保存dev_loss最小的五个模型，训练完成后再用全样本筛选出最优模型
             self._logger.info("dev sample is too large, resample dev data...")
-            model_checkpoint = ModelCheckpoint(
-                monitor="dev_acc",
-                mode="max", 
-                save_top_k=5,
-                save_on_train_epoch_end=False, 
-                verbose=True,
-                dirpath=self._output_dir
-            )
-        return [
-            model_summary,
-            adaptive_test_interval,
-            model_checkpoint
-        ]
+            model_checkpoint = ModelCheckpoint(monitor="dev_acc",
+                                               mode="max",
+                                               save_top_k=5,
+                                               save_on_train_epoch_end=False,
+                                               verbose=True,
+                                               dirpath=self._output_dir)
+        return [model_summary, adaptive_test_interval, model_checkpoint]
 
     def _after_training(self) -> None:
         if self._trainer.global_rank == 0:

@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,32 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
 import copy
+from typing import List
 
 from transformers import PreTrainedTokenizer
 
-from ...dataloaders.ie.item_encoder import ItemEncoder
-from ...dataloaders.ie.item_decoder import ItemDecoder
 from ...arguments.ie import TrainingArgumentsIEStd
+from ...dataloaders.ie.item_decoder import ItemDecoder
+from ...dataloaders.ie.item_encoder import ItemEncoder
 from .model import BagualuIEModel
 
 
-class BagualuIEExtractModel(object):
-    """ BagualuIEExtractModel
+class BagualuIEExtractModel:
+    """BagualuIEExtractModel.
 
     Args:
         tokenizer (PreTrainedTokenizer): tokenizer
         args (TrainingArgumentsIEStd): arguments
     """
-    def __init__(self,
-                 tokenizer: PreTrainedTokenizer,
+
+    def __init__(self, tokenizer: PreTrainedTokenizer,
                  args: TrainingArgumentsIEStd) -> None:
         self.encoder = ItemEncoder(tokenizer, args.max_length)
         self.decoder = ItemDecoder(tokenizer, args)
 
-    def extract(self, batch_data: List[dict], model: BagualuIEModel) -> List[dict]:
-        """ extract
+    def extract(self, batch_data: List[dict],
+                model: BagualuIEModel) -> List[dict]:
+        """extract.
 
         Args:
             batch_data (List[dict]): batch of data
@@ -52,7 +52,10 @@ class BagualuIEExtractModel(object):
         model.eval()
 
         batch_data = copy.deepcopy(batch_data)
-        batch = [self.encoder.encode_item(item, with_label=False) for item in batch_data]
+        batch = [
+            self.encoder.encode_item(item, with_label=False)
+            for item in batch_data
+        ]
         batch = self.encoder.collate(batch)
 
         batch = {k: v.cuda() for k, v in batch.items()}
@@ -62,9 +65,8 @@ class BagualuIEExtractModel(object):
 
         for i, item in enumerate(batch_data):
 
-            entity_list, spo_list = self.decoder.decode(item,
-                                                        span_logits[i],
-                                                        label_mask[i])
+            entity_list, spo_list = self.decoder.decode(
+                item, span_logits[i], label_mask[i])
 
             item["spo_list"] = spo_list
             item["entity_list"] = entity_list

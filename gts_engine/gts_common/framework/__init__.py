@@ -1,4 +1,4 @@
-"""框架包
+"""框架包.
 
 理想中的框架分为三层：
     * 通用接口层，如base_training_pipeline、base_inference_manager等。定义各个基本模块的性质
@@ -27,15 +27,11 @@ Todo:
     - [ ] (Jiang Yuzhen) base_arguments与业务相对无关，考虑放进utils中
 """
 from .base_arguments import BaseArguments
-from .base_training_pipeline import BaseTrainingPipeline
+from .base_gts_engine_interface import BaseGtsEngineInterface, GtsEngineArgs
 from .base_inference_manager import BaseInferenceManager
-from .base_gts_engine_interface import GtsEngineArgs, BaseGtsEngineInterface
-
+from .base_training_pipeline import BaseTrainingPipeline
 
 __all__ = [
-    "BaseArguments",
-    "BaseTrainingPipeline",
-    "BaseInferenceManager",
-    "GtsEngineArgs",
-    "BaseGtsEngineInterface"
+    "BaseArguments", "BaseTrainingPipeline", "BaseInferenceManager",
+    "GtsEngineArgs", "BaseGtsEngineInterface"
 ]

@@ -1,1 +1,1 @@
-from .arguments_std import TrainingArgumentsClfStd, InferenceArgumentsClfStd
+from .arguments_std import InferenceArgumentsClfStd, TrainingArgumentsClfStd

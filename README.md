@@ -314,6 +314,33 @@ optional arguments:
 
 您可以通过`examples/text_classification/run_inference_qiankunding.sh`直接运行推理示例。
 
+### 分类任务-标签检测
+
+标签检测是一个检测分类任务输入标签的效果的功能，它的作用是判断标签对于文本数据内容的概括性，并且给出分数和评级，依据该分数和评级可以在分类任务之前对标签的性能进行评判，预先将对文本内容概括性差的标签进行相应的修改、删除操作，由此提升后续分类任务的效果。
+
+- **输入-标签数据**
+
+输入数据目录为`gts_engine/examples/text_classification`，示例文件的文件名为`tnews_label`，数据为json格式，只有一行数据，必须含有`"labels"`字段，对应的是标签的列表集合，输入格式示例如下，使用时可直接将示例文件内的数据进行替换。
+
+```json
+{"labels": ["故事", "文化", "娱乐", "体育", "财经", "房产", "汽车", "教育", "科技", "军事", "旅游", "国际", "股票", "农业", "电竞"]}
+```
+
+- **输入-数据集**
+
+目录与标签数据同级，示例文件的文件名为`tnews_test`，每行是一个样本，只需要一个数据输入文件，输入数据采用json格式，数据必须含有`"content"`和`"label"`字段，`"content"`对应的是输入文本，`"label"`字段对应该文本的标签。输入格式示例如下，使用时可直接将示例文件内的数据进行替换。
+
+```json
+{"content": "请替我活下去：6岁女孩身患重病，自愿捐所有器官救5人，万人泪湿", "label": "故事", "id": 2740}
+```
+
+#### 开始检测
+一行代码启动.py文件即可开始检测
+
+```bash
+python label_detection.py --label_path ../../examples/text_classification/tnews_label.json --data_path ../../examples/text_classification/tnews_test.json
+```
+
 ## API文档
 
 更多GTS-Engine的内容可参考[API文档](https://gts-engine-doc.readthedocs.io/en/latest/index.html)。

@@ -1,14 +1,14 @@
-"""文本处理相关工具集"""
+"""文本处理相关工具集."""
 import re
 from typing import List, Optional, Tuple
 
-from LAC import LAC
 import numpy as np
+from LAC import LAC
 from transformers.tokenization_utils import PreTrainedTokenizer
 
 
 def cut_sent(para: str) -> List[str]:
-    """分字并处理标点符号"""
+    """分字并处理标点符号."""
     para = re.sub('([，。！？,\\.\\?!])([^”’])', r"\1\n\2", para)  # 单字符断句符
     para = re.sub('(\\.{6})([^”’])', r"\1\n\2", para)  # 英文省略号
     para = re.sub('(\\…{2})([^”’])', r"\1\n\2", para)  # 中文省略号
@@ -22,10 +22,8 @@ def cut_sent(para: str) -> List[str]:
 lac_seg = LAC(mode='lac')
 
 
-def segment_text(
-    text: str,
-    tokenizer: Optional[PreTrainedTokenizer] = None
-) -> List[str]:
+def segment_text(text: str,
+                 tokenizer: Optional[PreTrainedTokenizer] = None) -> List[str]:
     """分词
 
     输入一句话，返回一句经过处理的分词列表: 为了支持中文全称mask，将被分开的词，将上特殊标记("#")，
@@ -57,8 +55,8 @@ def segment_text(
         # 由于LAC对于像2018或者abc这种非中文字符会直接切分成单个字符，
         # 所以这里加入连续非中文字符的识别，然后使用bert的分词器进行重新切分
         non_chinese = []
-        while (i < len(text) and
-               len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0):
+        while (i < len(text)
+               and len(re.findall('[\u4E00-\u9FA5]', text[i])) == 0):
             non_chinese.append(text[i])
             i += 1
         if non_chinese:
@@ -90,7 +88,7 @@ def text_2_training_instance(
     tokenizer: PreTrainedTokenizer,
     index: Optional[int] = None
 ) -> Tuple[List[str], Optional[bool]]:  # type: ignore
-    """文本转训练样本
+    """文本转训练样本.
 
     Args:
         text (str): 文本字符串
@@ -110,7 +108,7 @@ def text_2_training_instance(
     target_seq_length = max_num_tokens
     if index is None:
         index = np.random.randint(1, 10000)
-    rng = np.random.RandomState(seed=((1234 + index) % 2 ** 32))  # type: ignore
+    rng = np.random.RandomState(seed=((1234 + index) % 2**32))  # type: ignore
     current_chunk = []  # 当前处理的文本段，包含多个句子
     current_length = 0
     i = 0
@@ -191,6 +189,7 @@ def text_2_training_instance(
             return tokens, is_random_next
 
         i += 1  # 接着文档中的内容往后看
+    return tokens, None
 
 
 def truncate_seq_pair(tokens_a, tokens_b, max_num_tokens, rng):

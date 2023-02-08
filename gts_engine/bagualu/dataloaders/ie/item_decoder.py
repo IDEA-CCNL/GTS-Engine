@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,25 +13,25 @@
 # limitations under the License.
 
 # from collections import defaultdict
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 import numpy as np
 from transformers import PreTrainedTokenizer
 
-from .item_encoder import entity_based_tokenize, get_entity_indices
-from .dataset_utils import get_choice
 from ...arguments.ie import TrainingArgumentsIEStd
+from .dataset_utils import get_choice
+from .item_encoder import entity_based_tokenize, get_entity_indices
 
 
-class ItemDecoder(object):
-    """ Decoder
+class ItemDecoder:
+    """Decoder.
 
     Args:
         tokenizer (PreTrainedTokenizer): tokenizer
         args (TrainingArgumentsIEStd): arguments
     """
-    def __init__(self,
-                 tokenizer: PreTrainedTokenizer,
+
+    def __init__(self, tokenizer: PreTrainedTokenizer,
                  args: TrainingArgumentsIEStd) -> None:
         self.tokenizer = tokenizer
         self.max_length = args.max_length
@@ -41,10 +40,11 @@ class ItemDecoder(object):
         self.entity_multi_label = args.entity_multi_label
         self.relation_multi_label = args.relation_multi_label
 
-    def extract_entity_index(self,
-                             entity_logits: np.ndarray,
-                             ) -> List[Tuple[int, int]]:
-        """ extract entity index
+    def extract_entity_index(
+        self,
+        entity_logits: np.ndarray,
+    ) -> List[Tuple[int, int]]:
+        """extract entity index.
 
         Args:
             entity_logits (np.ndarray): entity_logits
@@ -72,13 +72,10 @@ class ItemDecoder(object):
         return result
 
     @staticmethod
-    def extract_entity(text: str,
-                       entity_idx: List[int],
-                       entity_type: str,
-                       entity_score: float,
-                       text_start_id: int,
+    def extract_entity(text: str, entity_idx: List[int], entity_type: str,
+                       entity_score: float, text_start_id: int,
                        offset_mapping: List[List[int]]) -> dict:
-        """ extract entity
+        """extract entity.
 
         Args:
             text (str): text
@@ -91,16 +88,19 @@ class ItemDecoder(object):
         Returns:
             dict: entity
         """
-        entity_start, entity_end = entity_idx[0] - text_start_id, entity_idx[1] - text_start_id
+        entity_start, entity_end = entity_idx[0] - text_start_id, entity_idx[
+            1] - text_start_id
 
-        start_split = offset_mapping[entity_start] if 0 <= entity_start < len(offset_mapping) else []
-        end_split = offset_mapping[entity_end] if 0 <= entity_end < len(offset_mapping) else []
+        start_split = offset_mapping[entity_start] if 0 <= entity_start < len(
+            offset_mapping) else []
+        end_split = offset_mapping[entity_end] if 0 <= entity_end < len(
+            offset_mapping) else []
 
         if not start_split or not end_split:
             return None
 
         start_idx, end_idx = start_split[0], end_split[-1]
-        entity_text = text[start_idx: end_idx]
+        entity_text = text[start_idx:end_idx]
 
         if not entity_text:
             return None
@@ -114,13 +114,10 @@ class ItemDecoder(object):
 
         return entity
 
-    def decode_ner(self,
-                   text: str,
-                   choice: List[str],
+    def decode_ner(self, text: str, choice: List[str],
                    sample_span_logits: np.ndarray,
-                   offset_mapping: List[List[int]]
-                  ) -> List[dict]:
-        """ NER decode
+                   offset_mapping: List[List[int]]) -> List[dict]:
+        """NER decode.
 
         Args:
             text (str): text
@@ -138,8 +135,7 @@ class ItemDecoder(object):
 
         for entity_start, entity_end, entity_type_idx, entity_score in entity_idx_list:
 
-            entity = self.extract_entity(text,
-                                         [entity_start, entity_end],
+            entity = self.extract_entity(text, [entity_start, entity_end],
                                          choice[entity_type_idx],
                                          entity_score,
                                          text_start_id=1,
@@ -153,12 +149,10 @@ class ItemDecoder(object):
 
         return entity_list
 
-    def decode_spo(self,
-                   text: str,
-                   choice: List[List[str]],
+    def decode_spo(self, text: str, choice: List[List[str]],
                    sample_span_logits: np.ndarray,
                    offset_mapping: List[List[int]]) -> tuple:
-        """ SPO decode
+        """SPO decode.
 
         Args:
             text (str): text
@@ -173,10 +167,13 @@ class ItemDecoder(object):
         spo_list = []
         entity_list = []
 
-        choice_ent, choice_rel, choice_head, choice_tail, entity2rel = get_choice(choice)
+        choice_ent, choice_rel, choice_head, choice_tail, entity2rel = get_choice(
+            choice)
 
-        entity_logits = sample_span_logits[:, :, : len(choice_ent)] # (seq_len, seq_len, num_entity)
-        relation_logits = sample_span_logits[:, :, len(choice_ent): ] # (seq_len, seq_len, num_relation)
+        entity_logits = sample_span_logits[:, :, :len(
+            choice_ent)]  # (seq_len, seq_len, num_entity)
+        relation_logits = sample_span_logits[:, :, len(
+            choice_ent):]  # (seq_len, seq_len, num_relation)
 
         entity_idx_list = self.extract_entity_index(entity_logits)
 
@@ -186,8 +183,7 @@ class ItemDecoder(object):
 
             entity_type = choice_ent[entity_type_idx]
 
-            entity = self.extract_entity(text,
-                                         [entity_start, entity_end],
+            entity = self.extract_entity(text, [entity_start, entity_end],
                                          entity_type,
                                          entity_score,
                                          text_start_id=1,
@@ -197,9 +193,11 @@ class ItemDecoder(object):
                 continue
 
             if entity_type in choice_head:
-                head_list.append((entity_start, entity_end, entity_type, entity))
+                head_list.append(
+                    (entity_start, entity_end, entity_type, entity))
             if entity_type in choice_tail:
-                tail_list.append((entity_start, entity_end, entity_type, entity))
+                tail_list.append(
+                    (entity_start, entity_end, entity_type, entity))
 
         for head_start, head_end, subject_type, subject_dict in head_list:
             for tail_start, tail_end, object_type, object_dict in tail_list:
@@ -243,10 +241,18 @@ class ItemDecoder(object):
 
                     hh_idx = np.argmax(so_rel_logits[head_start, head_end])
                     tt_idx = np.argmax(so_rel_logits[tail_start, tail_end])
-                    hh_score = so_rel_logits[head_start, tail_start, hh_idx] + so_rel_logits[head_end, tail_end, hh_idx]
-                    tt_score = so_rel_logits[head_start, tail_start, tt_idx] + so_rel_logits[head_end, tail_end, tt_idx]
+                    hh_score = so_rel_logits[head_start, tail_start,
+                                             hh_idx] + so_rel_logits[head_end,
+                                                                     tail_end,
+                                                                     hh_idx]
+                    tt_score = so_rel_logits[head_start, tail_start,
+                                             tt_idx] + so_rel_logits[head_end,
+                                                                     tail_end,
+                                                                     tt_idx]
 
-                    predicate = relation_candidates[hh_idx] if hh_score > tt_score else relation_candidates[tt_idx]
+                    predicate = relation_candidates[
+                        hh_idx] if hh_score > tt_score else relation_candidates[
+                            tt_idx]
 
                     predicate_score = float(max(hh_score, tt_score) / 2)
 
@@ -270,12 +276,13 @@ class ItemDecoder(object):
 
         return spo_list, entity_list
 
-    def decode(self,
-               item: Dict,
-               span_logits: np.ndarray,
-               label_mask:  np.ndarray,
-               ):
-        """ decode
+    def decode(
+        self,
+        item: Dict,
+        span_logits: np.ndarray,
+        label_mask: np.ndarray,
+    ):
+        """decode.
 
         Args:
             task (str): task name
@@ -292,8 +299,11 @@ class ItemDecoder(object):
             List[dict]: decoded spo list
         """
         task, choice, text = item["task"], item["choice"], item["text"]
-        entity_indices = get_entity_indices(item.get("entity_list", []), item.get("spo_list", []))
-        _, offset_mapping = entity_based_tokenize(text, self.tokenizer, entity_indices,
+        entity_indices = get_entity_indices(item.get("entity_list", []),
+                                            item.get("spo_list", []))
+        _, offset_mapping = entity_based_tokenize(text,
+                                                  self.tokenizer,
+                                                  entity_indices,
                                                   return_offsets_mapping=True)
 
         assert span_logits.shape == label_mask.shape
@@ -304,15 +314,11 @@ class ItemDecoder(object):
         entity_list = []
 
         if task in {"实体识别", "抽取任务"}:
-            entity_list = self.decode_ner(text,
-                                          choice,
-                                          span_logits,
+            entity_list = self.decode_ner(text, choice, span_logits,
                                           offset_mapping)
 
         elif task in {"关系抽取"}:
-            spo_list, entity_list = self.decode_spo(text,
-                                                    choice,
-                                                    span_logits,
+            spo_list, entity_list = self.decode_spo(text, choice, span_logits,
                                                     offset_mapping)
 
         else:

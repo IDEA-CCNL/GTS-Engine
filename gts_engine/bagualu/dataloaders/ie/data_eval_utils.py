@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +15,9 @@
 from typing import List, Tuple
 
 
-def eval_entity_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
-    """ 获取实体抽取f1
+def eval_entity_f1(test_data: List[dict],
+                   pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
+    """获取实体抽取f1.
 
     Args:
         test_data (List[dict]): test data
@@ -33,14 +33,15 @@ def eval_entity_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[float,
     for test_sample, pred_sample in zip(test_data, pred_data):
         assert test_sample['text'] == pred_sample['text']
 
-        y_true_set = {(e["entity_type"], e["entity_text"].strip()) for e in test_sample["entity_list"]}
+        y_true_set = {(e["entity_type"], e["entity_text"].strip())
+                      for e in test_sample["entity_list"]}
         y_true += len(y_true_set)
 
-        y_pred_set = {(e["entity_type"], e["entity_text"].strip()) for e in pred_sample["entity_list"]}
+        y_pred_set = {(e["entity_type"], e["entity_text"].strip())
+                      for e in pred_sample["entity_list"]}
         y_pred += len(y_pred_set)
 
         corr += len(y_pred_set & y_true_set)
-
 
     if y_pred <= 0:
         precise = 0.
@@ -59,8 +60,9 @@ def eval_entity_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[float,
     return f1, (corr, y_true, recall), (corr, y_pred, precise)
 
 
-def eval_relation_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
-    """ 获取关系抽取f1
+def eval_relation_f1(test_data: List[dict],
+                     pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
+    """获取关系抽取f1.
 
     Args:
         test_data (List[dict]): test data
@@ -75,16 +77,14 @@ def eval_relation_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[floa
 
     for test_sample, pred_sample in zip(test_data, pred_data):
 
-        y_true_set = {
-            (spo["predicate"], spo["subject"]["entity_text"].strip(), spo["object"]["entity_text"].strip())
-            for spo in test_sample["spo_list"]
-        }
+        y_true_set = {(spo["predicate"], spo["subject"]["entity_text"].strip(),
+                       spo["object"]["entity_text"].strip())
+                      for spo in test_sample["spo_list"]}
         y_true += len(y_true_set)
 
-        y_pred_set = {
-            (spo["predicate"], spo["subject"]["entity_text"].strip(), spo["object"]["entity_text"].strip())
-            for spo in pred_sample["spo_list"]
-        }
+        y_pred_set = {(spo["predicate"], spo["subject"]["entity_text"].strip(),
+                       spo["object"]["entity_text"].strip())
+                      for spo in pred_sample["spo_list"]}
         y_pred += len(y_pred_set)
 
         corr += len(y_pred_set & y_true_set)
@@ -107,8 +107,10 @@ def eval_relation_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[floa
     return f1, (corr, y_true, recall), (corr, y_pred, precise)
 
 
-def eval_entity_relation_f1(test_data: List[dict], pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
-    """ 获取实体关系抽取f1
+def eval_entity_relation_f1(
+        test_data: List[dict],
+        pred_data: List[dict]) -> Tuple[float, tuple, tuple]:
+    """获取实体关系抽取f1.
 
     Args:
         test_data (List[dict]): test data
@@ -123,18 +125,18 @@ def eval_entity_relation_f1(test_data: List[dict], pred_data: List[dict]) -> Tup
 
     for test_sample, pred_sample in zip(test_data, pred_data):
 
-        y_true_set = {
-            (spo["predicate"], spo["subject"]["entity_text"].strip(), spo["subject"]["entity_type"],
-            spo["object"]["entity_text"].strip(), spo["object"]["entity_type"])
-            for spo in test_sample["spo_list"]
-        }
+        y_true_set = {(spo["predicate"], spo["subject"]["entity_text"].strip(),
+                       spo["subject"]["entity_type"],
+                       spo["object"]["entity_text"].strip(),
+                       spo["object"]["entity_type"])
+                      for spo in test_sample["spo_list"]}
         y_true += len(y_true_set)
 
-        y_pred_set = {
-            (spo["predicate"], spo["subject"]["entity_text"].strip(), spo["subject"]["entity_type"],
-            spo["object"]["entity_text"].strip(), spo["object"]["entity_type"])
-            for spo in pred_sample["spo_list"]
-        }
+        y_pred_set = {(spo["predicate"], spo["subject"]["entity_text"].strip(),
+                       spo["subject"]["entity_type"],
+                       spo["object"]["entity_text"].strip(),
+                       spo["object"]["entity_type"])
+                      for spo in pred_sample["spo_list"]}
         y_pred += len(y_pred_set)
 
         corr += len(y_pred_set & y_true_set)

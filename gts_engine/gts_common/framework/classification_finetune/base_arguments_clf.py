@@ -1,22 +1,18 @@
 import time
-from typing import Optional
 from pathlib import Path
-from pydantic import DirectoryPath, FilePath
+from typing import Optional
 
-from gts_common.framework.base_arguments import (
-    BaseArguments,
-    GeneralParser
-)
+from gts_common.components import ProtocolArgsMixin
+from gts_common.components.lightning_callbacks.adaptive_val_intervals import \
+    ADAPTIVE_VAL_INTERVAL_MODE
+from gts_common.framework.base_arguments import BaseArguments, GeneralParser
 from gts_common.framework.consts import RUN_MODE
 from gts_common.utils.path import mk_inexist_dir
-from gts_common.components import ProtocolArgsMixin
-from gts_common.components.lightning_callbacks.adaptive_val_intervals import (
-    ADAPTIVE_VAL_INTERVAL_MODE
-)
+from pydantic import DirectoryPath, FilePath
 
 
 class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
-    """句子分类任务TrainingPipeline对应参数集合基类"""
+    """句子分类任务TrainingPipeline对应参数集合基类."""
 
     # ========================== 外部参数 ===============================
 
@@ -53,29 +49,96 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
         return self.log_dir if self._log_dir is None else self._log_dir
 
     def _add_args(self, parser: GeneralParser) -> None:
-        parser.add_argument("--train_data_path", dest="train_data_path", type=Path, help="指定训练数据集路径", required=True)
-        parser.add_argument("--dev_data_path", dest="dev_data_path", type=Path, default=None, help="[可选]指定验证数据集路径")
-        parser.add_argument("--test_data_path", dest="test_data_path", type=Path, default=None, help="[可选]指定离线测试数据集路径")
-        parser.add_argument("--online_test_data_path", dest="online_test_data_path", type=Path, default=None, help="[可选]指定在线测试数据集路径")
-        parser.add_argument("--dataset", dest="dataset", type=str, help="数据集名称/路径名", default="default")
-        parser.add_argument("--label2id_path", dest="label2id_path", type=Path, help="指定label2id文件路径", required=True)
-        parser.add_argument("--log_dir", dest="_log_dir", type=Path, default=None, help="[可选]指定日志文件保存路径")
-        parser.add_argument("--run_mode", dest="run_mode", type=RUN_MODE,
-                            choices=RUN_MODE, default=RUN_MODE.ONLINE,
+        parser.add_argument("--train_data_path",
+                            dest="train_data_path",
+                            type=Path,
+                            help="指定训练数据集路径",
+                            required=True)
+        parser.add_argument("--dev_data_path",
+                            dest="dev_data_path",
+                            type=Path,
+                            default=None,
+                            help="[可选]指定验证数据集路径")
+        parser.add_argument("--test_data_path",
+                            dest="test_data_path",
+                            type=Path,
+                            default=None,
+                            help="[可选]指定离线测试数据集路径")
+        parser.add_argument("--online_test_data_path",
+                            dest="online_test_data_path",
+                            type=Path,
+                            default=None,
+                            help="[可选]指定在线测试数据集路径")
+        parser.add_argument("--dataset",
+                            dest="dataset",
+                            type=str,
+                            help="数据集名称/路径名",
+                            default="default")
+        parser.add_argument("--label2id_path",
+                            dest="label2id_path",
+                            type=Path,
+                            help="指定label2id文件路径",
+                            required=True)
+        parser.add_argument("--log_dir",
+                            dest="_log_dir",
+                            type=Path,
+                            default=None,
+                            help="[可选]指定日志文件保存路径")
+        parser.add_argument("--run_mode",
+                            dest="run_mode",
+                            type=RUN_MODE,
+                            choices=RUN_MODE,
+                            default=RUN_MODE.ONLINE,
                             help="运行模式 [offline - 离线测试 | online - 上线运行]")
-        parser.add_argument("--load_data_ratio", dest="load_data_ratio", type=float, default=1, help="[可选]指定加载数据比例（0到1之间），用于测试")
-        parser.add_argument("--selected_pretrained_model_dir", dest="selected_pretrained_model_dir", type=str, default=None, help="[可选]指定预训练模型路径")
+        parser.add_argument("--load_data_ratio",
+                            dest="load_data_ratio",
+                            type=float,
+                            default=1,
+                            help="[可选]指定加载数据比例（0到1之间），用于测试")
+        parser.add_argument("--selected_pretrained_model_dir",
+                            dest="selected_pretrained_model_dir",
+                            type=str,
+                            default=None,
+                            help="[可选]指定预训练模型路径")
         parser.add_argument("--seed", dest="seed", type=int, default=42)
         parser.add_argument("--debug", action="store_true", help="[可选]debug模式")
-        parser.add_argument("--num_workers", dest="num_workers", type=int, default=6)
-        parser.add_argument("--train_batchsize", dest="train_batchsize_per_device", type=int, default=8)
-        parser.add_argument("--valid_batchsize", dest="valid_batchsize_per_device", type=int, default=8)
-        parser.add_argument("--test_batchsize", dest="test_batchsize_per_device", type=int, default=8)
-        parser.add_argument("--max_length", dest="max_length", type=int, default=512)
-        parser.add_argument("--learning_rate", dest="learning_rate", type=float, default=2e-5)
-        parser.add_argument("--gpu_num", dest="gpu_num", type=int, default=1, help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
-        parser.add_argument("--max_epochs", dest="max_epochs", type=int, default=5)
-        parser.add_argument("--min_epochs", dest="min_epochs", type=int, default=5)
+        parser.add_argument("--num_workers",
+                            dest="num_workers",
+                            type=int,
+                            default=6)
+        parser.add_argument("--train_batchsize",
+                            dest="train_batchsize_per_device",
+                            type=int,
+                            default=8)
+        parser.add_argument("--valid_batchsize",
+                            dest="valid_batchsize_per_device",
+                            type=int,
+                            default=8)
+        parser.add_argument("--test_batchsize",
+                            dest="test_batchsize_per_device",
+                            type=int,
+                            default=8)
+        parser.add_argument("--max_length",
+                            dest="max_length",
+                            type=int,
+                            default=512)
+        parser.add_argument("--learning_rate",
+                            dest="learning_rate",
+                            type=float,
+                            default=2e-5)
+        parser.add_argument("--gpu_num",
+                            dest="gpu_num",
+                            type=int,
+                            default=1,
+                            help="[可选]指定训练gpu数量，系统自动分配空闲gpu，-1为使用全部可见gpu，默认为1")
+        parser.add_argument("--max_epochs",
+                            dest="max_epochs",
+                            type=int,
+                            default=5)
+        parser.add_argument("--min_epochs",
+                            dest="min_epochs",
+                            type=int,
+                            default=5)
         parser.add_argument("--trainer_strategy", dest="trainer_strategy", type=str, default=None, choices=[None, "ddp", "deepspeed_stage_2"])
 
     # ========================== 固定参数 ===============================
@@ -127,14 +190,22 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
 
 
 class BaseInferenceArgumentsClf(BaseArguments):
-    """句子分类任务InferenceManager对应参数集合"""
+    """句子分类任务InferenceManager对应参数集合."""
 
     model_save_dir: DirectoryPath
     label2id_path: FilePath
 
     def _add_args(self, parser) -> None:
-        parser.add_argument("--model_save_dir", dest="model_save_dir", type=Path, help="输出文件路径", required=True)
-        parser.add_argument("--label2id_path", dest="label2id_path", type=Path, help="[可选]指定label2id文件路径", required=True)
+        parser.add_argument("--model_save_dir",
+                            dest="model_save_dir",
+                            type=Path,
+                            help="输出文件路径",
+                            required=True)
+        parser.add_argument("--label2id_path",
+                            dest="label2id_path",
+                            type=Path,
+                            help="[可选]指定label2id文件路径",
+                            required=True)
 
     logger = "fintune_logger"
     prefix_prompt = "文本分类任务："

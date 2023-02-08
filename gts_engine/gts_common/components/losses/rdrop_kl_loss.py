@@ -4,8 +4,12 @@ import torch.nn.functional as F
 # 定义R-drop损失：根据两次前向计算的logits，计算kl_loss
 def compute_kl_loss(p, q, pad_mask=None):
 
-    p_loss = F.kl_div(F.log_softmax(p, dim=-1), F.softmax(q, dim=-1), reduction='none')
-    q_loss = F.kl_div(F.log_softmax(q, dim=-1), F.softmax(p, dim=-1), reduction='none')
+    p_loss = F.kl_div(F.log_softmax(p, dim=-1),
+                      F.softmax(q, dim=-1),
+                      reduction='none')
+    q_loss = F.kl_div(F.log_softmax(q, dim=-1),
+                      F.softmax(p, dim=-1),
+                      reduction='none')
 
     # pad_mask is for seq-level tasks
     if pad_mask is not None:

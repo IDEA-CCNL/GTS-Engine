@@ -1,4 +1,4 @@
-"""推理器接口基类模块
+"""推理器接口基类模块.
 
 加载训练好的模型，进行推理任务
 
@@ -6,7 +6,8 @@ Todo:
     - [ ] (Jiang Yuzhen) 始终觉得manager的命名有点怪，可以再考虑一下命名
 """
 from abc import ABCMeta, abstractmethod
-from typing import Optional, List, Sequence, Dict
+from typing import Dict, List, Optional, Sequence
+
 from pydantic import BaseModel
 
 from .mixin import ArgsMixin
@@ -18,14 +19,14 @@ InfOutput = Dict
 
 
 class BaseInferenceManager(ArgsMixin, metaclass=ABCMeta):
-    """推理器接口基类
+    """推理器接口基类.
 
     描述了推理器应当对外暴露的接口待子类实现。需要注意的是，推理器继承了`ArgsMixin`来提供
     和参数集合的交互，需要对该类对应的参数类进行声明，详见`ArgsMixin`文档。
     """
 
     def __init__(self, args_parse_list: Optional[List[str]] = None):
-        """实例化推理器
+        """实例化推理器.
 
         Args:
             args_parse_list (Optional[List[str]], optional):
@@ -35,7 +36,7 @@ class BaseInferenceManager(ArgsMixin, metaclass=ABCMeta):
 
     @abstractmethod
     def prepare_inference(self) -> None:
-        """推理准备
+        """推理准备.
 
         所有与具体样本推理无关的、一次性的推理准备逻辑都放在这里实现，如加载模型等。
         """

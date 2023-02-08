@@ -1,4 +1,4 @@
-"""mixin集合
+"""mixin集合.
 
 包含:
     * OptionalLoggerMixin: 支持选择从logger或者print进行信息输出
@@ -9,8 +9,4 @@
 from .args_mixin import ArgsMixin
 from .optional_logger_mixin import OptionalLoggerMixin
 
-
-__all__ = [
-    "OptionalLoggerMixin",
-    "ArgsMixin"
-]
+__all__ = ["OptionalLoggerMixin", "ArgsMixin"]

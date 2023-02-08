@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,11 +13,11 @@
 # limitations under the License.
 
 import collections
-from typing import List, Dict, Tuple
+from typing import Dict, List, Tuple
 
 
 def get_choice(spo_choice: list) -> tuple:
-    """ 把关系schema中的关系、实体获取出来
+    """把关系schema中的关系、实体获取出来.
 
     Args:
         spo_choice (list): 关系schema
@@ -35,7 +34,8 @@ def get_choice(spo_choice: list) -> tuple:
     choice_tail = []
     choice_ent = []
     choice_rel = []
-    entity2rel = collections.defaultdict(list) # "subject|object" -> [relation]
+    entity2rel = collections.defaultdict(
+        list)  # "subject|object" -> [relation]
 
     for head, rel, tail in spo_choice:
 
@@ -58,16 +58,15 @@ def get_choice(spo_choice: list) -> tuple:
 
 
 def check_data(data: List) -> None:
-    """ 检查数据是否格式合法
+    """检查数据是否格式合法.
 
     Args:
         data (List): 数据
     """
 
-    def check_entity(entity: Dict,
-                     choice_entity: List[str],
+    def check_entity(entity: Dict, choice_entity: List[str],
                      text: str) -> None:
-        """ 检查实体格式
+        """检查实体格式.
 
         Args:
             entity (Dict): 实体
@@ -77,14 +76,14 @@ def check_data(data: List) -> None:
         assert "entity_text" in entity
         assert "entity_type" in entity
         assert "entity_index" in entity
-        assert text[entity["entity_index"][0]: entity["entity_index"][1]] == entity["entity_text"]
+        assert text[entity["entity_index"][0]:entity["entity_index"]
+                    [1]] == entity["entity_text"]
         assert entity["entity_type"] in choice_entity
 
-    def check_spo(spo: Dict,
-                  choice_entity: List[str],
-                  entity2relation: Dict[Tuple[str, str], str],
-                  text: str) -> None:
-        """ 检查SPO格式
+    def check_spo(spo: Dict, choice_entity: List[str],
+                  entity2relation: Dict[Tuple[str, str],
+                                        str], text: str) -> None:
+        """检查SPO格式.
 
         Args:
             spo (Dict): SPO
@@ -97,8 +96,8 @@ def check_data(data: List) -> None:
         assert "object" in spo
         check_entity(spo["subject"], choice_entity, text)
         check_entity(spo["object"], choice_entity, text)
-        assert spo["predicate"] in entity2relation[spo["subject"]["entity_type"],
-                                                   spo["object"]["entity_type"]]
+        assert spo["predicate"] in entity2relation[
+            spo["subject"]["entity_type"], spo["object"]["entity_type"]]
 
     for item in data:
 
@@ -120,13 +119,14 @@ def check_data(data: List) -> None:
                 check_spo(spo, choice_entity, entity2relation, item["text"])
 
         else:
-            raise ValueError(f"task type `{item['task']}` is not supported yet.")
+            raise ValueError(
+                f"task type `{item['task']}` is not supported yet.")
 
 
 def data_segment(ori_data: List[dict],
                  cut_text_len: int = 400,
                  cut_text_stride: int = 200) -> List[dict]:
-    """ 数据按照文本切割
+    """数据按照文本切割.
 
     Args:
         ori_data (List[dict]): 原始数据
@@ -146,23 +146,27 @@ def data_segment(ori_data: List[dict],
         spo_list = item.get("spo_list", [])
         choice = item["choice"]
 
-        win_size = min(len(text), cut_text_len) # 实际窗口大小
+        win_size = min(len(text), cut_text_len)  # 实际窗口大小
 
         for win_end in range(win_size, len(text) + 1, cut_text_stride):
 
             win_start = win_end - win_size
-            text_win = text[win_start: win_end] # 窗口文本
+            text_win = text[win_start:win_end]  # 窗口文本
 
             # 处理窗口包含的实体
             entity_list_win = []
             for entity in entity_list:
 
                 entity_start, entity_end = entity["entity_index"]
-                entity_text, entity_type = entity["entity_text"], entity["entity_type"]
+                entity_text, entity_type = entity["entity_text"], entity[
+                    "entity_type"]
 
-                if entity_start >= win_start and entity_end <= win_end: # 包含的实体
-                    entity_index = [entity_start - win_start, entity_end - win_start] # 窗口中的相对索引
-                    assert text_win[entity_index[0]: entity_index[1]] == entity["entity_text"]
+                if entity_start >= win_start and entity_end <= win_end:  # 包含的实体
+                    entity_index = [
+                        entity_start - win_start, entity_end - win_start
+                    ]  # 窗口中的相对索引
+                    assert text_win[entity_index[0]:entity_index[1]] == entity[
+                        "entity_text"]
                     entity_list_win.append({
                         "entity_text": entity_text,
                         "entity_type": entity_type,
@@ -175,16 +179,18 @@ def data_segment(ori_data: List[dict],
 
                 predicate = spo["predicate"]
                 subj_start, subj_end = spo["subject"]["entity_index"]
-                subj_text, subj_type = spo["subject"]["entity_text"], spo["subject"]["entity_type"]
+                subj_text, subj_type = spo["subject"]["entity_text"], spo[
+                    "subject"]["entity_type"]
                 obj_start, obj_end = spo["object"]["entity_index"]
-                obj_text, obj_type = spo["object"]["entity_text"], spo["object"]["entity_type"]
+                obj_text, obj_type = spo["object"]["entity_text"], spo[
+                    "object"]["entity_type"]
 
                 if subj_start >= win_start and subj_end <= win_end and \
-                        obj_start >= win_start and obj_end <= win_end: # 包含的关系
+                        obj_start >= win_start and obj_end <= win_end:  # 包含的关系
                     subj_index = [subj_start - win_start, subj_end - win_start]
                     obj_index = [obj_start - win_start, obj_end - win_start]
-                    assert text_win[subj_index[0]: subj_index[1]] == subj_text
-                    assert text_win[obj_index[0]: obj_index[1]] == obj_text
+                    assert text_win[subj_index[0]:subj_index[1]] == subj_text
+                    assert text_win[obj_index[0]:obj_index[1]] == obj_text
                     spo_list_win.append({
                         "predicate": predicate,
                         "subject": {
@@ -216,7 +222,7 @@ def data_segment(ori_data: List[dict],
 
 
 def data_segment_restore(ori_data: List[dict]) -> List[dict]:
-    """ 切割后的数据进行预测后，对预测结果进行合并
+    """切割后的数据进行预测后，对预测结果进行合并.
 
     Args:
         ori_data (List[dict]): 原始数据
@@ -224,7 +230,8 @@ def data_segment_restore(ori_data: List[dict]) -> List[dict]:
     Returns:
         List[dict]: 合并后数据
     """
-    ori_data.sort(key=lambda x: (x["id"], x["bias"]))  # 保证相同ID的样本连续，且合并后样本顺序与原始数据相同
+    ori_data.sort(key=lambda x:
+                  (x["id"], x["bias"]))  # 保证相同ID的样本连续，且合并后样本顺序与原始数据相同
 
     data = []
     for item in ori_data:
@@ -250,43 +257,52 @@ def data_segment_restore(ori_data: List[dict]) -> List[dict]:
 
         # 合并实体列表
         for entity in entity_list_win:
-            entity_text, entity_type, score = entity["entity_text"], \
-                                              entity["entity_type"], entity["score"]
-            entity_start, entity_end = entity["entity_index"][0] + bias, \
-                                       entity["entity_index"][1] + bias
-            assert entity_text == text[entity_start: entity_end]
+            entity_text, entity_type, score = entity["entity_text"], entity[
+                "entity_type"], entity["score"]
+            entity_start, entity_end = entity["entity_index"][
+                0] + bias, entity["entity_index"][1] + bias
+            assert entity_text == text[entity_start:entity_end]
 
             # 判断该实体是否已经被前一个窗口包含，若包含则更新score，不包含则加入
             is_included = False
-            entity_key = (entity_text, entity_type, entity_start, entity_end) # 判断实体被包含的key
+            entity_key = (entity_text, entity_type, entity_start, entity_end
+                          )  # 判断实体被包含的key
             for pre_entity in new_item["entity_list"]:
-                pre_entity_key =  (pre_entity["entity_text"], pre_entity["entity_type"],
-                                   pre_entity["entity_index"][0], pre_entity["entity_index"][1])
+                pre_entity_key = (pre_entity["entity_text"],
+                                  pre_entity["entity_type"],
+                                  pre_entity["entity_index"][0],
+                                  pre_entity["entity_index"][1])
                 if entity_key == pre_entity_key:
-                    pre_entity["score"] = max(pre_entity["score"], score) # score取最高
+                    pre_entity["score"] = max(pre_entity["score"],
+                                              score)  # score取最高
                     is_included = True
                     break
 
             if not is_included:
                 new_item["entity_list"].append({
-                    "entity_text": entity_text,
-                    "entity_type": entity_type,
+                    "entity_text":
+                    entity_text,
+                    "entity_type":
+                    entity_type,
                     "entity_index": [entity_start, entity_end],
-                    "score": score,
+                    "score":
+                    score,
                 })
 
         # 合并关系列表
         for spo in spo_list_win:
-            predicate, subj, obj, score = spo["predicate"], spo["subject"], \
-                                          spo["object"], spo["score"]
-            subj_text, subj_type, subj_score = subj["entity_text"], \
-                                               subj["entity_type"], subj["score"]
-            subj_start, subj_end = subj["entity_index"][0] + bias, \
-                                   subj["entity_index"][1] + bias
-            obj_text, obj_type, obj_score = obj["entity_text"], obj["entity_type"], obj["score"]
-            obj_start, obj_end = obj["entity_index"][0] + bias, obj["entity_index"][1] + bias
-            assert subj_text == text[subj_start: subj_end]
-            assert obj_text == text[obj_start: obj_end]
+            predicate, subj, obj, score = spo["predicate"], spo[
+                "subject"], spo["object"], spo["score"]
+            subj_text, subj_type, subj_score = subj["entity_text"], subj[
+                "entity_type"], subj["score"]
+            subj_start, subj_end = subj["entity_index"][0] + bias, subj[
+                "entity_index"][1] + bias
+            obj_text, obj_type, obj_score = obj["entity_text"], obj[
+                "entity_type"], obj["score"]
+            obj_start, obj_end = obj["entity_index"][0] + bias, obj[
+                "entity_index"][1] + bias
+            assert subj_text == text[subj_start:subj_end]
+            assert obj_text == text[obj_start:obj_end]
 
             # 判断该关系是否已经被前一个窗口包含，若包含则更新score，不包含则加入
             is_included = False
@@ -295,12 +311,14 @@ def data_segment_restore(ori_data: List[dict]) -> List[dict]:
             for pre_spo in new_item["spo_list"]:
                 pre_subj, pre_obj = pre_spo["subject"], pre_spo["object"]
                 pre_spo_key = (pre_spo["predicate"], pre_subj["entity_text"],
-                               pre_subj["entity_type"], pre_subj["entity_index"][0],
-                               pre_subj["entity_index"][1], pre_obj["entity_text"],
-                               pre_obj["entity_type"], pre_obj["entity_index"][0],
+                               pre_subj["entity_type"],
+                               pre_subj["entity_index"][0],
+                               pre_subj["entity_index"][1],
+                               pre_obj["entity_text"], pre_obj["entity_type"],
+                               pre_obj["entity_index"][0],
                                pre_obj["entity_index"][1])
                 if spo_key == pre_spo_key:
-                    pre_spo["score"] = max(pre_spo["score"], score) # score取最高
+                    pre_spo["score"] = max(pre_spo["score"], score)  # score取最高
                     is_included = True
                     break
 

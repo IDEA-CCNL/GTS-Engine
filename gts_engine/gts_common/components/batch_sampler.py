@@ -1,9 +1,11 @@
-"""class-wise的样本采样"""
+"""class-wise的样本采样."""
 import random
+
 from torch.utils.data import Sampler
 
 
 class PairBatchSampler(Sampler):
+
     def __init__(self, dataset, batch_size):
         self.dataset = dataset
         self.batch_size = batch_size
@@ -18,7 +20,8 @@ class PairBatchSampler(Sampler):
             pair_indices = []
             for idx in batch_indices:
                 y = self.dataset.__getclass__(idx)
-                pair_indices.append(random.choice(self.dataset._classwise_indices[y]))
+                pair_indices.append(
+                    random.choice(self.dataset._classwise_indices[y]))
 
             yield batch_indices + pair_indices
 

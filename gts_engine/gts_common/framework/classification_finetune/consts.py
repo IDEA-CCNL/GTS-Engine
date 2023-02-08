@@ -1,26 +1,27 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Protocol, TypedDict, Dict, NamedTuple
+from typing import Dict, List, NamedTuple, Optional, Protocol, TypedDict
 
 from pydantic import BaseModel, Field
 from torch import Tensor
 from transformers.tokenization_utils import PreTrainedTokenizer
 
-
 #############################################################################################
 # Sample & Data
 #############################################################################################
 
+
 class RawSample(BaseModel):
-    """数据在json文件中储存的字段"""
+    """数据在json文件中储存的字段."""
     content: str
     id: int
     label: Optional[str] = None
-    probs: List[float] = Field(default_factory=list)  # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
+    probs: List[float] = Field(
+        default_factory=list)  # 默认为空列表，dataclass不允许默认值为动态数据结构[]，故采用这种方式
 
 
 @dataclass
 class LabeledSample:
-    """数据被加载并初步处理后的字段"""
+    """数据被加载并初步处理后的字段."""
     text: str
     id: int
     label: str
@@ -31,7 +32,7 @@ class LabeledSample:
 
 @dataclass
 class UnlabeledSample:
-    """无标注数据"""
+    """无标注数据."""
     text: str
     id: int
 
@@ -77,7 +78,7 @@ class EncodedInfSample:
 
 
 class InfSampleProto(Protocol):
-    """用于推理的数据格式"""
+    """用于推理的数据格式."""
     id: int
     text: str
 

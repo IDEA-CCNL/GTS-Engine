@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List, Dict
+from typing import Any, Dict, List
 
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -10,12 +10,9 @@ class GetConfusionMatrixOutput:
     labels: List[str]
 
 
-def get_confusion_matrix(
-    y_true: List[int],
-    y_pred: List[int],
-    id2label: Dict[int, str]
-) -> GetConfusionMatrixOutput:
-    """获取混淆矩阵
+def get_confusion_matrix(y_true: List[int], y_pred: List[int],
+                         id2label: Dict[int, str]) -> GetConfusionMatrixOutput:
+    """获取混淆矩阵.
 
     Args:
         y_true (List[int]): 真实标签
@@ -29,15 +26,14 @@ def get_confusion_matrix(
     """
     label_ids = sorted(list(set(y_true + y_pred)))
     label_names = [id2label[i] for i in label_ids]
-    return GetConfusionMatrixOutput(confusion_matrix(y_true=y_true, y_pred=y_pred, labels=label_ids).tolist(), label_names)
+    return GetConfusionMatrixOutput(
+        confusion_matrix(y_true=y_true, y_pred=y_pred,
+                         labels=label_ids).tolist(), label_names)
 
 
-def get_classification_report(
-    y_true: List[int],
-    y_pred: List[int],
-    id2label: Dict[int, str]
-) -> Dict[str, Any]:
-    """获取分类任务结果报告
+def get_classification_report(y_true: List[int], y_pred: List[int],
+                              id2label: Dict[int, str]) -> Dict[str, Any]:
+    """获取分类任务结果报告.
 
     Args:
         y_true (List[int]): 真实标签
@@ -56,5 +52,4 @@ def get_classification_report(
         digits=2,
         zero_division=0,  # type: ignore
         # TODO (Jiang Yuzhen) 这里zero_division的参数类型应该是str，不知为什么是0，再检查一下
-        output_dict=True
-    )  # type: ignore
+        output_dict=True)  # type: ignore

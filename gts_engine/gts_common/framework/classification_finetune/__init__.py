@@ -1,4 +1,4 @@
-"""句子分类任务基类与特殊工具集合
+"""句子分类任务基类与特殊工具集合.
 
 包含:
     * BaseTrainingPipelineClf: 句子分类训练Pipeline基类
@@ -17,31 +17,20 @@
 Todo:
     - [ ] (Jiang Yuzhen) 对StdPrompt进行拆分和功能修改，补全docstring
 """
-from .base_training_pipeline_clf import BaseTrainingPipelineClf
-from .base_arguments_clf import (
-    BaseTrainingArgumentsClf,
-    BaseInferenceArgumentsClf
-)
+from .base_arguments_clf import (BaseInferenceArgumentsClf,
+                                 BaseTrainingArgumentsClf)
 from .base_data_module_clf import BaseDataModuleClf
-from .base_lightnings_clf import (
-    BaseTrainingLightningClf,
-    BaseInferenceLightningClf
-)
 from .base_dataset_clf import BaseDatasetClf
 from .base_inference_manager_clf import BaseInferenceManagerClf
+from .base_lightnings_clf import (BaseInferenceLightningClf,
+                                  BaseTrainingLightningClf)
+from .base_training_pipeline_clf import BaseTrainingPipelineClf
 from .data_reader_clf import DataReaderClf
 from .label import StdLabel
 
-
 __all__ = [
-    "BaseTrainingPipelineClf",
-    "BaseTrainingArgumentsClf",
-    "BaseInferenceArgumentsClf",
-    "BaseDataModuleClf",
-    "BaseTrainingLightningClf",
-    "BaseInferenceLightningClf",
-    "BaseDatasetClf",
-    "BaseInferenceManagerClf",
-    "StdLabel",
-    "DataReaderClf"
+    "BaseTrainingPipelineClf", "BaseTrainingArgumentsClf",
+    "BaseInferenceArgumentsClf", "BaseDataModuleClf",
+    "BaseTrainingLightningClf", "BaseInferenceLightningClf", "BaseDatasetClf",
+    "BaseInferenceManagerClf", "StdLabel", "DataReaderClf"
 ]
