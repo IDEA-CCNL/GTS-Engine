@@ -139,7 +139,11 @@ class BaseTrainingArgumentsClf(BaseArguments, ProtocolArgsMixin):
                             dest="min_epochs",
                             type=int,
                             default=5)
-        parser.add_argument("--trainer_strategy", dest="trainer_strategy", type=str, default=None, choices=[None, "ddp", "deepspeed_stage_2"])
+        parser.add_argument("--trainer_strategy",
+                            dest="trainer_strategy",
+                            type=str,
+                            default=None,
+                            choices=[None, "ddp", "deepspeed_stage_2"])
 
     # ========================== 固定参数 ===============================
 

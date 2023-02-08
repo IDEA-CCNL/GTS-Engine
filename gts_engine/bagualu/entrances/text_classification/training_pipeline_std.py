@@ -131,8 +131,9 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
                     self._logger.info(
                         "test_data_path is not passed, skip testing...")
                 elif not self._args.test_data_path.exists():
-                    self._logger.info(f"test_data_path {self._args.test_data_path}"
-                                    f" does not exist, skip testing...")
+                    self._logger.info(
+                        f"test_data_path {self._args.test_data_path}"
+                        f" does not exist, skip testing...")
                 else:
                     self._logger.info("implement test on training model...")
                     self._implement_test(best_ckpt)
@@ -146,21 +147,31 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
             if self._args.use_knn:
                 # Create a knn datastore with train data
                 self._logger.info("generating knn datastore...")
-                datastore = get_datastore(model=self._inference_lightning.model.cuda(), 
-                                            data_model=self._get_data_module().raw_train_dataloader())
-                best_hyper,_,_ = grid_search_for_hyper(datastore, 
-                                                        self._get_data_module().val_dataloader(stage=TRAINING_STAGE.VALIDATION), 
-                                                        self._inference_lightning.model.cuda())
-                self._logger.info("best_hyper of knn is {}, base dev dataset".format(best_hyper))
+                datastore = get_datastore(
+                    model=self._inference_lightning.model.cuda(),
+                    data_model=self._get_data_module().raw_train_dataloader())
+                best_hyper, _, _ = grid_search_for_hyper(
+                    datastore,
+                    self._get_data_module().val_dataloader(
+                        stage=TRAINING_STAGE.VALIDATION),
+                    self._inference_lightning.model.cuda())
+                self._logger.info(
+                    "best_hyper of knn is {}, base dev dataset".format(
+                        best_hyper))
 
                 # construct knn_based inference model
-                self._inference_lightning = self._get_inf_lightning(use_knn=self._args.use_knn, datastore=datastore, best_hyper=best_hyper)
-                self._inference_lightning.load_model_from_state_dict(state_dict)
+                self._inference_lightning = self._get_inf_lightning(
+                    use_knn=self._args.use_knn,
+                    datastore=datastore,
+                    best_hyper=best_hyper)
+                self._inference_lightning.load_model_from_state_dict(
+                    state_dict)
                 self._inference_lightning.model.eval()
             self._logger.info("generate prediction file...")
             self._generate_prediction_file()
             self._logger.info("save model files...")
-            torch.save(state_dict, os.path.join(self._output_dir, "finetune_pytorch.bin"))
+            torch.save(state_dict,
+                       os.path.join(self._output_dir, "finetune_pytorch.bin"))
             self._logger.info("export model to onnx...")
             self._export_onnx()
 
@@ -173,6 +184,7 @@ class TrainingPipelineClfStd(BaseTrainingPipelineClf):
                     os.remove(ckpt)
                 except IsADirectoryError:
                     shutil.rmtree(ckpt)
-            if os.path.exists(lightning_logs_path := os.path.join(self._output_dir, "lightning_logs")):
+            if os.path.exists(lightning_logs_path := os.path.join(
+                    self._output_dir, "lightning_logs")):
                 shutil.rmtree(lightning_logs_path)
             self._copy_output_files()

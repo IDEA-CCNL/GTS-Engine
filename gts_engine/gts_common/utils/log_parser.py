@@ -45,14 +45,14 @@ class LogParser(metaclass=ABCMeta):
 
     def _support_error(self, matcher: Matcher) -> Matcher:
 
-        def wraper(log: str):
+        def wrapper(log: str):
             try:
                 res = matcher(log)
             except Exception:
                 res = None
             return res
 
-        return wraper
+        return wrapper
 
 
 # =============================================================================

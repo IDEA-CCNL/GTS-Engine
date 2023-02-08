@@ -102,14 +102,15 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
         }
 
     def training_step_end(self, step_output: Dict[str, Tensor]):
-        """聚合training_step输出并打印"""
+        """聚合training_step输出并打印."""
         lr = step_output["lr"]
         batch_idx = step_output["batch_idx"]
-        batch_size_list = step_output["batch_size"]
         loss = step_output["loss"]
         loss_mlm = step_output["loss_mlm"]
         loss_ce = step_output["loss_ce"]
-        self._logger.info(f"loss: {loss:.4f} lr: {lr:.2e} batch: {batch_idx}/{self.trainer.num_training_batches} epoch: {self.current_epoch} step: {self.global_step}")
+        self._logger.info(
+            f"loss: {loss:.4f} lr: {lr:.2e} batch: {batch_idx}/{self.trainer.num_training_batches} epoch: {self.current_epoch} step: {self.global_step}"
+        )
         metrics = {
             "train_loss": loss,
             "lr": lr,
@@ -139,21 +140,28 @@ class TrainLightningClfStd(BaseTrainingLightningClf):
         logits = model_output["logits"]
         acc, _ = self._logits_2_acc.forward(logits, batch["label_id_clf"])
         batch_size = len(batch["input_ids"])
-        return {"loss": loss, "acc": acc, "batch_size": batch_size} 
-        
-    def validation_epoch_end(self, validation_step_outputs: List[Dict[str, Tensor]]) -> None:
-        """聚合所有验证结果并打印"""
-        loss_list = torch.stack([step["loss"] for step in validation_step_outputs])
-        acc_list = torch.stack([step["acc"] for step in validation_step_outputs])
-        batch_size_list = [step["batch_size"] for step in validation_step_outputs]
+        return {"loss": loss, "acc": acc, "batch_size": batch_size}
+
+    def validation_epoch_end(
+            self, validation_step_outputs: List[Dict[str, Tensor]]) -> None:
+        """聚合所有验证结果并打印."""
+        loss_list = torch.stack(
+            [step["loss"] for step in validation_step_outputs])
+        acc_list = torch.stack(
+            [step["acc"] for step in validation_step_outputs])
+        batch_size_list = [
+            step["batch_size"] for step in validation_step_outputs
+        ]
         dev_loss = loss_list.mean()
         dev_acc = acc_list.sum() / sum(batch_size_list)
-        metrics = {
-            "dev_loss": dev_loss,
-            "dev_acc": dev_acc
-        }
-        self.log_dict(metrics, prog_bar=False, logger=True, rank_zero_only=True)
-        self._logger.info(f"validation - loss: {dev_loss:.4f} acc: {dev_acc:.4f} epoch: {self.current_epoch}")
+        metrics = {"dev_loss": dev_loss, "dev_acc": dev_acc}
+        self.log_dict(metrics,
+                      prog_bar=False,
+                      logger=True,
+                      rank_zero_only=True)
+        self._logger.info(
+            f"validation - loss: {dev_loss:.4f} acc: {dev_acc:.4f} epoch: {self.current_epoch}"
+        )
 
 
 class PredictLightningClfStd(BaseTrainingLightningClf):

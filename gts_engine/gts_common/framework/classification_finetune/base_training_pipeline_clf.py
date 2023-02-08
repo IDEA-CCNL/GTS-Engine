@@ -13,7 +13,8 @@ from pydantic import DirectoryPath
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import Logger as PlLogger
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.utilities.deepspeed import convert_zero_checkpoint_to_fp32_state_dict
+from pytorch_lightning.utilities.deepspeed import \
+    convert_zero_checkpoint_to_fp32_state_dict
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 
@@ -242,30 +243,33 @@ class BaseTrainingPipelineClf(BaseTrainingPipeline, metaclass=ABCMeta):
     ) -> DevOutput:
         """输出对应checkpoint的验证/测试结果."""
         model = self._load_ckpt(checkpoint_path)
-        data_loader = self._data_module.test_dataloader(stage=TRAINING_STAGE.TEST) if stage == TRAINING_STAGE.TEST else self._data_module.val_dataloader(stage=TRAINING_STAGE.VALIDATION, load_ratio=self._args.load_data_ratio)
-        dev_trainer = Trainer(
-            accelerator="gpu",
-            devices=1,
-            default_root_dir=str(self._output_dir),
-            enable_progress_bar=False,
-            auto_select_gpus=True
-        )
-        eval_output = dev_trainer.validate(
-            model=model,
-            dataloaders=data_loader,
-            verbose=False
-        )
+        data_loader = self._data_module.test_dataloader(
+            stage=TRAINING_STAGE.TEST
+        ) if stage == TRAINING_STAGE.TEST else self._data_module.val_dataloader(
+            stage=TRAINING_STAGE.VALIDATION,
+            load_ratio=self._args.load_data_ratio)
+        dev_trainer = Trainer(accelerator="gpu",
+                              devices=1,
+                              default_root_dir=str(self._output_dir),
+                              enable_progress_bar=False,
+                              auto_select_gpus=True)
+        eval_output = dev_trainer.validate(model=model,
+                                           dataloaders=data_loader,
+                                           verbose=False)
         dev_acc = eval_output[0]["dev_acc"]
         dev_loss = eval_output[0]["dev_loss"]
         return DevOutput(dev_loss=dev_loss, dev_acc=dev_acc)
 
-    def _load_ckpt(self, checkpoint_path: str) -> BaseTrainingLightningClf:  # type: ignore 
+    def _load_ckpt(
+            self,
+            checkpoint_path: str) -> BaseTrainingLightningClf:  # type: ignore
         if self._args.trainer_strategy and 'deepspeed' in self._args.trainer_strategy:
             save_path = checkpoint_path
             output_path = os.path.join(self._output_dir, "converted.pt")
-            if not os.path.exists(output_path): 
-                convert_zero_checkpoint_to_fp32_state_dict(save_path, output_path)
-            checkpoint_path=output_path
+            if not os.path.exists(output_path):
+                convert_zero_checkpoint_to_fp32_state_dict(
+                    save_path, output_path)
+            checkpoint_path = output_path
         return type(self._training_lightning).load_from_checkpoint(
             checkpoint_path,
             args=self._args,
