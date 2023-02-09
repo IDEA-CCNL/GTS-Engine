@@ -1,46 +1,49 @@
-import os
-import time
 import argparse
-import numpy as np
-import torch
 import json
+import os
 import random
 import sys
+import time
+
+import numpy as np
+import torch
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import TaskDatasetUnifiedMC
-from qiankunding.models.nli.bert_UnifiedMC import taskModel
-from gts_common.logs_utils import Logger
-from gts_common.pipeline_utils import download_model_from_huggingface
-from transformers import BertTokenizer, MegatronBertForMaskedLM
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-from sklearn.metrics import precision_score, f1_score, recall_score
 from datetime import datetime
 
+from gts_common.logs_utils import Logger
+from gts_common.pipeline_utils import download_model_from_huggingface
+from qiankunding.dataloaders.text_classification.dataloader_UnifiedMC import \
+    TaskDatasetUnifiedMC
+from qiankunding.models.nli.bert_UnifiedMC import taskModel
+from sklearn.metrics import f1_score, precision_score, recall_score
+from torch.utils.data import DataLoader
+from tqdm import tqdm
+from transformers import BertTokenizer, MegatronBertForMaskedLM
 
 logger = Logger().get_log()
 
 
 def read_data(label_path, data_path):
     input_data = []
-    with open(os.path.join(data_path), 'r',
-              encoding='utf8') as f:
+    with open(os.path.join(data_path), encoding='utf8') as f:
         for line in f:
             input_data.append(json.loads(line.strip()))
 
     input_labels = object
-    with open(os.path.join(label_path),
-              'r',
-              encoding='utf8') as f:
+    with open(os.path.join(label_path), encoding='utf8') as f:
         input_labels = json.load(f)
     return input_data, input_labels
 
 
-def take_sample_input(labels_length, input_data,):
+def take_sample_input(
+    labels_length,
+    input_data,
+):
     labels_count = labels_length
     sample_count_every_class = int(2000 / labels_count)
-    logger.info("sample_count_every_class {}".format(sample_count_every_class))
+    logger.info(f"sample_count_every_class {sample_count_every_class}")
     random.shuffle(input_data)
     sample_input_data = []
     label_to_count = {}
@@ -57,13 +60,13 @@ def take_sample(sample_input_data, current_label):
     total_val_data = sample_input_data
     total_val_data_index = [i for i in range(len(total_val_data))]
     true_label_index = [
-        i for i, k in enumerate(total_val_data)
-        if k['label'] == current_label
+        i for i, k in enumerate(total_val_data) if k['label'] == current_label
     ]
 
     tmp_set = set(total_val_data_index).difference(set(true_label_index))
     # 负采样个数
-    negative_label_index = random.sample(list(tmp_set),min(len(true_label_index) * 2, len(list(tmp_set))))
+    negative_label_index = random.sample(
+        list(tmp_set), min(len(true_label_index) * 2, len(list(tmp_set))))
     need_index = true_label_index + negative_label_index
     need_index.sort()
 
@@ -76,13 +79,10 @@ def take_sample(sample_input_data, current_label):
 
 
 def predict_process(two_choices, tokenizer, sentences, model):
-    logger.info("start {}".format(two_choices))
+    logger.info(f"start {two_choices}")
     samples = []
     for sentence in sentences:
-        tmp_sample = {
-            "content": sentence,
-            "label": two_choices[0]
-        }
+        tmp_sample = {"content": sentence, "label": two_choices[0]}
         samples.append(tmp_sample)
 
     train_data = TaskDatasetUnifiedMC(data_path=None,
@@ -130,10 +130,15 @@ def predict_process(two_choices, tokenizer, sentences, model):
 
 def label_detection(label_path, data_path):
     model_name = "Erlangshen-UniMC-MegatronBERT-1.3B-Chinese"
-    pretrained_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pretrained")
-    download_model_from_huggingface(pretrained_model_dir, model_name, model_class=MegatronBertForMaskedLM, tokenizer_class=BertTokenizer)
-    model_path = os.path.join(pretrained_model_dir,
-                              model_name)
+    pretrained_model_dir = os.path.join(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "pretrained")
+    download_model_from_huggingface(pretrained_model_dir,
+                                    model_name,
+                                    model_class=MegatronBertForMaskedLM,
+                                    tokenizer_class=BertTokenizer)
+    model_path = os.path.join(pretrained_model_dir, model_name)
     starttime = datetime.now()
     tokenizer = BertTokenizer.from_pretrained(model_path)
     model = taskModel(model_path, tokenizer=tokenizer)
@@ -141,9 +146,12 @@ def label_detection(label_path, data_path):
     model.cuda()
     random.seed(123)
     labels_info = {}
-    result_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'label_detection_result.json')
-    input_data, input_labels = read_data(label_path=label_path, data_path=data_path)
-    sample_input_data = take_sample_input(len(input_labels["labels"]), input_data)
+    result_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'label_detection_result.json')
+    input_data, input_labels = read_data(label_path=label_path,
+                                         data_path=data_path)
+    sample_input_data = take_sample_input(len(input_labels["labels"]),
+                                          input_data)
     label_detection_result = []
 
     total_count = 0
@@ -153,7 +161,8 @@ def label_detection(label_path, data_path):
         current_label_id = index
         index += 1
 
-        sentences, val_data = take_sample(sample_input_data=sample_input_data, current_label=current_label)
+        sentences, val_data = take_sample(sample_input_data=sample_input_data,
+                                          current_label=current_label)
 
         total_count += len(sentences)
         random_f1 = -1
@@ -167,7 +176,7 @@ def label_detection(label_path, data_path):
                                              tokenizer=tokenizer,
                                              sentences=sentences,
                                              model=model)
-           
+
             y_true = []
             y_pred = []
             y_senetence = []
@@ -182,16 +191,24 @@ def label_detection(label_path, data_path):
 
             trueY = np.array(y_true)
             testY = np.array(y_pred)
-            logger.info("n {}".format(n))
+            logger.info(f"n {n}")
 
             label = 0
 
             if n == 0:
-                random_f1 = f1_score(trueY == label, testY == label, labels=True)
-                random_recall = recall_score(trueY == label, testY == label, labels=True)
+                random_f1 = f1_score(trueY == label,
+                                     testY == label,
+                                     labels=True)
+                random_recall = recall_score(trueY == label,
+                                             testY == label,
+                                             labels=True)
             else:
-                label_f1 = f1_score(trueY == label, testY == label, labels=True)
-                label_recall = recall_score(trueY == label, testY == label, labels=True)
+                label_f1 = f1_score(trueY == label,
+                                    testY == label,
+                                    labels=True)
+                label_recall = recall_score(trueY == label,
+                                            testY == label,
+                                            labels=True)
 
             n += 1
             two_choices[0] = current_label
@@ -238,12 +255,12 @@ def label_detection(label_path, data_path):
             "score": score
         })
 
-    logger.info("label_detection_result {}".format(label_detection_result))
-    logger.info("result {}".format(result))
+    logger.info(f"label_detection_result {label_detection_result}")
+    logger.info(f"result {result}")
     endtime = datetime.now()
-    logger.info("RunTime: {}h-{}m-{}s".format(endtime.hour - starttime.hour,
-                                              endtime.minute - starttime.minute,
-                                              endtime.second - starttime.second))
+    logger.info("RunTime: {}h-{}m-{}s".format(
+        endtime.hour - starttime.hour, endtime.minute - starttime.minute,
+        endtime.second - starttime.second))
 
     with open(result_path, 'w', encoding='utf-8') as f:
         for i in result:
@@ -252,18 +269,11 @@ def label_detection(label_path, data_path):
 
 if __name__ == '__main__':
     total_parser = argparse.ArgumentParser()
-    total_parser.add_argument(
-        "--label_path",
-        type=str,
-        help="data path")
-    total_parser.add_argument(
-        "--data_path",
-        type=str,
-        help="data path")
+    total_parser.add_argument("--label_path", type=str, help="data path")
+    total_parser.add_argument("--data_path", type=str, help="data path")
     total_parser.add_argument("--max_len", default=630, type=str)
     args = total_parser.parse_args()
 
-    logger.info("args: {}".format(args))
+    logger.info(f"args: {args}")
 
-    label_detection(label_path=args.label_path,
-                    data_path=args.data_path)
+    label_detection(label_path=args.label_path, data_path=args.data_path)

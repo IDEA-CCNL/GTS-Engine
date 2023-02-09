@@ -1,11 +1,11 @@
-#encoding=utf8
-
+import importlib
 import os
 import sys
-import importlib
+
 
 def scandir(dir_path, suffix=None, recursive=False, full_path=False):
     """Scan a directory to find the interested files.
+
     Args:
         dir_path (str): Path of the directory.
         suffix (str | tuple(str), optional): File suffix that we are
@@ -37,15 +37,24 @@ def scandir(dir_path, suffix=None, recursive=False, full_path=False):
                     yield return_path
             else:
                 if recursive:
-                    yield from _scandir(entry.path, suffix=suffix, recursive=recursive)
+                    yield from _scandir(entry.path,
+                                        suffix=suffix,
+                                        recursive=recursive)
                 else:
                     continue
 
     return _scandir(dir_path, suffix=suffix, recursive=recursive)
 
+
 # automatically scan and import model modules for registry
 # scan all the files under the 'models' folder and collect files ending with '_model.py'
 pipeline_dir = os.path.dirname(os.path.abspath(__file__))
-model_filenames = [os.path.splitext(os.path.basename(v))[0] for v in scandir(pipeline_dir) if v.endswith('_pipeline.py')]
+model_filenames = [
+    os.path.splitext(os.path.basename(v))[0] for v in scandir(pipeline_dir)
+    if v.endswith('_pipeline.py')
+]
 # import all the model modules
-__all__ = [os.path.splitext(os.path.basename(v))[0] for v in scandir(pipeline_dir) if not v.endswith('__init__.py')]
+__all__ = [
+    os.path.splitext(os.path.basename(v))[0] for v in scandir(pipeline_dir)
+    if not v.endswith('__init__.py')
+]
