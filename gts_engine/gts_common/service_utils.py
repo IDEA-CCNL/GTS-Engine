@@ -161,6 +161,7 @@ class DataFormatChecker:
 
         class IESample(BaseModel):
             """sample."""
+
             regex = "(实体识别|关系抽取)"
             task: constr(regex=regex)
             text: constr(min_length=1)

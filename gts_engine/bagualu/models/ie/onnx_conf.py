@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +13,9 @@
 # limitations under the License.
 
 
-class BagualuIEOnnxConfig(object):
-    """ config """
+class BagualuIEOnnxConfig:
+    """config."""
+
     def __init__(self) -> None:
         self.input_names = [
             "input_ids",
@@ -25,9 +25,7 @@ class BagualuIEOnnxConfig(object):
             "text_len",
             "label_token_idx",
         ]
-        self.output_names = [
-            "span_logits"
-        ]
+        self.output_names = ["span_logits"]
         self.dynamic_axes = {
 
             # input

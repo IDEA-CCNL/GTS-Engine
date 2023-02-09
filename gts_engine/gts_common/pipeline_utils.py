@@ -76,6 +76,7 @@ def save_args(args: GtsEngineArgs):
         json.dump(vars(args), f, indent=4)
     logger.info(f"Save args to {args_path}")
     for k, v in vars(args).items():
+
         logger.info(f"{k} : {v}    ")
     logger.info('\n' + '-' * 64)
     return args

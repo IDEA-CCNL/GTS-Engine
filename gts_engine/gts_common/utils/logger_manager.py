@@ -1,4 +1,4 @@
-"""全局的单输出文件日志管理器
+"""全局的单输出文件日志管理器.
 
 Todo:
     - [ ] (Jiang Yuzhen) 目前这个模块的功能只是对log的输出格式和文件处理
@@ -9,7 +9,7 @@ import logging
 
 
 class LoggerManager:
-    """全局的单输出文件日志管理器
+    """全局的单输出文件日志管理器.
 
     Example:
 
@@ -20,9 +20,10 @@ class LoggerManager:
         >>> logger = LoggerManager.get_logger("test")
         >>> logger.info("hello world!")
     """
+
     @staticmethod
     def set_logger(logger_name: str, log_file_path: str):
-        """设置logger与对应的输出文件
+        """设置logger与对应的输出文件.
 
         Args:
             logger_name (str): 为logger指定唯一名称以全局访问
@@ -34,22 +35,21 @@ class LoggerManager:
         file_handler.setLevel(logging.INFO)
         file_handler.setFormatter(
             logging.Formatter(
-                fmt='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S')
-        )
+                fmt='%(asctime)s - %(filename)s[line:%(lineno)d] ' +
+                '- %(levelname)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S'))
         logger.addHandler(file_handler)
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.INFO)
         console_handler.setFormatter(
             logging.Formatter(
                 fmt='%(asctime)s - %(filename)s - %(levelname)s: %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S')
-        )
+                datefmt='%Y-%m-%d %H:%M:%S'))
         logger.addHandler(console_handler)
 
     @staticmethod
     def get_logger(logger_name: str) -> logging.Logger:
-        """全局获取logger
+        """全局获取logger.
 
         Args:
             logger_name (str): 获取的logger名

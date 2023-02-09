@@ -1,13 +1,14 @@
-"""抽样、样本筛选相关工具集"""
-from typing import Dict, Sequence, Protocol, List, TypeVar, Callable
+"""抽样、样本筛选相关工具集."""
 import random
+from typing import Callable, Dict, List, Protocol, Sequence, TypeVar
 
 
 class LabeledSampleProto(Protocol):
-    """带标签数据类型协议
+    """带标签数据类型协议.
 
     包含可读的label属性
     """
+
     @property
     def label(self) -> str:
         ...
@@ -17,23 +18,21 @@ LabeledSampleType = TypeVar("LabeledSampleType", bound=LabeledSampleProto)
 
 
 class SoftLabeledSampleProto(Protocol):
-    """带软标签数据类型协议
+    """带软标签数据类型协议.
 
     包含可读的soft_label属性
     """
     soft_label: List[float]
 
 
-SoftLabeledSampleType = TypeVar(
-    "SoftLabeledSampleType", bound=SoftLabeledSampleProto)
+SoftLabeledSampleType = TypeVar("SoftLabeledSampleType",
+                                bound=SoftLabeledSampleProto)
 
 
 def balanced_sampling_by_label(
-        labeled_sample_list: Sequence[LabeledSampleType],
-        sample_num: int,
-        minimum_num_per_label: int
-) -> List[LabeledSampleType]:
-    """按标签平衡抽样
+        labeled_sample_list: Sequence[LabeledSampleType], sample_num: int,
+        minimum_num_per_label: int) -> List[LabeledSampleType]:
+    """按标签平衡抽样.
 
     Args:
         labeled_sample_list (Sequence[LabeledSampleProto]):
@@ -61,7 +60,7 @@ def balanced_sampling_by_label(
 
 
 def get_prob_threshold(label_classes: int, use_unlabel: bool) -> float:
-    """根据类别确定筛选样本的置信度
+    """根据类别确定筛选样本的置信度.
 
     Args:
         label_classes (int):
@@ -90,11 +89,10 @@ def get_prob_threshold(label_classes: int, use_unlabel: bool) -> float:
 
 
 def filter_data_by_confidence(
-    sample_list: Sequence[SoftLabeledSampleType],
-    label_classes: int,
-    use_unlabel: bool = True
-) -> List[SoftLabeledSampleType]:
-    """根据不同的类别和置信度过滤数据
+        sample_list: Sequence[SoftLabeledSampleType],
+        label_classes: int,
+        use_unlabel: bool = True) -> List[SoftLabeledSampleType]:
+    """根据不同的类别和置信度过滤数据.
 
     Args:
         sample_list (Sequence[SoftLabeledSampleType]):
@@ -110,9 +108,9 @@ def filter_data_by_confidence(
     if len(sample_list) == 0:
         return []
     prob_threshold = get_prob_threshold(label_classes, use_unlabel)
-    filter_fx: Callable[[SoftLabeledSampleType], bool] = (
-        lambda sample: len(sample.soft_label) > 0 and
-        max(sample.soft_label) > prob_threshold)
+    filter_fx: Callable[[SoftLabeledSampleType], bool] = (lambda sample: len(
+        sample.soft_label) > 0 and max(sample.soft_label) > prob_threshold)
     filtered_sample_list = [
-        sample for sample in sample_list if filter_fx(sample)]
+        sample for sample in sample_list if filter_fx(sample)
+    ]
     return filtered_sample_list

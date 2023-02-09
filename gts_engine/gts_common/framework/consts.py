@@ -1,20 +1,20 @@
-"""常量定义模块
+"""常量定义模块.
 
 将所有需要复用的常量定义在这里，防止循环导入。
 """
 from enum import Enum
 from typing import Optional
-from typing_extensions import TypedDict
 
 from torch import Tensor
-
+from typing_extensions import TypedDict
 
 # =============================================================================
 # types
 # =============================================================================
 
+
 class BertInput(TypedDict):
-    """Bert模型输入字段"""
+    """Bert模型输入字段."""
     input_ids: Tensor
     attention_mask: Tensor
     token_type_ids: Tensor
@@ -24,6 +24,7 @@ class BertInput(TypedDict):
 # =============================================================================
 # enums
 # =============================================================================
+
 
 class TRAIN_MODE(Enum):
     DEFAULT = "0"

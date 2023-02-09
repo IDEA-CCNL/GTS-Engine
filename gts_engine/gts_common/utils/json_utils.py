@@ -1,4 +1,4 @@
-"""json读写工具集
+"""json读写工具集.
 
 提供支持类别推导、校验，支持json和json列表（每行为一个json字符串）形式的读写工具
 
@@ -7,16 +7,9 @@ Todo:
 """
 import json
 from pathlib import Path
-from typing import (
-    List,
-    Union,
-    TypeVar,
-    Type,
-    Any,
-    Optional,
-    Generator,
-    overload
-)
+from typing import (Any, Generator, List, Optional, Type, TypeVar, Union,
+                    overload)
+
 from pydantic import parse_obj_as
 from pydantic.json import pydantic_encoder
 
@@ -25,7 +18,7 @@ LoadType = TypeVar("LoadType", bound=Type)
 
 @overload
 def load_json(file: Union[str, Path]) -> Any:
-    """读取json文件
+    """读取json文件.
 
     Args:
         file (Union[str, Path]): 文件路径
@@ -37,7 +30,7 @@ def load_json(file: Union[str, Path]) -> Any:
 
 @overload
 def load_json(file: Union[str, Path], type_: Type[LoadType]) -> LoadType:
-    """读取指定类型的json文件
+    """读取指定类型的json文件.
 
     Args:
         file (Union[str, Path]):
@@ -94,10 +87,9 @@ def load_json_list(file: Union[str, Path]) -> Generator[Any, None, None]:
 
 
 @overload
-def load_json_list(
-    file: Union[str, Path], type_: Type[LoadType]
-) -> Generator[LoadType, None, None]:
-    """读取json列表文件（每行为一个json对象），并检查、解析为指定类型
+def load_json_list(file: Union[str, Path],
+                   type_: Type[LoadType]) -> Generator[LoadType, None, None]:
+    """读取json列表文件（每行为一个json对象），并检查、解析为指定类型.
 
     Args:
         file (Union[str, Path]): json文件路径
@@ -133,10 +125,10 @@ def load_json_list(
     """
 
 
-def dump_json(
-    obj: Any, file: Union[str, Path], indent: Optional[int] = None
-) -> None:
-    """将对象写入json文件
+def dump_json(obj: Any,
+              file: Union[str, Path],
+              indent: Optional[int] = None) -> None:
+    """将对象写入json文件.
 
     Args:
         obj (Any):
@@ -148,14 +140,15 @@ def dump_json(
             json换行缩进空格数. Defaults to None.
     """
     with open(file, 'w', encoding='utf-8') as f:
-        json.dump(
-            obj, f, indent=indent,
-            ensure_ascii=False, default=pydantic_encoder
-        )
+        json.dump(obj,
+                  f,
+                  indent=indent,
+                  ensure_ascii=False,
+                  default=pydantic_encoder)
 
 
 def dump_json_list(obj: List[Any], file: Union[str, Path]) -> None:
-    """将对象列表按行写入json文件，每一行为一个对象对应的json字符串
+    """将对象列表按行写入json文件，每一行为一个对象对应的json字符串.
 
     Args:
         obj (List[Any]): 写入的对象列表
@@ -163,19 +156,15 @@ def dump_json_list(obj: List[Any], file: Union[str, Path]) -> None:
     """
     with open(file, 'w', encoding='utf-8') as f:
         f.writelines([
-            json.dumps(
-                content, ensure_ascii=False, default=pydantic_encoder
-            ) + "\n"
-            for content in obj
+            json.dumps(content, ensure_ascii=False, default=pydantic_encoder) +
+            "\n" for content in obj
         ])
 
 
-def load_json(
-    file: Union[str, Path],
-    type_: Optional[Type[LoadType]] = None
-) -> Union[Any, LoadType]:
-    """load_json()函数实现"""
-    with open(file, "r", encoding="utf-8") as f:
+def load_json(file: Union[str, Path],
+              type_: Optional[Type[LoadType]] = None) -> Union[Any, LoadType]:
+    """load_json()函数实现."""
+    with open(file, encoding="utf-8") as f:
         obj = json.load(f)
     if type_ is None:
         return obj
@@ -184,10 +173,11 @@ def load_json(
 
 
 def load_json_list(
-    file: Union[str, Path], type_: Optional[Type[LoadType]] = None
+    file: Union[str, Path],
+    type_: Optional[Type[LoadType]] = None
 ) -> Union[Generator[Any, None, None], Generator[LoadType, None, None]]:
-    """load_json_list() 函数实现"""
-    with open(file, 'r', encoding="utf-8") as f:
+    """load_json_list() 函数实现."""
+    with open(file, encoding="utf-8") as f:
         for line in f:
             if type_ is None:
                 yield json.loads(line)

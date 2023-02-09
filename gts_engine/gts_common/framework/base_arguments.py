@@ -1,16 +1,16 @@
-"""参数集合基类模块"""
+"""参数集合基类模块."""
+import sys
 from abc import ABCMeta
 from argparse import ArgumentParser, Namespace, _ArgumentGroup
-import sys
-from typing import Optional, Dict, List, Type, Union, get_type_hints
-from typing_extensions import Self
+from typing import Dict, List, Optional, Type, Union, get_type_hints
 
+from typing_extensions import Self
 
 GeneralParser = Union[ArgumentParser, _ArgumentGroup]
 
 
 class BaseArguments(Namespace, metaclass=ABCMeta):
-    """参数集合基类
+    """参数集合基类.
 
     将参数定义、解析、类型标注进行整合的支持嵌套的用于模块化管理参数的参数集合基类
 
@@ -153,7 +153,7 @@ class BaseArguments(Namespace, metaclass=ABCMeta):
     # ========================== public ===============================
 
     def parse_args(self, parse_list: Optional[List[str]] = None) -> Self:
-        """递归地解析参数集合及其子参数集合
+        """递归地解析参数集合及其子参数集合.
 
         Args:
             parse_list (Optional[List[str]], optional):
@@ -163,13 +163,12 @@ class BaseArguments(Namespace, metaclass=ABCMeta):
             Self: 解析后的参数对象
         """
         # 支持`--help`参数
-        if ((len(sys.argv) > 1 and sys.argv[1] in {"--help", "-h"}) or
-            (parse_list is not None and
-             len(parse_list) == 1 and
-             parse_list[0] in {"--help", "-h"})):
+        if ((len(sys.argv) > 1 and sys.argv[1] in {"--help", "-h"})
+                or (parse_list is not None and len(parse_list) == 1
+                    and parse_list[0] in {"--help", "-h"})):
             self._show_help()  # 程序会在这里打印help并结束
-        parser = ArgumentParser(
-            prog=self._arg_name, description=self._arg_description)
+        parser = ArgumentParser(prog=self._arg_name,
+                                description=self._arg_description)
         # 加入并解析当前层参数
         self._add_args(parser)
         _, left_params = parser.parse_known_args(parse_list, namespace=self)
@@ -183,46 +182,46 @@ class BaseArguments(Namespace, metaclass=ABCMeta):
     # ========================== abstract ===============================
 
     def _add_args(self, parser: GeneralParser) -> None:
-        """将参数加入parser"""
+        """将参数加入parser."""
         pass
 
     def _after_parse(self) -> None:
-        """后处理逻辑，可用于需要传参结束后进行处理和计算的逻辑"""
+        """后处理逻辑，可用于需要传参结束后进行处理和计算的逻辑."""
         pass
 
     @property
     def _arg_name(self) -> Optional[str]:
-        """参数集合名称，用于help"""
+        """参数集合名称，用于help."""
         return None
 
     @property
     def _arg_description(self) -> Optional[str]:
-        """参数集合描述，用于help"""
+        """参数集合描述，用于help."""
         return None
 
     # ========================== protected ===============================
 
     @property
     def _sub_args_dict(self) -> Dict[str, Type["BaseArguments"]]:
-        """子参数集合类字典"""
+        """子参数集合类字典."""
         hintsDict = get_type_hints(type(self))
-        return {key: val for
-                key, val in
-                hintsDict.items() if
-                isinstance(val, type) and
-                issubclass(val, BaseArguments)}
+        return {
+            key: val
+            for key, val in hintsDict.items()
+            if isinstance(val, type) and issubclass(val, BaseArguments)
+        }
 
     def _show_help(self) -> None:
-        """打印help"""
-        parser = ArgumentParser(
-            prog=self._arg_name, description=self._arg_description)
+        """打印help."""
+        parser = ArgumentParser(prog=self._arg_name,
+                                description=self._arg_description)
         self._add_all_args(parser)
         parser.parse_args(["--help"])
 
     def _add_all_args(self, parser: ArgumentParser) -> ArgumentParser:
-        """为了打印help，将子参数集合的参数都加入本层parser"""
-        parser_group = parser.add_argument_group(
-            self._arg_name, self._arg_description)
+        """为了打印help，将子参数集合的参数都加入本层parser."""
+        parser_group = parser.add_argument_group(self._arg_name,
+                                                 self._arg_description)
         self._add_args(parser_group)
         for _, arg_cls in self._sub_args_dict.items():
             arg = arg_cls()

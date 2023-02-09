@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2021 The IDEA Authors. All rights reserved.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,18 +15,18 @@
 import os
 from typing import Optional
 
-from gts_common.utils.path import mk_inexist_dir
-from gts_common.framework.base_arguments import BaseArguments, GeneralParser
 from gts_common.components.protocol_args import ProtocolArgsMixin
+from gts_common.framework.base_arguments import BaseArguments, GeneralParser
+from gts_common.utils.path import mk_inexist_dir
 
 
 class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
-    """ 信息抽取finetune参数 """
+    """信息抽取finetune参数."""
 
     # 输出相关参数
     @property
     def ft_output_dir(self) -> str:
-        """ finetune输出路径 """
+        """finetune输出路径."""
         return os.path.join(self.protocol_args.output_dir)
 
     @property
@@ -36,37 +35,37 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
 
     @property
     def ckpt_dirpath(self) -> str:
-        """ checkpoint dirpath """
+        """checkpoint dirpath."""
         return os.path.join(self.ft_output_dir, "checkpoints")
 
     @property
     def tensorboard_dir(self) -> str:
-        """ tensorboard日志输出路径 """
+        """tensorboard日志输出路径."""
         return os.path.join(self.ft_output_dir, "tensorboard")
 
     @property
     def prediction_save_dir(self) -> str:
-        """ 预测结果保存路径 """
+        """预测结果保存路径."""
         return os.path.join(self.ft_output_dir, "predictions")
 
     @property
     def model_save_dir(self) -> str:
-        """ 模型保存路径 """
+        """模型保存路径."""
         return os.path.join(self.ft_output_dir, "model")
 
     @property
     def best_ckpt_path(self) -> str:
-        """ 最优checkpoint路径 """
+        """最优checkpoint路径."""
         return os.path.join(self.model_save_dir, "best.ckpt")
 
     @property
     def last_ckpt_path(self) -> str:
-        """ 最后一个checkpoint路径 """
+        """最后一个checkpoint路径."""
         return os.path.join(self.ckpt_dirpath, "last.ckpt")
 
     @property
     def onnx_saved_path(self) -> str:
-        """ onnx 模型保存路径 """
+        """onnx 模型保存路径."""
         return os.path.join(self.model_save_dir, "model.onnx")
 
     # 数据集相关参数
@@ -78,26 +77,28 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
 
     @property
     def train_data_path(self) -> str:
-        """ 训练集 """
-        default_path = os.path.join(self.protocol_args.input_dir, "train.jsonl")
+        """训练集."""
+        default_path = os.path.join(self.protocol_args.input_dir,
+                                    "train.jsonl")
         return self._train_data_path if self._train_data_path else default_path
 
     @property
     def dev_data_path(self) -> str:
-        """ 验证集 """
+        """验证集."""
         default_path = os.path.join(self.protocol_args.input_dir, "val.jsonl")
         return self._dev_data_path if self._dev_data_path else default_path
 
     @property
     def test_data_path(self) -> str:
-        """ 测试集 """
+        """测试集."""
         default_path = os.path.join(self.protocol_args.input_dir, "test.jsonl")
         return self._test_data_path if self._test_data_path else default_path
 
     @property
     def online_test_data_path(self) -> str:
-        """ 无标注数据 """
-        default_path = os.path.join(self.protocol_args.input_dir, "test_online.jsonl")
+        """无标注数据."""
+        default_path = os.path.join(self.protocol_args.input_dir,
+                                    "test_online.jsonl")
         return self._online_test_data_path if self._online_test_data_path else default_path
 
     # 固定参数
@@ -254,7 +255,7 @@ class TrainingArgumentsIEStd(BaseArguments, ProtocolArgsMixin):
 
 
 class InferenceArgumentsIEStd(BaseArguments):
-    """ 信息抽取finetune参数 """
+    """信息抽取finetune参数."""
 
     task_dir: str
     pretrained_model_root: str
@@ -273,12 +274,12 @@ class InferenceArgumentsIEStd(BaseArguments):
 
     @property
     def model_save_dir(self) -> str:
-        """ 模型保存路径 """
+        """模型保存路径."""
         return os.path.join(self.task_dir, "outputs/model")
 
     @property
     def best_ckpt_path(self) -> str:
-        """ 最优checkpoint路径 """
+        """最优checkpoint路径."""
         return os.path.join(self.model_save_dir, "best.ckpt")
 
     def _add_args(self, parser: GeneralParser) -> None:

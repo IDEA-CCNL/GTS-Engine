@@ -1,20 +1,20 @@
-"""工程协议参数集合模块
+"""工程协议参数集合模块.
 
 Todo:
     - [ ] (Jiang Yuzhen) 本模块是为了将gts-factory的通用调用协议参数模块化，整合进gts-engine后，
         需要重新考虑存在的必要性。
 """
 from pathlib import Path
-from pydantic import DirectoryPath
 from typing import Optional
 
 from gts_common.framework import BaseArguments
 from gts_common.framework.consts import TRAIN_MODE
 from gts_common.utils.path import mk_inexist_dir
+from pydantic import DirectoryPath
 
 
 class ProtocolArgs(BaseArguments):
-    """通用的工程协议参数集合"""
+    """通用的工程协议参数集合."""
 
     input_dir: DirectoryPath
     """输入数据路径"""
@@ -26,18 +26,26 @@ class ProtocolArgs(BaseArguments):
     """训练模式"""
 
     def _add_args(self, parser) -> None:
+        parser.add_argument("--gts_input_path",
+                            type=Path,
+                            dest="input_dir",
+                            help="训练数据集路径",
+                            required=True)
+        parser.add_argument("--gts_pretrained_model_path",
+                            type=Path,
+                            dest="pretrained_model_root",
+                            help="预训练模型根目录",
+                            required=True)
+        parser.add_argument("--gts_output_dir",
+                            type=Path,
+                            dest="output_dir",
+                            help="输出文件路径",
+                            required=True)
         parser.add_argument(
-            "--gts_input_path", type=Path,
-            dest="input_dir", help="训练数据集路径", required=True)
-        parser.add_argument(
-            "--gts_pretrained_model_path", type=Path,
-            dest="pretrained_model_root", help="预训练模型根目录", required=True)
-        parser.add_argument(
-            "--gts_output_dir", type=Path,
-            dest="output_dir", help="输出文件路径", required=True)
-        parser.add_argument(
-            "--gts_train_level", type=TRAIN_MODE,
-            choices=TRAIN_MODE, dest="train_level",
+            "--gts_train_level",
+            type=TRAIN_MODE,
+            choices=TRAIN_MODE,
+            dest="train_level",
             help="运行模式: [0 - default | 1 - student | 2 - gts | 3 - 快速模式]",
             required=True)
 
@@ -58,7 +66,7 @@ class ProtocolArgs(BaseArguments):
 
 
 class ProtocolArgsMixin:
-    """使当前参数包含ProtocolArgs并隔离
+    """使当前参数包含ProtocolArgs并隔离.
 
     使参数foo可以直接通过args.foo而非args.protocol_args.foo访问
     """

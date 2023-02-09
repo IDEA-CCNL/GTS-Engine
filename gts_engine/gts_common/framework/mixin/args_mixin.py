@@ -1,11 +1,11 @@
-"""提供参数集合(BaseArguments)管理功能的Mixin模块"""
-from typing import Type, Optional, List, get_type_hints
+"""提供参数集合(BaseArguments)管理功能的Mixin模块."""
+from typing import List, Optional, Type, get_type_hints
 
 from gts_common.framework import BaseArguments
 
 
 class ArgsMixin:
-    """提供参数集合(BaseArguments)管理功能的Mixin
+    """提供参数集合(BaseArguments)管理功能的Mixin.
 
     Example:
 
@@ -31,7 +31,7 @@ class ArgsMixin:
     """
 
     def __init__(self, args_parse_list: Optional[List[str]] = None):
-        """实例化ArgsMixin
+        """实例化ArgsMixin.
 
         识别继承了ArgsMixin的子类声明的参数集合类，并在该类实例化时对参数进行解析。
 

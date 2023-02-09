@@ -1,4 +1,4 @@
-"""开箱即用的组件包
+"""开箱即用的组件包.
 
 包含:
     * ProtocolArgs: 工程接口协议参数集合
@@ -25,10 +25,4 @@ from .eda_utils import EDA
 from .protocol_args import ProtocolArgs, ProtocolArgsMixin
 from .tokenizer_generator import TokenizerGenerator
 
-
-__all__ = [
-    "ProtocolArgs",
-    "ProtocolArgsMixin",
-    "TokenizerGenerator",
-    "EDA"
-]
+__all__ = ["ProtocolArgs", "ProtocolArgsMixin", "TokenizerGenerator", "EDA"]

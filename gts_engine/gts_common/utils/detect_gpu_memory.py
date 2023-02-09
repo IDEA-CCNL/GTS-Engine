@@ -31,6 +31,7 @@ def decide_gpu(gpu_memory):
     lower_gpu = 13000
     low_gpu = 25000
     mid_gpu = 33000
+
     # high_gpu = 41000
 
     if gpu_memory <= lower_gpu:
