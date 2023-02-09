@@ -125,7 +125,6 @@ class Evaluator:
     def evaluation(self, mode, data_set, threshold=0):
         self.data_model.setup(mode)
 
-
         if data_set == "unlabeled":
             test_loader = self.data_model.unlabeled_dataloader()
         elif data_set == "val":
