@@ -197,16 +197,6 @@ class BagualuSummaryLitModel(LightningModule):
         
         return res
 
-
-    def on_predict_epoch_end(self, outputs: List) -> List[Dict]:
-        results = []
-        
-        for step in outputs:
-            results.extend(step[0])
-        
-        return results
-
-
     def configure_optimizers(self) -> List[dict]:
         """configure optimizers.
 

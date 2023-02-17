@@ -24,7 +24,7 @@ from datasets import Dataset as hfDataset
 import torch
 from gts_common.framework.base_training_pipeline import BaseTrainingPipeline
 from gts_common.utils import LoggerManager
-from gts_common.utils.json_utils import dump_json_list
+from gts_common.utils.json_utils import dump_json_list, dump_json
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
@@ -92,11 +92,6 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         if train_data_path and os.path.exists(train_data_path):
             train_data = hfDataset.from_json(train_data_path)
             self._logger.info("load train data from %s", train_data_path)
-            
-            #testing
-            train_data = train_data.shard(10,0)
-            #testing
-
             check_data(train_data)
         else:
             train_data = None
@@ -248,28 +243,28 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         #     result.extend(batch_result)
         
         predict_trainer = Trainer(
-            gpus=1,
+            devices=1,
             accelerator="gpu",
             enable_progress_bar=False,
+            auto_select_gpus=True,
         )
 
         preds = predict_trainer.predict(
                             model=self._lit_model,
                             dataloaders=self._data_module.test_dataloader())
         
-        return preds
+        res = []
+        for pred in preds:
+            res.extend(pred)
+
+        return res
 
     def _generate_evaluation_results(self, res_data: List[dict]) -> dict:
         
         new_preds = [chinese_char_tokenize(d['pred']) for d in res_data]
         new_labels = [chinese_char_tokenize(d['summary']) for d in res_data]
         
-        
         summary_report = get_summerization_report(new_labels, new_preds, self._args.rouge_keys)
-
-        rougeL = summary_report['rougeL_fmeasure'] if 'rougeL_fmeasure' in summary_report else 0.
-        rouge1 = summary_report['rouge1_fmeasure'] if 'rouge1_fmeasure' in summary_report else 0.
-        rouge2 = summary_report['rouge2_fmeasure'] if 'rouge2_fmeasure' in summary_report else 0.
 
         return summary_report
 

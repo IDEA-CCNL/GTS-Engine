@@ -26,6 +26,7 @@ from gts_common.registry import PIPELINE_REGISTRY
 
 from transformers.models.pegasus.modeling_pegasus import PegasusForConditionalGeneration
 
+
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
     TRAIN_MODE.STD: GtsEngineInterfaceSummaryStd()
 }

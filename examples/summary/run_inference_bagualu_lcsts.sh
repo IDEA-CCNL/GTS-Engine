@@ -19,4 +19,3 @@ python gts_engine/gts_engine_inference.py \
     --task_type=summary \
     --input_path=examples/summary/lcsts_test.json \
     --output_path=$TASK_DIR/output.json \
-    --max_epochs=50

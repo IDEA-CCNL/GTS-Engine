@@ -38,12 +38,12 @@ class InferenceManagerSummaryStd(BaseInferenceManager, OptionalLoggerMixin):
         self.info(f"loaded model from {self._args.best_ckpt_path}")
 
         # load tokenizer
-        tokenizer = PegasusTokenizer.from_pretrained(self._args.model_save_dir)
-        self.info(f"loaded tokenzier from {self._args.model_save_dir}")
+        tokenizer = PegasusTokenizer.from_pretrained(self._args.pretrained_model_root)
+        self.info(f"loaded tokenzier from {self._args.pretrained_model_root}")
         self._tokenizer = tokenizer
 
 
-    def inference(self, sample: List[dict]) -> List[dict]:
+    def inference(self, sample: List[dict]) -> dict:
         """inference.
 
         Args:
@@ -62,14 +62,14 @@ class InferenceManagerSummaryStd(BaseInferenceManager, OptionalLoggerMixin):
 
         data_loader = inf_data_module.test_dataloader()
 
-        result = []
+        result = dict()
         for batch in data_loader:
             
-            model_output = self._model(**batch, is_training=False)
+            model_output = self._inference_model(**batch, is_training=False)
             preds = self._tokenizer.batch_decode(model_output['generated_ids'], skip_special_tokens=True, clean_up_tokenization_spaces=True)
             
             for idx,pred in zip(batch['id'], preds):
-                  result.append({'id': idx,'pred': pred})
+                  result[idx]= pred
         
       
         return result

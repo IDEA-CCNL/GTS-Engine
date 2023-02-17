@@ -68,9 +68,11 @@ def get_summerization_report(y_true: List[str], y_pred: List[str], rouge_keys: s
     
     rouge_keys_ = tuple(rouge_keys.split(','))
 
-    rouge_metric = ROUGEScore(
-    rouge_keys=rouge_keys_, normalizer=lambda x: x)
+    rouge_metric = ROUGEScore(rouge_keys=rouge_keys_, normalizer=lambda x: x)
 
     rouge_dict = rouge_metric(y_pred,y_true)
+
+    for k,v in rouge_dict.items():
+        rouge_dict[k] = v.item()
 
     return rouge_dict
