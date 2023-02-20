@@ -17,8 +17,9 @@
 import torch
 from torch import Tensor, nn
 from torch.nn import CrossEntropyLoss, KLDivLoss
+from transformers.models.pegasus.modeling_pegasus import \
+    PegasusForConditionalGeneration
 
-from transformers.models.pegasus.modeling_pegasus import PegasusForConditionalGeneration
 
 class BagualuSummaryModel(nn.Module):
     """BagualuSummaryModel.
@@ -29,10 +30,11 @@ class BagualuSummaryModel(nn.Module):
 
     def __init__(self, pretrained_model_dir: str, max_dec_length: int) -> None:
         super().__init__()
-        
-        self._model = PegasusForConditionalGeneration.from_pretrained(pretrained_model_dir)
-        self._config = self._model.config # type: ignore
-        
+
+        self._model = PegasusForConditionalGeneration.from_pretrained(
+            pretrained_model_dir)
+        self._config = self._model.config  # type: ignore
+
         self._CELoss = CrossEntropyLoss()
         self._KLLoss = KLDivLoss(reduction='batchmean')
 
@@ -43,7 +45,7 @@ class BagualuSummaryModel(nn.Module):
             input_ids: Tensor,
             attention_mask: Tensor,
             labels: Tensor,
-            is_training = True,
+            is_training=True,
             **kwargs) -> Tensor:
         """forward.
 
@@ -57,33 +59,30 @@ class BagualuSummaryModel(nn.Module):
             Tensor: generated_ids
         """
 
-        outputs = self._model.forward(
-                                      input_ids=input_ids,
+        outputs = self._model.forward(input_ids=input_ids,
                                       attention_mask=attention_mask,
                                       labels=labels,
                                       return_dict=True)
         if is_training:
             generated_ids = None
         else:
-            
+
             generated_ids = self._model.generate(
-                                        input_ids=input_ids,
-                                        attention_mask=attention_mask,
-                                        max_length=self._max_dec_length,
-                                        num_beams=8,
-                                    ) # type: ignore
-           
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_length=self._max_dec_length,
+                num_beams=8,
+            )  # type: ignore
+
         masked_lm_loss: float = 0.
-        masked_lm_loss = self._CELoss(outputs.logits.view(-1, self._config.vocab_size), labels.view(-1))
+        masked_lm_loss = self._CELoss(
+            outputs.logits.view(-1, self._config.vocab_size), labels.view(-1))
 
         kl_loss: float = 0.
         # if soft_labels is not None:
-        #     probs = torch.nn.functional.softmax(outputs.logits, dim=-1) 
-        #     kl_loss = self._KLLoss(probs.log(), soft_labels)  
+        #     probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
+        #     kl_loss = self._KLLoss(probs.log(), soft_labels)
 
         loss_total: float = masked_lm_loss + kl_loss
-                                
-        return {
-            'loss_total':loss_total,
-            'generated_ids':generated_ids
-        }
+
+        return {'loss_total': loss_total, 'generated_ids': generated_ids}

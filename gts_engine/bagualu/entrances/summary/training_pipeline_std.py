@@ -13,26 +13,28 @@
 # limitations under the License.
 
 import datetime
+import json
 import os
 import shutil
 from logging import Logger
 from typing import List, Optional
 
-import json
-from datasets import Dataset as hfDataset
-
 import torch
+from datasets import Dataset as hfDataset
 from gts_common.framework.base_training_pipeline import BaseTrainingPipeline
 from gts_common.utils import LoggerManager
-from gts_common.utils.json_utils import dump_json_list, dump_json
+from gts_common.utils.json_utils import dump_json, dump_json_list
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from transformers import AutoTokenizer, PreTrainedTokenizer
 
 from ...arguments.summary import TrainingArgumentsSummaryStd
-from ...dataloaders.summary import (BagualuSummaryDataModule, check_data)
-from ...models.summary import (BagualuSummaryModel, BagualuSummaryLitModel,chinese_char_tokenize,get_summerization_report, PegasusTokenizer)
+from ...dataloaders.summary import BagualuSummaryDataModule, check_data
+from ...models.summary import (BagualuSummaryLitModel, BagualuSummaryModel,
+                               PegasusTokenizer, chinese_char_tokenize,
+                               get_summerization_report)
+
 
 class TrainingPipelineSummaryStd(BaseTrainingPipeline):
     """training pipeline."""
@@ -80,7 +82,8 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
 
     def _generate_tokenizer(self):
         self._logger.info("generate tokenizer...")
-        tokenizer = PegasusTokenizer.from_pretrained(self._args.pretrained_model_root)
+        tokenizer = PegasusTokenizer.from_pretrained(
+            self._args.pretrained_model_root)
         self._tokenizer = tokenizer
 
     def _get_data_module(self):
@@ -119,20 +122,19 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
                                  test_data_path)
 
         self._data_module = BagualuSummaryDataModule(self._tokenizer,
-                                                      self._args,
-                                                      train_data,
-                                                      dev_data,
-                                                      test_data)
+                                                     self._args, train_data,
+                                                     dev_data, test_data)
+
     def load_json_data(data_path: str) -> Optional[hfDataset]:
         if os.path.exists(data_path):
-            ds = hfDataset.from_json(path)
+            ds = hfDataset.from_json(data_path)
             return ds
         else:
             return None
 
-
     def _get_training_lightning(self):
-        self._lit_model = BagualuSummaryLitModel(self._args, logger=self._logger)
+        self._lit_model = BagualuSummaryLitModel(self._args,
+                                                 logger=self._logger)
 
     def _get_trainer(self):
         # add checkpoint callback
@@ -219,7 +221,7 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         # generate predictions from test data
         if os.path.exists(self._args.test_data_path):
             self._logger.info("predicting on test data..")
-            
+
             res_data = self._generate_prediction_results()
             dump_json_list(
                 res_data,
@@ -230,18 +232,17 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
                       os.path.join(self._args.prediction_save_dir,
                                    "test_evaluation_results.json"),
                       indent=4)
-    
-    
+
     def _generate_prediction_results(self) -> List[dict]:
-        
+
         # batch_size = self._args.batch_size
 
         # result = []
         # for i in range(0, len(data), batch_size):
         #     batch_data = data[i:i + batch_size]
-        #     batch_result = 
+        #     batch_result =
         #     result.extend(batch_result)
-        
+
         predict_trainer = Trainer(
             devices=1,
             accelerator="gpu",
@@ -250,9 +251,9 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         )
 
         preds = predict_trainer.predict(
-                            model=self._lit_model,
-                            dataloaders=self._data_module.test_dataloader())
-        
+            model=self._lit_model,
+            dataloaders=self._data_module.test_dataloader())
+
         res = []
         for pred in preds:
             res.extend(pred)
@@ -260,12 +261,11 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         return res
 
     def _generate_evaluation_results(self, res_data: List[dict]) -> dict:
-        
+
         new_preds = [chinese_char_tokenize(d['pred']) for d in res_data]
         new_labels = [chinese_char_tokenize(d['summary']) for d in res_data]
-        
-        summary_report = get_summerization_report(new_labels, new_preds, self._args.rouge_keys)
+
+        summary_report = get_summerization_report(new_labels, new_preds,
+                                                  self._args.rouge_keys)
 
         return summary_report
-
-    

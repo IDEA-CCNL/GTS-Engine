@@ -19,8 +19,10 @@ from gts_common.framework.mixin import OptionalLoggerMixin
 from transformers import AutoTokenizer
 
 from ...arguments.summary import InferenceArgumentsSummaryStd
-from ...models.summary import (BagualuSummaryLitModel, BagualuSummaryModel, PegasusTokenizer)
 from ...dataloaders.summary import BagualuSummaryDataModule
+from ...models.summary import (BagualuSummaryLitModel, BagualuSummaryModel,
+                               PegasusTokenizer)
+
 
 class InferenceManagerSummaryStd(BaseInferenceManager, OptionalLoggerMixin):
     """InferenceManagerSummaryStd."""
@@ -38,10 +40,10 @@ class InferenceManagerSummaryStd(BaseInferenceManager, OptionalLoggerMixin):
         self.info(f"loaded model from {self._args.best_ckpt_path}")
 
         # load tokenizer
-        tokenizer = PegasusTokenizer.from_pretrained(self._args.pretrained_model_root)
+        tokenizer = PegasusTokenizer.from_pretrained(
+            self._args.pretrained_model_root)
         self.info(f"loaded tokenzier from {self._args.pretrained_model_root}")
         self._tokenizer = tokenizer
-
 
     def inference(self, sample: List[dict]) -> dict:
         """inference.
@@ -52,24 +54,22 @@ class InferenceManagerSummaryStd(BaseInferenceManager, OptionalLoggerMixin):
         Returns:
             List[dict]: inference results
         """
-        
 
-        inf_data_module = BagualuSummaryDataModule(self._tokenizer,
-                                                    self._args,
-                                                    None,
-                                                    None,
-                                                    sample)
+        inf_data_module = BagualuSummaryDataModule(self._tokenizer, self._args,
+                                                   None, None, sample)
 
         data_loader = inf_data_module.test_dataloader()
 
         result = dict()
         for batch in data_loader:
-            
+
             model_output = self._inference_model(**batch, is_training=False)
-            preds = self._tokenizer.batch_decode(model_output['generated_ids'], skip_special_tokens=True, clean_up_tokenization_spaces=True)
-            
-            for idx,pred in zip(batch['id'], preds):
-                  result[idx]= pred
-        
-      
+            preds = self._tokenizer.batch_decode(
+                model_output['generated_ids'],
+                skip_special_tokens=True,
+                clean_up_tokenization_spaces=True)
+
+            for idx, pred in zip(batch['id'], preds):
+                result[idx] = pred
+
         return result

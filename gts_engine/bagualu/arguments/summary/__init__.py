@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .arguments_std import TrainingArgumentsSummaryStd,InferenceArgumentsSummaryStd
+from .arguments_std import (InferenceArgumentsSummaryStd,
+                            TrainingArgumentsSummaryStd)

@@ -15,7 +15,8 @@ import os
 from typing import Any, Dict, List
 
 from bagualu.entrances.summary import GtsEngineInterfaceSummaryStd
-from bagualu.entrances.summary.inference_manager_std import InferenceManagerSummaryStd
+from bagualu.entrances.summary.inference_manager_std import \
+    InferenceManagerSummaryStd
 from bagualu.models.summary import PegasusTokenizer
 from gts_common.arguments import GtsEngineArgs
 from gts_common.framework.base_gts_engine_interface import (
@@ -23,15 +24,13 @@ from gts_common.framework.base_gts_engine_interface import (
 from gts_common.pipeline_utils import (download_model_from_huggingface,
                                        load_args, save_args)
 from gts_common.registry import PIPELINE_REGISTRY
-
-from transformers.models.pegasus.modeling_pegasus import PegasusForConditionalGeneration
-
+from transformers.models.pegasus.modeling_pegasus import \
+    PegasusForConditionalGeneration
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
     TRAIN_MODE.STD: GtsEngineInterfaceSummaryStd(),
     TRAIN_MODE.ADV: GtsEngineInterfaceSummaryStd()
 }
-
 
 
 @PIPELINE_REGISTRY.register(suffix=__name__)
@@ -47,15 +46,17 @@ def train_pipeline(args: GtsEngineArgs) -> None:
         model_name = "Randeng-Pegasus-238M-Summary-Chinese"
     elif args.train_mode == "advanced":
         model_name = "Randeng-Pegasus-523M-Summary-Chinese"
-        
-    download_model_from_huggingface(args.pretrained_model_dir,
-                                    model_name,
-                                    model_class=PegasusForConditionalGeneration,
-                                    tokenizer_class=PegasusTokenizer)
+
+    download_model_from_huggingface(
+        args.pretrained_model_dir,
+        model_name,
+        model_class=PegasusForConditionalGeneration,
+        tokenizer_class=PegasusTokenizer)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir,
                                              model_name)
     train_mode = TRAIN_MODE(args.train_mode)
-    module_factory: GtsEngineInterfaceSummaryStd = mode_to_interface[train_mode]
+    module_factory: GtsEngineInterfaceSummaryStd = mode_to_interface[
+        train_mode]
     module_factory.prepare_training(args)
     module_factory.generate_training_pipeline(args).main()
 
@@ -72,14 +73,16 @@ def prepare_inference(save_path: str) -> InferenceManagerSummaryStd:
     """
     model_name = "Randeng-Pegasus-238M-Summary-Chinese"
     args: GtsEngineArgs = load_args(save_path)
-    download_model_from_huggingface(args.pretrained_model_dir,
-                                    model_name,
-                                    model_class=PegasusForConditionalGeneration,
-                                    tokenizer_class=PegasusTokenizer)
+    download_model_from_huggingface(
+        args.pretrained_model_dir,
+        model_name,
+        model_class=PegasusForConditionalGeneration,
+        tokenizer_class=PegasusTokenizer)
     args.pretrained_model_dir = os.path.join(args.pretrained_model_dir,
                                              model_name)
     train_mode = TRAIN_MODE(args.train_mode)
-    module_factory: GtsEngineInterfaceSummaryStd = mode_to_interface[train_mode]
+    module_factory: GtsEngineInterfaceSummaryStd = mode_to_interface[
+        train_mode]
     return module_factory.generate_inference_manager(args)
 
 

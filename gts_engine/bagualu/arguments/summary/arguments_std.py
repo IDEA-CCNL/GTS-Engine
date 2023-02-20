@@ -145,7 +145,6 @@ class TrainingArgumentsSummaryStd(BaseArguments, ProtocolArgsMixin):
     max_dec_length: int
     rouge_keys: str
 
-
     def _add_args(self, parser: GeneralParser) -> None:
         # 数据集参数
         parser.add_argument("--dataset",
@@ -245,7 +244,7 @@ class InferenceArgumentsSummaryStd(BaseArguments):
 
     task_dir: str
     pretrained_model_root: str
-    
+
     num_workers: int = 8
     batch_size: int = 8
     max_enc_length: int = 128

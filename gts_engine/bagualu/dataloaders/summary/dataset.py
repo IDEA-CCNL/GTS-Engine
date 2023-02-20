@@ -13,10 +13,10 @@
 # limitations under the License.
 from typing import List
 
+from datasets import Dataset as hfDataset
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
-from datasets import Dataset as hfDataset
 
 class BagualuSummaryDataset(Dataset):
     """BagualuIEDataset.
@@ -28,7 +28,7 @@ class BagualuSummaryDataset(Dataset):
     """
 
     def __init__(self, data: hfDataset, tokenizer: PreTrainedTokenizer,
-                max_enc_length: int, max_dec_length: int) -> None:
+                 max_enc_length: int, max_dec_length: int) -> None:
         super().__init__()
 
         self.data = data
@@ -41,28 +41,28 @@ class BagualuSummaryDataset(Dataset):
 
     def __getitem__(self, index: int):
         return self._encode_on_iter(self.data[index], index)
-    
+
     def _encode_on_iter(self, sample, idx: int):
-        
+
         encode_dict = self.tokenizer.encode_plus(
             sample['text'],
             max_length=self.max_enc_length,
             padding='max_length',
             truncation=True,
             return_tensors='pt')
-        
+
         decode_dict = self.tokenizer.encode_plus(
             sample['summary'],
             max_length=self.max_dec_length,
             padding='max_length',
             truncation=True,
             return_tensors='pt')
-        
+
         labels = decode_dict['input_ids'].squeeze()  # type: ignore
-        
+
         source_input = encode_dict['input_ids'].squeeze()  # type: ignore
         attn_mask = encode_dict['attention_mask'].squeeze()  # type: ignore
-        
+
         return {
             'input_ids': source_input,
             'attention_mask': attn_mask,
@@ -71,4 +71,3 @@ class BagualuSummaryDataset(Dataset):
             'summary': sample['summary'],
             'id': idx
         }
-        

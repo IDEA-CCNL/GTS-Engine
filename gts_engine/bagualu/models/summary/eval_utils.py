@@ -1,25 +1,32 @@
-from .tokenizers_pegasus import PegasusTokenizer
-from torchmetrics.text.rouge import ROUGEScore
+from typing import Any, Dict, List
+
 import torch
-from torch import nn 
-from typing import List, Dict, Any
+from torch import nn
+from torchmetrics.text.rouge import ROUGEScore
+
+from .tokenizers_pegasus import PegasusTokenizer
 
 
 class SummerizationEvaluation(nn.Module):
+
     def __init__(self, pretrained_model_dir):
         super().__init__()
-        
-        self._tokenizer = PegasusTokenizer.from_pretrained(pretrained_model_dir)
-        
+
+        self._tokenizer = PegasusTokenizer.from_pretrained(
+            pretrained_model_dir)
+
     def forward(self, generated_ids, target_ids):
-        
-        preds = self._tokenizer.batch_decode(
-            generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+        preds = self._tokenizer.batch_decode(generated_ids,
+                                             skip_special_tokens=True,
+                                             clean_up_tokenization_spaces=True)
         labels = torch.where(target_ids != -100, target_ids,
                              self._tokenizer.pad_token_id)
         labels = self._tokenizer.batch_decode(
-            labels, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-      
+            labels,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=True)
+
         new_preds = [chinese_char_tokenize(p) for p in preds]
         new_labels = [chinese_char_tokenize(label) for label in labels]
 
@@ -39,7 +46,6 @@ def chinese_char_tokenize(line):
             line_in_chars += char
 
     return line_in_chars
-
 
 
 def _is_chinese_char(cp):
@@ -64,15 +70,16 @@ def _is_chinese_char(cp):
     return False
 
 
-def get_summerization_report(y_true: List[str], y_pred: List[str], rouge_keys: str) -> Dict[str, Any]:
-    
+def get_summerization_report(y_true: List[str], y_pred: List[str],
+                             rouge_keys: str) -> Dict[str, Any]:
+
     rouge_keys_ = tuple(rouge_keys.split(','))
 
     rouge_metric = ROUGEScore(rouge_keys=rouge_keys_, normalizer=lambda x: x)
 
-    rouge_dict = rouge_metric(y_pred,y_true)
+    rouge_dict = rouge_metric(y_pred, y_true)
 
-    for k,v in rouge_dict.items():
+    for k, v in rouge_dict.items():
         rouge_dict[k] = v.item()
 
     return rouge_dict

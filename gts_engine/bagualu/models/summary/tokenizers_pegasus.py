@@ -1,13 +1,13 @@
-from transformers import PreTrainedTokenizer
-from transformers import logging
-from typing import List, Optional, Tuple, Union
 import collections
 import os
-import unicodedata
 import re
-import jieba
 import sys
+import unicodedata
 from copy import deepcopy
+from typing import List, Optional, Tuple, Union
+
+import jieba
+from transformers import PreTrainedTokenizer, logging
 
 # jieba.enable_parallel(8)
 jieba.initialize()
@@ -15,7 +15,6 @@ jieba.initialize()
 logger = logging.get_logger(__name__)
 
 VOCAB_FILES_NAMES = {"vocab_file": "vocab.txt"}
-
 
 
 def _is_chinese_char(cp):
@@ -38,6 +37,7 @@ def _is_chinese_char(cp):
         return True
 
     return False
+
 
 def _is_whitespace(char):
     """Checks whether `char` is a whitespace character."""
@@ -82,7 +82,7 @@ def _is_punctuation(char):
 def load_vocab(vocab_file):
     """Loads a vocabulary file into a dictionary."""
     vocab = collections.OrderedDict()
-    with open(vocab_file, "r", encoding="utf-8") as reader:
+    with open(vocab_file, encoding="utf-8") as reader:
         tokens = reader.readlines()
     for index, token in enumerate(tokens):
         token = token.rstrip("\n")
@@ -170,8 +170,7 @@ class PegasusTokenizer(PreTrainedTokenizer):
             if not isinstance(additional_special_tokens, list):
                 raise TypeError(
                     f"additional_special_tokens should be of type {type(list)}, \
-                     but is {type(additional_special_tokens)}"
-                )
+                     but is {type(additional_special_tokens)}")
 
             additional_special_tokens_extended = (
                 ([mask_token_sent] + additional_special_tokens)
@@ -189,8 +188,7 @@ class PegasusTokenizer(PreTrainedTokenizer):
                 raise ValueError(
                     f"Please make sure that the provided additional_special_tokens \
                         do not contain an incorrectly shifted list of <unk_x> tokens. \
-                        Found {additional_special_tokens_extended}."
-                )
+                        Found {additional_special_tokens_extended}.")
             additional_special_tokens = additional_special_tokens_extended
         else:
             additional_special_tokens = [
@@ -293,7 +291,7 @@ class PegasusTokenizer(PreTrainedTokenizer):
 
     @staticmethod
     def _cjk_punctuation():
-        return u'\uff02\uff03\uff04\uff05\uff06\uff07\uff08\uff09\uff0a\uff0b\uff0c\uff0d\uff0f\uff1a\uff1b\uff1c\uff1d\
+        return '\uff02\uff03\uff04\uff05\uff06\uff07\uff08\uff09\uff0a\uff0b\uff0c\uff0d\uff0f\uff1a\uff1b\uff1c\uff1d\
             \uff1e\uff20\uff3b\uff3c\uff3d\uff3e\uff3f\uff40\uff5b\uff5c\uff5d\uff5e\uff5f\uff60\uff62\
             \uff63\uff64\u3000\u3001\u3003\u3008\u3009\u300a\u300b\u300c\u300d\u300e\u300f\u3010\u3011\u3014\
             \u3015\u3016\u3017\u3018\u3019\u301a\u301b\u301c\u301d\u301e\u301f\u3030\u303e\u303f\u2013\u2014\
@@ -303,9 +301,9 @@ class PegasusTokenizer(PreTrainedTokenizer):
             self,
             ids: Union[int, List[int]],
             skip_special_tokens: bool = False) -> Union[str, List[str]]:
-        """
-        Converts a single index or a sequence of indices in a token or a sequence of tokens, using the vocabulary and
-        added tokens.
+        """Converts a single index or a sequence of indices in a token or a
+        sequence of tokens, using the vocabulary and added tokens.
+
         Args:
             ids (`int` or `List[int]`):
                 The token id (or token ids) to convert to tokens.
@@ -355,8 +353,8 @@ class PegasusTokenizer(PreTrainedTokenizer):
 
         text = re.sub(' +', ' ', text)
         text = re.sub('\' (re|m|s|t|ve|d|ll) ', '\'\\1 ', text)
-        punctuation = re.sub(
-            ' +', '', self._cjk_punctuation()).strip() + '+-/={(<['
+        punctuation = re.sub(' +', '',
+                             self._cjk_punctuation()).strip() + '+-/={(<['
         punctuation_regex = '|'.join([re.escape(p) for p in punctuation])
         punctuation_regex = '(%s) ' % punctuation_regex
         text = re.sub(punctuation_regex, '\\1', text)
@@ -369,9 +367,11 @@ class PegasusTokenizer(PreTrainedTokenizer):
             self,
             token_ids_0: List[int],
             token_ids_1: Optional[List[int]] = None) -> List[int]:
-        """
-        Build model inputs from a sequence or a pair of sequences for sequence classification tasks by concatenating
-        and adding special tokens. A PEGASUS sequence has the following format, where `X` represents the sequence:
+        """Build model inputs from a sequence or a pair of sequences for
+        sequence classification tasks by concatenating and adding special
+        tokens. A PEGASUS sequence has the following format, where `X`
+        represents the sequence:
+
         - single sequence: `X </s>`
         - pair of sequences: `A B </s>` (not intended use)
         BOS is never used. Pairs of sequences are not the expected use case, but they will be handled without a
@@ -400,8 +400,10 @@ class PegasusTokenizer(PreTrainedTokenizer):
             token_ids_0: List[int],
             token_ids_1: Optional[List[int]] = None,
             already_has_special_tokens: bool = False) -> List[int]:
-        """
-        Retrieve sequence ids from a token list that has no special tokens added. This method is called when adding
+        """Retrieve sequence ids from a token list that has no special tokens
+        added.
+
+        This method is called when adding
         special tokens using the tokenizer `prepare_for_model` method.
         Args:
             token_ids_0 (`List[int]`):
@@ -423,7 +425,7 @@ class PegasusTokenizer(PreTrainedTokenizer):
                                             token_ids_1) + [self.eos_token_id]
 
     def num_special_tokens_to_add(self, pair=False):
-        """Just EOS"""
+        """Just EOS."""
         return 1
 
     def save_vocabulary(self,
@@ -451,7 +453,7 @@ class PegasusTokenizer(PreTrainedTokenizer):
         return (vocab_file, )
 
 
-class BasicTokenizer(object):
+class BasicTokenizer:
     """
     Constructs a BasicTokenizer that will run basic tokenization (punctuation splitting, lower casing, etc.).
     Args:
@@ -575,19 +577,20 @@ class BasicTokenizer(object):
         # space-separated words, so they are not treated specially and handled
         # like the all of the other languages.
         if ((cp >= 0x4E00 and cp <= 0x9FFF)
-            or (cp >= 0x3400 and cp <= 0x4DBF)  #
-            or (cp >= 0x20000 and cp <= 0x2A6DF)  #
-            or (cp >= 0x2A700 and cp <= 0x2B73F)  #
-            or (cp >= 0x2B740 and cp <= 0x2B81F)  #
-            or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
-            or (cp >= 0xF900 and cp <= 0xFAFF)
+                or (cp >= 0x3400 and cp <= 0x4DBF)  #
+                or (cp >= 0x20000 and cp <= 0x2A6DF)  #
+                or (cp >= 0x2A700 and cp <= 0x2B73F)  #
+                or (cp >= 0x2B740 and cp <= 0x2B81F)  #
+                or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
+                or (cp >= 0xF900 and cp <= 0xFAFF)
                 or (cp >= 0x2F800 and cp <= 0x2FA1F)):  #
             return True
 
         return False
 
     def _clean_text(self, text):
-        """Performs invalid character removal and whitespace cleanup on text."""
+        """Performs invalid character removal and whitespace cleanup on
+        text."""
         output = []
         for char in text:
             cp = ord(char)
@@ -600,7 +603,7 @@ class BasicTokenizer(object):
         return "".join(output)
 
 
-class WordpieceTokenizer(object):
+class WordpieceTokenizer:
     """Runs WordPiece tokenization."""
 
     def __init__(self, vocab, unk_token, max_input_chars_per_word=100):
@@ -609,10 +612,11 @@ class WordpieceTokenizer(object):
         self.max_input_chars_per_word = max_input_chars_per_word
 
     def tokenize(self, text):
-        """
-        Tokenizes a piece of text into its word pieces. This uses a greedy longest-match-first algorithm to perform
+        """Tokenizes a piece of text into its word pieces.
+
+        This uses a greedy longest-match-first algorithm to perform
         tokenization using the given vocabulary.
-        For example, `input = "unaffable"` wil return as output `["un", "##aff", "##able"]`.
+        For example, `input = "unaffable"` will return as output `["un", "##aff", "##able"]`.
         Args:
             text: A single token or whitespace separated tokens. This should have
                 already been passed through *BasicTokenizer*.
