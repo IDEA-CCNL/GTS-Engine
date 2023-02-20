@@ -28,7 +28,8 @@ from transformers.models.pegasus.modeling_pegasus import PegasusForConditionalGe
 
 
 mode_to_interface: Dict[TRAIN_MODE, BaseGtsEngineInterface] = {
-    TRAIN_MODE.STD: GtsEngineInterfaceSummaryStd()
+    TRAIN_MODE.STD: GtsEngineInterfaceSummaryStd(),
+    TRAIN_MODE.ADV: GtsEngineInterfaceSummaryStd()
 }
 
 
@@ -42,7 +43,11 @@ def train_pipeline(args: GtsEngineArgs) -> None:
     """
     # save args
     args = save_args(args)
-    model_name = "Randeng-Pegasus-238M-Summary-Chinese"
+    if args.train_mode == "standard":
+        model_name = "Randeng-Pegasus-238M-Summary-Chinese"
+    elif args.train_mode == "advanced":
+        model_name = "Randeng-Pegasus-523M-Summary-Chinese"
+        
     download_model_from_huggingface(args.pretrained_model_dir,
                                     model_name,
                                     model_class=PegasusForConditionalGeneration,
