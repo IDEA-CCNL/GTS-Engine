@@ -12,7 +12,7 @@ if [ ! -d $TASK_DIR ]; then
     exit 1
 fi
 
-export CUDA_VISIBLE_DEVICES=5
+export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_inference.py \
     --task_dir=$TASK_DIR \
     --engine_type=bagualu \
