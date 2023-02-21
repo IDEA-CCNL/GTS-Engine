@@ -7,7 +7,7 @@ from torchmetrics.text.rouge import ROUGEScore
 from .tokenizers_pegasus import PegasusTokenizer
 
 
-class SummerizationEvaluation(nn.Module):
+class SummarizationEvaluation(nn.Module):
 
     def __init__(self, pretrained_model_dir):
         super().__init__()
@@ -35,17 +35,17 @@ class SummerizationEvaluation(nn.Module):
 
 def chinese_char_tokenize(line):
     line = line.strip()
-    line_in_chars = ""
+    line_in_chars = []
 
     for char in line:
         if _is_chinese_char(ord(char)):
-            line_in_chars += " "
-            line_in_chars += char
-            line_in_chars += " "
+            line_in_chars.append(" ")
+            line_in_chars.append(char)
+            line_in_chars.append(" ")
         else:
-            line_in_chars += char
+            line_in_chars.append(char)
 
-    return line_in_chars
+    return "".join(line_in_chars)
 
 
 def _is_chinese_char(cp):
@@ -70,7 +70,7 @@ def _is_chinese_char(cp):
     return False
 
 
-def get_summerization_report(y_true: List[str], y_pred: List[str],
+def get_summarization_report(y_true: List[str], y_pred: List[str],
                              rouge_keys: str) -> Dict[str, Any]:
 
     rouge_keys_ = tuple(rouge_keys.split(','))

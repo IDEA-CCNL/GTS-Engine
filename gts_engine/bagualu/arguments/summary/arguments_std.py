@@ -21,7 +21,7 @@ from gts_common.utils.path import mk_inexist_dir
 
 
 class TrainingArgumentsSummaryStd(BaseArguments, ProtocolArgsMixin):
-    """信息抽取finetune参数."""
+    """摘要生成finetune参数."""
 
     # 输出相关参数
     @property
@@ -240,7 +240,7 @@ class TrainingArgumentsSummaryStd(BaseArguments, ProtocolArgsMixin):
 
 
 class InferenceArgumentsSummaryStd(BaseArguments):
-    """信息抽取finetune参数."""
+    """摘要生成finetune参数."""
 
     task_dir: str
     pretrained_model_root: str

@@ -26,16 +26,16 @@ from transformers.optimization import (get_constant_schedule,
                                        get_linear_schedule_with_warmup)
 
 from ...arguments.summary import TrainingArgumentsSummaryStd
-from .eval_utils import SummerizationEvaluation
+from .eval_utils import SummarizationEvaluation
 from .model import BagualuSummaryModel
 from .tokenizers_pegasus import PegasusTokenizer
 
 
 class BagualuSummaryLitModel(LightningModule):
-    """BagualuIELitModel.
+    """BagualuSummaryLitModel.
 
     Args:
-        args (TrainingArgumentsIEStd): arguments
+        args (TrainingArgumentsSummaryStd): arguments
         num_data (int, optional): num of input data. Defaults to 1.
     """
 
@@ -60,7 +60,7 @@ class BagualuSummaryLitModel(LightningModule):
         self.num_step = -1
         self.num_step_each_epoch = -1
 
-        self._summerization_evaluation = SummerizationEvaluation(
+        self._summerization_evaluation = SummarizationEvaluation(
             self.args.pretrained_model_root)
         rouge_keys = tuple(args.rouge_keys.split(','))
         self._rouge_metric = ROUGEScore(rouge_keys=rouge_keys,
@@ -87,11 +87,10 @@ class BagualuSummaryLitModel(LightningModule):
                 self.num_step_each_epoch = num_step_each_epoch
                 self.num_step = self.trainer.max_steps
                 self._logger.info("----- set max steps -----")
-                self._logger.info("num_data: %d", self.num_data)
-                self._logger.info("num_parallel: %d", num_parallel)
-                self._logger.info("one epoch training step: %d",
-                                  self.num_step_each_epoch)
-                self._logger.info("Total training step: %d", self.num_step)
+                self._logger.info(f"num_data: {self.num_data}" )
+                self._logger.info(f"num_parallel: {num_parallel}")
+                self._logger.info(f"one epoch training step: {self.num_step_each_epoch}")
+                self._logger.info(f"Total training step: {self.num_step}")
             elif max_epochs and max_epochs > 0:
                 num_data = max_epochs * self.num_data
                 num_parallel = max(
@@ -101,11 +100,10 @@ class BagualuSummaryLitModel(LightningModule):
                 self.num_step = num_step
                 self.num_step_each_epoch = num_step / max_epochs
                 self._logger.info("----- set max epochs -----")
-                self._logger.info("num_data: %d", self.num_data)
-                self._logger.info("num_parallel: %d", num_parallel)
-                self._logger.info("one epoch training step: %d",
-                                  self.num_step_each_epoch)
-                self._logger.info("Total training step: %d", self.num_step)
+                self._logger.info(f"num_data: {self.num_data}")
+                self._logger.info(f"num_parallel: {num_parallel}")
+                self._logger.info(f"one epoch training step: {self.num_step_each_epoch}")
+                self._logger.info(f"Total training step: {self.num_step}")
             else:
                 raise ValueError()
 

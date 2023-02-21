@@ -33,7 +33,7 @@ from ...arguments.summary import TrainingArgumentsSummaryStd
 from ...dataloaders.summary import BagualuSummaryDataModule, check_data
 from ...models.summary import (BagualuSummaryLitModel, BagualuSummaryModel,
                                PegasusTokenizer, chinese_char_tokenize,
-                               get_summerization_report)
+                               get_summarization_report)
 
 
 class TrainingPipelineSummaryStd(BaseTrainingPipeline):
@@ -265,7 +265,7 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
         tokenize_preds = [chinese_char_tokenize(d['pred']) for d in res_data]
         tokenize_labels = [chinese_char_tokenize(d['summary']) for d in res_data]
 
-        summary_report = get_summerization_report(tokenize_labels, tokenize_preds,
+        summary_report = get_summarization_report(tokenize_labels, tokenize_preds,
                                                   self._args.rouge_keys)
 
         return summary_report

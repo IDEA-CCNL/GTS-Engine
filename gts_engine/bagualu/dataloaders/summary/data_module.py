@@ -118,21 +118,16 @@ class BagualuSummaryDataModule(pl.LightningDataModule):
         else:
             labels = None
 
-        if labels is None:
-            batch_data = {
+        batch_data = {
                 'id': batch_data['id'],
                 'text': batch_data['text'],
                 'input_ids': input_ids,
                 'attention_mask': attention_mask,
             }
-        else:
-            batch_data = {
-                'id': batch_data['id'],
-                'text': batch_data['text'],
-                'summary': summary,
-                'input_ids': input_ids,
-                'attention_mask': attention_mask,
-                'labels': labels,
-            }
+        
+        if labels is not None:
+            batch_data["summary"] = summary
+            batch_data["labels"] = labels
+
 
         return batch_data
