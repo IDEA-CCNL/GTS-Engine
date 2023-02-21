@@ -113,8 +113,6 @@ class DataFormatChecker:
             return self._check_nli_data(data_type, data)
         elif task_type == "ie":
             return self._check_ie_data(data_type, data)
-        elif task_type == "summary":
-            return self._check_summary_data(data_type, data)
         else:
             raise ValueError(
                 f"task_type `{task_type}` format checking is not supported.")
@@ -183,15 +181,5 @@ class DataFormatChecker:
 
             # if data_type in {"train", "val", "dev"}:
             #     pass
-
-        return True, "OK"
-
-    def _check_summary_data(self, data_type: str,
-                            data: List[dict]) -> Tuple[bool, str]:
-        for item in data:
-            if "text" not in item:
-                return False, f"样本【{item}】格式错误：缺少`text`字段"
-            if "summary" not in item:
-                return False, f"样本【{item}】格式错误：缺少`summary`字段"
 
         return True, "OK"
