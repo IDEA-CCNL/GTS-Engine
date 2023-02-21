@@ -186,13 +186,12 @@ class DataFormatChecker:
 
         return True, "OK"
 
-
     def _check_summary_data(self, data_type: str,
-                        data: List[dict]) -> Tuple[bool, str]:
+                            data: List[dict]) -> Tuple[bool, str]:
         for item in data:
             if "text" not in item:
                 return False, f"样本【{item}】格式错误：缺少`text`字段"
             if "summary" not in item:
                 return False, f"样本【{item}】格式错误：缺少`summary`字段"
-            
+
         return True, "OK"

@@ -262,10 +262,10 @@ class TrainingPipelineSummaryStd(BaseTrainingPipeline):
 
     def _generate_evaluation_results(self, res_data: List[dict]) -> dict:
 
-        new_preds = [chinese_char_tokenize(d['pred']) for d in res_data]
-        new_labels = [chinese_char_tokenize(d['summary']) for d in res_data]
+        tokenize_preds = [chinese_char_tokenize(d['pred']) for d in res_data]
+        tokenize_labels = [chinese_char_tokenize(d['summary']) for d in res_data]
 
-        summary_report = get_summerization_report(new_labels, new_preds,
+        summary_report = get_summerization_report(tokenize_labels, tokenize_preds,
                                                   self._args.rouge_keys)
 
         return summary_report

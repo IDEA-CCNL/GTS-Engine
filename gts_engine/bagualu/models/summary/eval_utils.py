@@ -27,10 +27,10 @@ class SummerizationEvaluation(nn.Module):
             skip_special_tokens=True,
             clean_up_tokenization_spaces=True)
 
-        new_preds = [chinese_char_tokenize(p) for p in preds]
-        new_labels = [chinese_char_tokenize(label) for label in labels]
+        tokenize_preds = [chinese_char_tokenize(p) for p in preds]
+        tokenize_labels = [chinese_char_tokenize(label) for label in labels]
 
-        return new_preds, new_labels
+        return tokenize_preds, tokenize_labels
 
 
 def chinese_char_tokenize(line):
