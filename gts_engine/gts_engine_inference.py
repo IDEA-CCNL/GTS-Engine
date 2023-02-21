@@ -46,7 +46,7 @@ def main():
     total_parser.add_argument(
         "--task_type",
         required=True,
-        choices=["classification", "similarity", "nli", "ie", "summary"],
+        choices=["classification", "similarity", "nli", "ie"],
         type=str,
         help="task type for training")
     total_parser.add_argument(

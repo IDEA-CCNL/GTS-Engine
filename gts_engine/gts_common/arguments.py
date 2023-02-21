@@ -11,7 +11,7 @@ class GtsEngineArgs(Namespace):
     engine_type: Literal["qiankunding", "bagualu"]
     train_mode: Literal["fast", "standard", "advanced"]
     task_dir: PathStr
-    task_type: Literal["classification", "similarity", "nli", "ie", "summary"]
+    task_type: Literal["classification", "similarity", "nli", "ie"]
     num_workers: int
     train_batchsize: int
     valid_batchsize: int
