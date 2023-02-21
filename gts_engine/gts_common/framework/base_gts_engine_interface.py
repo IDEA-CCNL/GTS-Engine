@@ -29,6 +29,7 @@ class TASK(Enum):
     NLI = "nli"
     SIM = "similarity"
     IE = "ie"
+    SMY = "summary"
 
 
 class ENGINE_TYPE(Enum):
