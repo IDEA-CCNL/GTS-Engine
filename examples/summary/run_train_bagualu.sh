@@ -13,7 +13,7 @@ PRETRAINED_DIR=$WORK_DIR/pretrained
 TASK_DIR=$WORK_DIR/tasks/text_summary_example
 mkdir -p $TASK_DIR
 
-export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=0
 python gts_engine/gts_engine_train.py \
     --engine_type=bagualu \
     --train_mode=standard \
