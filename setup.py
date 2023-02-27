@@ -14,7 +14,7 @@ REQUIRED_PACKAGES = read_requirements_file("requirements.txt")
 
 setup(
     name="gts_engine",
-    version="0.1.3",
+    version="0.1.4",
     description="git_engine development suite: a powerful NLU training system",
     long_description=long_description,
     long_description_content_type="text/markdown",
